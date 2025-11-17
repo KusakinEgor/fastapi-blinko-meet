@@ -1,30 +1,25 @@
 import { useState } from "react";
+import ScreenWrapper from "../ui/ScreenWrapper";
+import Button from "../ui/Button";
+import Input from "../ui/Input";
 
 export default function JoinRoomScreen({ onBack }) {
   const [roomId, setRoomId] = useState("");
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-6 flex flex-col items-center justify-center">
-      <h2 className="text-3xl font-semibold mb-6">Вход в комнату</h2>
+    <ScreenWrapper>
+      <h2 className="text-3xl font-semibold mb-8 text-center">Вход в комнату</h2>
 
-      <input
-        type="text"
+      <Input
         placeholder="ID комнаты"
         value={roomId}
         onChange={(e) => setRoomId(e.target.value)}
-        className="w-full max-w-sm p-3 rounded-xl bg-gray-900 border border-gray-700 mb-4"
       />
 
-      <button className="w-full max-w-sm py-3 bg-blue-600 rounded-xl hover:bg-blue-700">
-        Войти
-      </button>
-
-      <button
-        onClick={onBack}
-        className="mt-4 text-gray-400 hover:text-white"
-      >
+      <Button className="mt-4" variant="primary">Войти</Button>
+      <Button className="mt-4 text-sm" variant="secondary" onClick={onBack}>
         Назад
-      </button>
-    </div>
+      </Button>
+    </ScreenWrapper>
   );
 }

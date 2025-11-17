@@ -1,23 +1,20 @@
+import Button from "../ui/Button";
+import VideoTile from "../ui/VideoTile";
+
 export default function VideoCallScreen() {
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-4 flex flex-col">
+    <div className="min-h-screen bg-[#0d0d0f] text-white p-4 flex flex-col">
 
       <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-        <div className="bg-gray-800 rounded-xl flex items-center justify-center">
-          Видео участника
-        </div>
-        <div className="bg-gray-800 rounded-xl flex items-center justify-center">
-          Видео участника
-        </div>
-        <div className="bg-gray-800 rounded-xl flex items-center justify-center">
-          Видео участника
-        </div>
+        {[1, 2, 3].map((i) => (
+          <VideoTile key={i}>Видео участника</VideoTile>
+        ))}
       </div>
 
-      <div className="flex justify-center gap-4 py-4 bg-gray-900 rounded-xl">
-        <button className="px-4 py-2 bg-red-600 rounded-xl hover:bg-red-700">Выйти</button>
-        <button className="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600">Микрофон</button>
-        <button className="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600">Камера</button>
+      <div className="flex justify-center gap-4 py-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl shadow-lg shadow-black/40">
+        <Button variant="danger">Выйти</Button>
+        <Button variant="secondary">Микрофон</Button>
+        <Button variant="secondary">Камера</Button>
       </div>
 
     </div>
