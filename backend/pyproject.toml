@@ -19,5 +19,8 @@ build-backend = "poetry.core.masonry.api"
 
 [dependency-groups]
 dev = [
-    "fastapi (>=0.121.2,<0.122.0)"
+    "fastapi (>=0.121.2,<0.122.0)",
+    "pydantic[email] (>=2.12.4,<3.0.0)",
+    "passlib (>=1.7.4,<2.0.0)",
+    "python-jose (>=3.5.0,<4.0.0)"
 ]
