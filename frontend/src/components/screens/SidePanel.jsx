@@ -52,7 +52,7 @@ export default function SidePanel({ isOpen, onClose, children }) {
           </div>
 
           <div className="flex gap-4">
-            <button className="bg-[#5d95fd] rounded-xl w-[93px]">
+            <button className="bg-[#5d95fd] rounded-xl w-[93px] font-bold text-white">
               Schedule
             </button>
             <button
