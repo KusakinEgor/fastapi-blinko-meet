@@ -40,6 +40,9 @@
 ### Экран логина
 ![Экран логина](pictures/login.PNG)
 
+### Сайдбар Schedule
+![Сайдбар schedule](pictures/sidepanel.PNG)
+
 ---
 
 ## Технологии
