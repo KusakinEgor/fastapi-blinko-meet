@@ -4,10 +4,12 @@ import CreateRoomScreen from "./CreateRoomScreen";
 import MyIcon from "../../assets/card.svg"
 import DivButton from "../ui/DivButton";
 import LoginScreen from "./LoginScreen";
+import SidePanel from "./SidePanel";
 
 export default function LandingScreen() {
   const [loaded, setLoaded] = useState(false);
   const [screen, setScreen] = useState("landing");
+  const [sidePanelOpen, setSidePanelOpen] = useState(false);
 
   useEffect(() => setLoaded(true), []);
 
@@ -20,14 +22,12 @@ export default function LandingScreen() {
   return (
     <div className="min-h-screen bg-black text-white flex relative overflow-hidden">
 
-      {/* Sidebar */}
       <div
         className={`sm:w-24 bg-white/10 backdrop-blur-xl flex flex-col justify-between items-center p-4 transition-all duration-1000
         ${loaded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-6"}`}
       >
         <div className="flex flex-col gap-6 mt-4">
 
-          {/* Login Button */}
           <Button
             variant="secondary"
             className="flex flex-col items-center py-2 px-3 hover:bg-white/10 rounded-lg transition-all duration-200"
@@ -48,7 +48,6 @@ export default function LandingScreen() {
             Login
           </Button>
 
-          {/* Meetings Button */}
           <Button
             variant="secondary"
             onClick={() => setScreen("createRoom")}
@@ -78,7 +77,6 @@ export default function LandingScreen() {
 
         </div>
 
-        {/* Footer Inside Sidebar */}
         <div className="flex flex-col items-center gap-2 mb-4">
           <p className="text-white font-semibold text-center">BLINKO MEET</p>
 
@@ -94,7 +92,6 @@ export default function LandingScreen() {
 
       </div>
 
-      {/* Main Content */}
       <div className="grid grid-cols-2 gap-10 p-10 w-full h-screen justify-center items-center">
             <div className="grid grid-cols-2 gap-4">
                 <div className="flex justify-end">
@@ -111,7 +108,7 @@ export default function LandingScreen() {
                 </div>
 
                 <div className="flex flex-col gap-4 h-[568]">
-                    <div className="bg-[#171717] flex flex-col flex-1 rounded-xl p-4 overflow-hidden cursor-pointer relative">
+                    <div onClick={() => setSidePanelOpen(true)} className="bg-[#171717] flex flex-col flex-1 rounded-xl p-4 overflow-hidden cursor-pointer relative">
                         <svg width="65" height="65" viewBox="0 0 65 65" fill="none">
                             <path d="M30.1667 15.0317C28.9314 15.0317 27.9299 16.1153 27.9299 17.4519V34.086C27.929 34.1558 27.9308 34.2254 27.9354 34.2946C27.982 35.0178 28.3222 35.6534 28.8279 36.0628C28.9106 36.1298 28.9977 36.1907 29.0887 36.2449L38.2884 42.1357C39.3582 42.804 40.7263 42.4074 41.3439 41.2498C41.9616 40.0923 41.595 38.6122 40.5252 37.9439L32.4035 32.7265V17.4519C32.4035 16.1153 31.4021 15.0317 30.1667 15.0317Z" fill="#FCC24D"></path>
                             <path fill-rule="evenodd" clip-rule="evenodd" d="M32.4989 55.0318C45.1225 55.0318 55.356 44.7983 55.356 32.1747C55.356 19.551 45.1225 9.31752 32.4989 9.31752C19.8752 9.31752 9.64174 19.551 9.64174 32.1747C9.64174 44.7983 19.8752 55.0318 32.4989 55.0318ZM32.4989 59.6032C47.6473 59.6032 59.9275 47.323 59.9275 32.1747C59.9275 17.0263 47.6473 4.74609 32.4989 4.74609C17.3505 4.74609 5.07031 17.0263 5.07031 32.1747C5.07031 47.323 17.3505 59.6032 32.4989 59.6032Z" fill="#FCC24D"></path>
@@ -156,6 +153,11 @@ export default function LandingScreen() {
                 </div>
             </div>
       </div>
+
+      <SidePanel isOpen={sidePanelOpen} onClose={() => setSidePanelOpen(false)}>
+        <h2 className="text-white text-[40px] font-bold mb-4">Schedule a meeting</h2>
+      </SidePanel>
+
     </div>
   );
 }
