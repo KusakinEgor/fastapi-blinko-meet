@@ -43,6 +43,9 @@
 ### Сайдбар Schedule
 ![Сайдбар schedule](pictures/sidepanel.PNG)
 
+### Экран подключения
+![Экран подключения](pictures/joinScreen.PNG)
+
 ---
 
 ## Технологии
