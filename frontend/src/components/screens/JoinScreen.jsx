@@ -105,7 +105,7 @@ export default function JoinScreen({ onBack, onJoin }) {
 
             <div
               onClick={() => onJoin({ name, meetingCode, meetingPassword })}
-              className="bg-[#3f81fd] py-3 rounded-lg text-center text-lg font-semibold cursor-pointer mt-4 max-w-md mx-auto"
+              className="bg-[#3f81fd] py-3 rounded-lg text-center text-lg font-semibold cursor-pointer mt-4 max-w-md mx-auto p-2"
             >
               Join the Meeting
             </div>
