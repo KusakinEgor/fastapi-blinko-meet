@@ -5,6 +5,7 @@ import MyIcon from "../../assets/card.svg"
 import DivButton from "../ui/DivButton";
 import LoginScreen from "./LoginScreen";
 import SidePanel from "./SidePanel";
+import JoinScreen from "./JoinScreen";
 
 export default function LandingScreen() {
   const [loaded, setLoaded] = useState(false);
@@ -17,6 +18,8 @@ export default function LandingScreen() {
     return <CreateRoomScreen onBack={() => setScreen("landing")} />;
   } else if (screen === "loginRoom") {
     return <LoginScreen onBack={() => setScreen("landing")} />;
+  } else if (screen === "joinRoom") {
+    return <JoinScreen onBack={() => setScreen("landing")}/>
   }
 
   return (
@@ -123,7 +126,10 @@ export default function LandingScreen() {
                         <div className="absolute inset-0 bg-white/1 backdrop-blur-sm opacity-0 hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
                     </div>
 
-                    <div className="bg-[#171717] flex flex-col flex-1 rounded-xl p-4 overflow-hidden cursor-pointer relative">
+                    <DivButton
+                        onClick={() => setScreen("joinRoom")}
+                        className="bg-[#171717] flex flex-col flex-1 rounded-xl p-4 overflow-hidden cursor-pointer relative" 
+                    >
                         <svg width="65" height="65" viewBox="0 0 65 65" fill="none">
                             <path fill-rule="evenodd" clip-rule="evenodd" d="M10.0003 34.7227L44.0641 34.7227L31.1793 47.2185C30.1496 48.2171 30.1496 49.8559 31.1793 50.8545C32.2091 51.8532 33.8725 51.8532 34.9022 50.8545L52.3019 33.9802C53.3317 32.9815 53.3317 31.3684 52.3019 30.3697L34.9022 13.4954C33.8725 12.4967 32.2091 12.4967 31.1793 13.4954C30.1496 14.494 30.1496 16.1072 31.1793 17.1058L44.0641 29.6015L10.0003 29.6015C8.54807 29.6015 7.35993 30.7538 7.35993 32.1621C7.35993 33.5705 8.54807 34.7227 10.0003 34.7227Z" fill="#BF6BF2"></path>
                         </svg>
@@ -133,7 +139,7 @@ export default function LandingScreen() {
                         </div>
 
                         <div className="absolute inset-0 bg-white/1 backdrop-blur-sm opacity-0 hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
-                    </div>
+                    </DivButton>
                 </div>
             </div>
             
