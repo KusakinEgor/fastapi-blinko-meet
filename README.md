@@ -49,6 +49,9 @@
 ### Экран создания
 ![Экран создания](pictures/createScreen.PNG)
 
+### Сайдбар Login
+![Сайдбар login](pictures/loginPanel.PNG)
+
 ---
 
 ## Технологии
