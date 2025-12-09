@@ -6,11 +6,13 @@ import DivButton from "../ui/DivButton";
 import LoginScreen from "./LoginScreen";
 import SidePanel from "./SidePanel";
 import JoinScreen from "./JoinScreen";
+import LoginPanel from "./LoginPanel";
 
 export default function LandingScreen() {
   const [loaded, setLoaded] = useState(false);
   const [screen, setScreen] = useState("landing");
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
+  const [showLoginPanel, setShowLoginPanel] = useState(false);
 
   useEffect(() => setLoaded(true), []);
 
@@ -26,7 +28,7 @@ export default function LandingScreen() {
     <div className="min-h-screen bg-black text-white flex relative overflow-hidden">
 
       <div
-        className={`sm:w-24 bg-white/10 backdrop-blur-xl flex flex-col justify-between items-center p-4 transition-all duration-1000
+        className={`sm:w-24 bg-[#080808] backdrop-blur-xl flex flex-col justify-between items-center p-4 transition-all duration-1000
         ${loaded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-6"}`}
       >
         <div className="flex flex-col gap-6 mt-4">
@@ -34,6 +36,7 @@ export default function LandingScreen() {
           <Button
             variant="secondary"
             className="flex flex-col items-center py-2 px-3 hover:bg-white/10 rounded-lg transition-all duration-200"
+            onClick={() => setShowLoginPanel(!showLoginPanel)}
           >
             <svg
               width="24"
@@ -159,7 +162,7 @@ export default function LandingScreen() {
                 </div>
             </div>
       </div>
-
+      <LoginPanel visible={showLoginPanel} onClose={() => setShowLoginPanel(false)} />
       <SidePanel isOpen={sidePanelOpen} onClose={() => setSidePanelOpen(false)}>
         <h2 className="text-white text-[40px] font-bold mb-4">Schedule a meeting</h2>
       </SidePanel>
