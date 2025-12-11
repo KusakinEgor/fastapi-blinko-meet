@@ -52,6 +52,9 @@
 ### Сайдбар Login
 ![Сайдбар login](pictures/loginPanel.PNG)
 
+### Экран конференции
+![Экран конференции](pictures/meetRoom.PNG)
+
 ---
 
 ## Технологии
