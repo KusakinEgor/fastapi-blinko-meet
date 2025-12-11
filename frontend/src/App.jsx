@@ -3,8 +3,6 @@ import { useState } from "react";
 import LandingScreen from "./components/screens/LandingScreen";
 import JoinRoomScreen from "./components/screens/JoinRoomScreen";
 import CreateRoomScreen from "./components/screens/CreateRoomScreen";
-import PreCallScreen from "./components/screens/PreCallScreen";
-import VideoCallScreen from "./components/screens/VideoCallScreen";
 
 function App() {
   const [screen, setScreen] = useState("landing");
@@ -29,12 +27,6 @@ function App() {
       {screen === "create" && (
         <CreateRoomScreen onBack={() => goTo("landing")} />
       )}
-
-      {screen === "precall" && (
-        <PreCallScreen onStart={() => goTo("call")} />
-      )}
-
-      {screen === "call" && <VideoCallScreen />}
     </div>
   );
 }

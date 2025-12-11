@@ -1,122 +1,154 @@
 import { useState, useEffect } from "react";
-import Sidebar from "../ui/SideBar";
 
-export default function MeetRoom({ onBack, onJoin }) {
-  const [loaded, setLoaded] = useState(false);
+export default function MeetRoom({ name, meetingTitle, onBack }) {
+  const [seconds, setSeconds] = useState(0);
 
-  useEffect(() => setLoaded(true), []);
+  useEffect(() => {
+    const interval = setInterval(() => {
+        setSeconds(prev => prev + 1)
+    }, 1000);
 
-  const [name, setName] = useState("");
-  const [meetingCode, setMeetingCode] = useState("");
-  const [meetingPassword, setMeetingPassword] = useState("");
-  const [micMuted, setMicMuted] = useState(false);
-  const [camMuted, setCamMuted] = useState(false);
+    return () => clearInterval(interval);
+  }, []);
+
+  const minutes = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  const formattedTime = `${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 
   return (
-    <div className="min-h-screen flex bg-black text-white relative overflow-hidden">
-      <Sidebar loaded={loaded} onLogin={onBack} onCreate={onBack} />
+    <div className="min-h-screen flex flex-col bg-[#080808] text-white">
+        <header className="h-16 bg-[#080808] flex flex-col p-3">
+            <h1 className="text-xl font-semibold">Video meeting{meetingTitle}</h1>
+            <span className="mt-1 font-semibold text-[#8b8b8b]">{formattedTime}</span>
+        </header>
 
-      <div className="flex flex-col w-full p-10 gap-6">
+        <main className="flex-1 grid grid-cols-[1fr_3fr_1fr] gap-4 p-4 place-items-center">
+            <div className="bg-[#171717] w-full h-full rounded-xl flex flex-col justify-between p-4">
+                <div className="flex w-full self-start justify-between">
+                    <span className="font-bold text-[25px] p-2">1 participant</span>
+                    <div className="flex gap-1 p-2">
+                        <svg width="30px" viewBox="0 0 24 24" fill="none">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M9.75 3.5C6.29822 3.5 3.5 6.29822 3.5 9.75C3.5 13.2018 6.29822 16 9.75 16C13.2018 16 16 13.2018 16 9.75C16 6.29822 13.2018 3.5 9.75 3.5ZM2 9.75C2 5.46979 5.46979 2 9.75 2C14.0302 2 17.5 5.46979 17.5 9.75C17.5 11.62 16.8377 13.3353 15.7348 14.6742L20.7803 19.7197C21.0732 20.0126 21.0732 20.4874 20.7803 20.7803C20.4874 21.0732 20.0126 21.0732 19.7197 20.7803L14.6742 15.7348C13.3353 16.8377 11.62 17.5 9.75 17.5C5.46979 17.5 2 14.0302 2 9.75Z" fill="currentColor"></path>
+                        </svg>
+                        <svg width="30px" viewBox="0 0 24 24" fill="none">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M5.46967 5.46967C5.76256 5.17678 6.23744 5.17678 6.53033 5.46967L12 10.9393L17.4697 5.46967C17.7626 5.17678 18.2374 5.17678 18.5303 5.46967C18.8232 5.76256 18.8232 6.23744 18.5303 6.53033L13.0607 12L18.5303 17.4697C18.8232 17.7626 18.8232 18.2374 18.5303 18.5303C18.2374 18.8232 17.7626 18.8232 17.4697 18.5303L12 13.0607L6.53033 18.5303C6.23744 18.8232 5.76256 18.8232 5.46967 18.5303C5.17678 18.2374 5.17678 17.7626 5.46967 17.4697L10.9393 12L5.46967 6.53033C5.17678 6.23744 5.17678 5.76256 5.46967 5.46967Z" fill="currentColor"></path>
+                        </svg>
+                    </div>
+                </div>
 
-        <div className="flex items-center gap-4 mb-6 cursor-pointer" onClick={onBack}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          <span className="text-white font-semibold text-lg">Back</span>
-        </div>
-
-        <div className="flex flex-col md:flex-row gap-6 flex-1">
-
-          <div className="flex flex-col relative items-center justify-center bg-[#1c1c1c] p-8 rounded-2xl shadow-xl flex-1">
-            <div className="bg-[#4e4e4e] w-[40px] h-[30px] rounded-full flex justify-center items-center absolute top-2 right-2">
-              <svg width="30px" height="30px" viewBox="0 0 24 24">
-                <path
-                  fillRule="evenodd"
-                  clipRule="evenodd"
-                  d="M18.99 9.894c.45.207 1.585.886 1.73.977.175.11.282.303.28.51v1.238a.598.598 0 01-.288.515c-.19.12-1.298.781-1.73.977l-.558 1.35c.18.476.502 1.75.54 1.916a.598.598 0 01-.162.558l-.875.874a.602.602 0 01-.558.162l-.022-.005c-.27-.07-1.46-.374-1.893-.535l-1.35.558c-.207.45-.885 1.586-.977 1.73a.603.603 0 01-.51.281h-1.236a.598.598 0 01-.515-.288c-.12-.19-.781-1.298-.977-1.73l-1.35-.558c-.476.18-1.75.502-1.916.54a.598.598 0 01-.558-.162l-.874-.875a.601.601 0 01-.162-.558l.005-.022c.07-.27.374-1.46.535-1.893l-.558-1.35c-.45-.207-1.586-.885-1.73-.977a.603.603 0 01-.281-.51v-1.236c0-.208.109-.401.286-.51.191-.12 1.298-.78 1.73-.977l.558-1.35c-.18-.475-.502-1.75-.54-1.915a.598.598 0 01.162-.558l.875-.88a.601.601 0 01.558-.162l.023.005c.27.07 1.46.374 1.892.535l1.35-.558c.207-.45.886-1.586.977-1.73a.603.603 0 01.51-.281h1.238c.208 0 .401.109.51.286.12.191.78 1.298.977 1.73l1.35.558c.475-.18 1.75-.502 1.915-.54a.598.598 0 01.558.162l.88.875a.601.601 0 01.162.558l-.005.022c-.07.271-.374 1.46-.535 1.893l.558 1.35zM8.08 11.993a3.922 3.922 0 107.845.007 3.922 3.922 0 00-7.845-.007z"
-                  fill="currentColor">
-                </path>
-              </svg>
+                <button className="bg-[#333333] w-full h-[50px] rounded-md px-4 py-2">
+                    <div className="flex justify-center gap-2">
+                        <svg width="24px" viewBox="0 0 24 24" fill="none">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M16.2504 7.49999C16.2504 9.84719 14.3476 11.75 12.0004 11.75C9.65318 11.75 7.75039 9.84719 7.75039 7.49999C7.75039 5.15278 9.65318 3.25 12.0004 3.25C14.3476 3.25 16.2504 5.15278 16.2504 7.49999ZM11.8696 20.75C11.3165 19.7939 11 18.6839 11 17.5C11 16.1039 11.4401 14.8107 12.1892 13.7514C12.1265 13.7505 12.0638 13.75 12.001 13.75C9.10759 13.75 6.4203 14.7482 4.19361 16.4568C3.73539 16.8084 3.48305 17.3648 3.50089 17.9421C3.52124 18.6009 3.58196 19.0294 3.76311 19.385C4.00279 19.8554 4.38524 20.2378 4.85565 20.4775C5.39043 20.75 6.09049 20.75 7.49063 20.75H11.8696Z" fill="currentColor"></path>
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M17.5 23C20.5376 23 23 20.5376 23 17.5C23 14.4624 20.5376 12 17.5 12C14.4624 12 12 14.4624 12 17.5C12 20.5376 14.4624 23 17.5 23ZM18 14.5C18 14.2239 17.7761 14 17.5 14C17.2239 14 17 14.2239 17 14.5V17H14.5C14.2239 17 14 17.2239 14 17.5C14 17.7761 14.2239 18 14.5 18H17V20.5C17 20.7761 17.2239 21 17.5 21C17.7761 21 18 20.7761 18 20.5V18H20.5C20.7761 18 21 17.7761 21 17.5C21 17.2239 20.7761 17 20.5 17H18V14.5Z" fill="currentColor"></path>
+                        </svg>
+                        <span className="font-bold">Invite to meeting</span>
+                    </div>
+                </button>
             </div>
-
-            <div className="text-[#999999] text-center text-3xl font-bold mb-2">Camera prohibited</div>
-            <div className="text-center font-semibold text-[#3f7fdf]">Allow</div>
-          </div>
-
-          <div className="flex flex-col justify-center gap-4 flex-1 max-w-md w-full">
-            <span className="font-bold text-[40px] leading-none">New video meeting</span>
-
-            <div className="relative w-full">
-              <input
-                type="text"
-                id="meetingCode"
-                value={meetingCode}
-                onChange={(e) => setMeetingCode(e.target.value)}
-                className="peer w-full h-16 px-4 pt-5 pb-2 rounded-xl bg-[#171717] text-white placeholder-transparent outline-none"
-                placeholder="Meeting code"
-              />
-              <label
-                htmlFor="meetingCode"
-                className="absolute left-4 top-2 text-[#999999] font-bold text-sm transition-all duration-200
-                peer-placeholder-shown:top-5 peer-placeholder-shown:text-base
-                peer-focus:top-2 peer-focus:text-sm"
-              >
-                Your name
-              </label>
+            <div className="bg-[#171717] w-full h-full rounded-xl flex items-center justify-center">
+                <div>
+                    <span className="font-bold text-[30px] text-[#999595]">Руководитель отдела Python-разработки</span>
+                </div>
             </div>
+            <div className="bg-[#171717] w-full h-[100px] rounded-xl flex items-center self-start relative">
+                <div className="flex">
+                    <svg width="24px" viewBox="0 0 24 24" fill="none" className="absolute bottom-2 left-2">
+                        <path d="M11.9999 2C10.0669 2 8.49994 3.67893 8.49994 5.75V11.75C8.49994 12.2471 8.59022 12.7216 8.75416 13.1557L7.45127 14.4586C7.08164 13.8449 6.83854 13.157 6.74353 12.4353C6.68946 12.0246 6.31272 11.7356 5.90205 11.7896C5.49138 11.8437 5.2023 12.2204 5.25636 12.6311C5.39487 13.6832 5.77814 14.6793 6.3658 15.5441L2.46967 19.4402C2.17678 19.7331 2.17678 20.208 2.46967 20.5009C2.76256 20.7938 3.23744 20.7938 3.53033 20.5009L7.34482 16.6864C7.34477 16.6864 7.34487 16.6864 7.34482 16.6864L8.40645 15.625C8.4064 15.625 8.40649 15.6251 8.40645 15.625L9.57605 14.4552C9.57601 14.4551 9.57609 14.4552 9.57605 14.4552L20.5009 3.53033C20.7938 3.23744 20.7938 2.76256 20.5009 2.46967C20.208 2.17678 19.7331 2.17678 19.4402 2.46967L15.4999 6.40996V5.75C15.4999 3.67893 13.9329 2 11.9999 2Z" fill="currentColor"></path>
+                        <path d="M9.67204 16.4808L8.56313 17.5897C9.3702 18.0576 10.2676 18.3542 11.1986 18.4583V20.75C11.1986 21.1642 11.5344 21.5 11.9486 21.5C12.3628 21.5 12.6986 21.1642 12.6986 20.75V18.4583C14.0641 18.3056 15.3572 17.7388 16.3992 16.825C17.6304 15.7452 18.4271 14.2547 18.6409 12.6311C18.6949 12.2204 18.4058 11.8437 17.9952 11.7896C17.5845 11.7356 17.2078 12.0246 17.1537 12.4353C16.9875 13.6981 16.3678 14.8574 15.4102 15.6972C14.4526 16.537 13.2223 17 11.9486 17C11.1543 17 10.3769 16.82 9.67204 16.4808Z" fill="currentColor"></path>
+                        <path d="M15.4999 10.6529L10.8572 15.2956C11.2153 15.4281 11.5998 15.5 11.9999 15.5C13.9329 15.5 15.4999 13.8211 15.4999 11.75V10.6529Z" fill="currentColor"></path>
+                    </svg>
+                    <span className="text-[#999595] text-[20px] font-bold text-center">Руководитель отдела Python-разработки</span>
+                </div>
+            </div> 
+        </main>
 
-            <div className="relative w-full">
-              <input
-                type="text"
-                id="meetingPassword"
-                value={meetingPassword}
-                onChange={(e) => setMeetingPassword(e.target.value)}
-                className="peer w-full h-16 px-4 pt-5 pb-2 rounded-xl bg-[#171717] text-white placeholder-transparent outline-none"
-                placeholder="Meeting password"
-              />
-              <label
-                htmlFor="meetingPassword"
-                className="absolute left-4 top-2 text-[#999999] font-bold text-sm transition-all duration-200
-                peer-placeholder-shown:top-5 peer-placeholder-shown:text-base
-                peer-focus:top-2 peer-focus:text-sm"
-              >
-                Meeting title
-              </label>
+        <footer className="h-16 bg-[#080808] flex items-center justify-center px-4">
+            <div className="flex w-full justify-between items-center">
+                <div className="flex gap-2">
+                    <div className="flex bg-[#262626] w-[72px] h-[40px] rounded-xl justify-center items-center">
+                        <svg width="33px" viewBox="0 0 24 24" fill="none">
+                            <path d="M11.9999 2C10.0669 2 8.49994 3.67893 8.49994 5.75V11.75C8.49994 12.2471 8.59022 12.7216 8.75416 13.1557L7.45127 14.4586C7.08164 13.8449 6.83854 13.157 6.74353 12.4353C6.68946 12.0246 6.31272 11.7356 5.90205 11.7896C5.49138 11.8437 5.2023 12.2204 5.25636 12.6311C5.39487 13.6832 5.77814 14.6793 6.3658 15.5441L2.46967 19.4402C2.17678 19.7331 2.17678 20.208 2.46967 20.5009C2.76256 20.7938 3.23744 20.7938 3.53033 20.5009L7.34482 16.6864C7.34487 16.6864 7.34477 16.6864 7.34482 16.6864L8.40645 15.625C8.40649 15.6251 8.4064 15.625 8.40645 15.625L9.57605 14.4552C9.57609 14.4552 9.57601 14.4551 9.57605 14.4552L20.5009 3.53033C20.7938 3.23744 20.7938 2.76256 20.5009 2.46967C20.208 2.17678 19.7331 2.17678 19.4402 2.46967L15.4999 6.40996V5.75C15.4999 3.67893 13.9329 2 11.9999 2Z" fill="currentColor"></path>
+                            <path d="M9.67204 16.4808L8.56313 17.5897C9.3702 18.0576 10.2676 18.3542 11.1986 18.4583V20.75C11.1986 21.1642 11.5344 21.5 11.9486 21.5C12.3628 21.5 12.6986 21.1642 12.6986 20.75V18.4583C14.0641 18.3056 15.3572 17.7388 16.3992 16.825C17.6304 15.7452 18.4271 14.2547 18.6409 12.6311C18.6949 12.2204 18.4058 11.8437 17.9952 11.7896C17.5845 11.7356 17.2078 12.0246 17.1537 12.4353C16.9875 13.6981 16.3678 14.8574 15.4102 15.6972C14.4526 16.537 13.2223 17 11.9486 17C11.1543 17 10.3769 16.82 9.67204 16.4808Z" fill="currentColor"></path>
+                            <path d="M15.4999 10.6529L10.8572 15.2956C11.2153 15.4281 11.5998 15.5 11.9999 15.5C13.9329 15.5 15.4999 13.8211 15.4999 11.75V10.6529Z" fill="currentColor"></path>
+                        </svg>
+                        <svg width="25px" viewBox="0 0 24 24" fill="none">
+                            <path fillRule="evenodd" clipRule="evenodd" d="M6.96967 9.9676C7.26256 9.67471 7.73744 9.67471 8.03033 9.9676L12 13.9373L15.9697 9.9676C16.2626 9.67471 16.7374 9.67471 17.0303 9.9676C17.3232 10.2605 17.3232 10.7354 17.0303 11.0283L12 16.0586L6.96967 11.0283C6.67678 10.7354 6.67678 10.2605 6.96967 9.9676Z" fill="currentColor"></path>
+                        </svg>
+                    </div>
+          
+                    <div className="flex bg-[#262626] w-[72px] h-[40px] rounded-xl justify-center items-center">
+                        <svg width="33px" viewBox="0 0 24 24" fill="none">
+                            <path d="M19.5297 4.53082C19.8229 4.23819 19.8233 3.76332 19.5307 3.47016C19.238 3.17699 18.7632 3.17656 18.47 3.46918L15.1294 6.80365C14.6153 6.30615 13.9148 6 13.1429 6H4.85714C3.27919 6 2 7.27919 2 8.85714V15.1429C2 16.4344 2.85697 17.5258 4.03331 17.8794L2.47014 19.4397C2.17698 19.7324 2.17655 20.2072 2.46917 20.5004C2.7618 20.7936 3.23667 20.794 3.52983 20.5014L19.5297 4.53082Z" fill="currentColor"></path>
+                            <path d="M13.1429 18H8.15357L16 10.1536V15.1429C16 16.7208 14.7208 18 13.1429 18Z" fill="currentColor"></path>
+                            <path d="M22.0003 8.79931C22.0003 7.95084 20.9745 7.52592 20.3745 8.12587L17.1488 11.3515C16.7867 11.7136 16.7758 12.2972 17.1241 12.6726L20.3497 16.1496C20.9386 16.7843 22.0003 16.3676 22.0003 15.5018V8.79931Z" fill="currentColor"></path>
+                        </svg>
+                        <svg width="25px" viewBox="0 0 24 24" fill="none">
+                            <path fillRule="evenodd" clipRule="evenodd" d="M6.96967 9.9676C7.26256 9.67471 7.73744 9.67471 8.03033 9.9676L12 13.9373L15.9697 9.9676C16.2626 9.67471 16.7374 9.67471 17.0303 9.9676C17.3232 10.2605 17.3232 10.7354 17.0303 11.0283L12 16.0586L6.96967 11.0283C6.67678 10.7354 6.67678 10.2605 6.96967 9.9676Z" fill="currentColor"></path>
+                        </svg>
+                    </div>
+                </div>
+
+                <div className="flex">
+                    <div className="flex gap-7">
+                        <div className="flex flex-col items-center">
+                            <div className="bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center">
+                                <svg width="24px" viewBox="0 0 24 24" fill="none">
+                                    <path d="M5 8C5 5.79086 6.79087 4 9.00001 4C11.2092 4 13 5.79086 13 8C13 10.2091 11.2092 12 9.00001 12C6.79087 12 5 10.2091 5 8Z" fill="currentColor"></path>
+                                    <path d="M3.07093 15.2816C4.77084 14.1557 6.80998 13.5 8.99999 13.5C11.19 13.5 13.2292 14.1557 14.9291 15.2816C15.6489 15.7584 16 16.5654 16 17.3536C16 18.8152 14.8152 20 13.3536 20H4.64641C3.18484 20 2 18.8152 2 17.3536C2 16.5653 2.35107 15.7584 3.07093 15.2816Z" fill="currentColor"></path>
+                                    <path d="M17.0834 7.41675C15.4726 7.41675 14.1667 8.72258 14.1667 10.3334C14.1667 11.9442 15.4726 13.2501 17.0834 13.2501C18.6943 13.2501 20.0001 11.9442 20.0001 10.3334C20.0001 8.72258 18.6943 7.41675 17.0834 7.41675Z" fill="currentColor"></path>
+                                    <path d="M17.0834 13.75C16.3654 13.75 15.6707 13.8522 15.0134 14.0429C16.2016 14.7364 17 16.025 17 17.5C17 17.8754 16.9483 18.2388 16.8516 18.5833H19.9858C21.0983 18.5833 22.0001 17.6815 22.0001 16.5691C22.0001 15.9726 21.7341 15.3502 21.1742 14.9793C20.0012 14.2024 18.594 13.75 17.0834 13.75Z" fill="currentColor"></path>
+                                </svg>
+                            </div>
+                            <span className="text-center font-semibold">Participants</span> 
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <div className="bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center">
+                                <svg width="24px" viewBox="0 0 24 24" fill="none">
+                                    <path d="M9.74901 3C5.74494 3 2.49901 6.24594 2.49901 10.25C2.49901 10.9221 2.59066 11.574 2.76258 12.1933C2.93471 12.8133 2.99207 13.3793 2.86123 13.8765L2.35091 15.8157C2.05856 16.9267 3.07234 17.9404 4.18326 17.6481L6.12251 17.1378C6.61969 17.0069 7.18572 17.0643 7.80575 17.2364C8.42505 17.4084 9.07693 17.5 9.74901 17.5C13.7531 17.5 16.999 14.2541 16.999 10.25C16.999 6.24594 13.7531 3 9.74901 3Z" fill="currentColor"></path>
+                                    <path d="M9.83203 18.9996C10.6685 18.9918 11.4769 18.8666 12.2416 18.6398C12.8665 18.8727 13.5429 18.9999 14.249 18.9999C14.7842 18.9999 15.3011 18.927 15.791 18.791C16.5279 18.5865 17.3926 18.4596 18.2572 18.6871L20.1965 19.1974L19.6862 17.2582C19.4586 16.3935 19.5855 15.5289 19.7901 14.792C19.9261 14.3021 19.999 13.7851 19.999 13.2499C19.999 11.7324 19.4111 10.3521 18.4507 9.32452C18.3637 8.49719 18.1614 7.7042 17.8602 6.96191C20.0349 8.2135 21.499 10.5607 21.499 13.2499C21.499 13.922 21.4074 14.5739 21.2354 15.1932C21.0633 15.8132 21.0059 16.3793 21.1368 16.8764L21.6471 18.8157C21.9395 19.9266 20.9257 20.9404 19.8148 20.648L17.8755 20.1377C17.3783 20.0069 16.8123 20.0642 16.1923 20.2364C15.573 20.4083 14.9211 20.4999 14.249 20.4999C12.5867 20.4999 11.055 19.9405 9.83203 18.9996Z" fill="currentColor"></path>
+                                </svg>
+                            </div>
+                            <span className="text-center font-semibold">Chat</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <div className="bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center">
+                                <svg width="24px" viewBox="0 0 24 24" fill="none">
+                                    <path d="M5.91957 4C5.38542 3.99999 4.93956 3.99998 4.57533 4.02974C4.19545 4.06078 3.83879 4.12789 3.50153 4.29973C2.98408 4.56339 2.56339 4.98408 2.29973 5.50153C2.12789 5.83879 2.06078 6.19545 2.02974 6.57533C1.99998 6.93956 1.99999 7.3854 2 7.91955V16.0804C1.99999 16.6146 1.99998 17.0604 2.02974 17.4247C2.06078 17.8046 2.12789 18.1612 2.29973 18.4985C2.56339 19.0159 2.98408 19.4366 3.50153 19.7003C3.83879 19.8721 4.19545 19.9392 4.57533 19.9703C4.93956 20 5.3854 20 5.91955 20H9.75V18.5H5.95C5.37757 18.5 4.99336 18.4994 4.69748 18.4752C4.41036 18.4518 4.27307 18.4099 4.18251 18.3638C3.94731 18.2439 3.75608 18.0527 3.63624 17.8175C3.5901 17.7269 3.54822 17.5896 3.52476 17.3025C3.50058 17.0066 3.5 16.6224 3.5 16.05V7.95C3.5 7.37757 3.50058 6.99336 3.52476 6.69748C3.54822 6.41036 3.5901 6.27307 3.63624 6.18251C3.75608 5.94731 3.94731 5.75608 4.18251 5.63624C4.27307 5.5901 4.41036 5.54822 4.69748 5.52476C4.99336 5.50058 5.37757 5.5 5.95 5.5H18.05C18.6224 5.5 19.0066 5.50058 19.3025 5.52476C19.5896 5.54822 19.7269 5.5901 19.8175 5.63624C20.0527 5.75608 20.2439 5.94731 20.3638 6.18251C20.4099 6.27307 20.4518 6.41036 20.4752 6.69748C20.4994 6.99336 20.5 7.37757 20.5 7.95V16.05C20.5 16.6224 20.4994 17.0066 20.4752 17.3025C20.4518 17.5896 20.4099 17.7269 20.3638 17.8175C20.2439 18.0527 20.0527 18.2439 19.8175 18.3638C19.7269 18.4099 19.5896 18.4518 19.3025 18.4752C19.0066 18.4994 18.6224 18.5 18.05 18.5H14.25V20H18.0805C18.6146 20 19.0604 20 19.4247 19.9703C19.8046 19.9392 20.1612 19.8721 20.4985 19.7003C21.0159 19.4366 21.4366 19.0159 21.7003 18.4985C21.8721 18.1612 21.9392 17.8046 21.9703 17.4247C22 17.0604 22 16.6146 22 16.0805V7.91955C22 7.3854 22 6.93956 21.9703 6.57533C21.9392 6.19545 21.8721 5.83879 21.7003 5.50153C21.4366 4.98408 21.0159 4.56339 20.4985 4.29973C20.1612 4.12789 19.8046 4.06078 19.4247 4.02974C19.0604 3.99998 18.6146 3.99999 18.0805 4H5.91957Z" fill="currentColor"></path>
+                                    <path d="M12.5303 10.2197C12.2374 9.92678 11.7626 9.92678 11.4697 10.2197L8.46967 13.2197C8.17678 13.5126 8.17678 13.9874 8.46967 14.2803C8.76256 14.5732 9.23744 14.5732 9.53033 14.2803L11.25 12.5607V21.25C11.25 21.6642 11.5858 22 12 22C12.4142 22 12.75 21.6642 12.75 21.25V12.5607L14.4697 14.2803C14.7626 14.5732 15.2374 14.5732 15.5303 14.2803C15.8232 13.9874 15.8232 13.5126 15.5303 13.2197L12.5303 10.2197Z" fill="currentColor"></path>
+                                </svg>
+                            </div>
+                            <span className="text-center font-semibold">Screen</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <div className="bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center">
+                                <svg width="24px" viewBox="0 0 24 24" fill="none">
+                                    <path d="M8.75 11C9.44036 11 10 10.4404 10 9.75C10 9.05964 9.44036 8.5 8.75 8.5C8.05964 8.5 7.5 9.05964 7.5 9.75C7.5 10.4404 8.05964 11 8.75 11Z" fill="currentColor"></path>
+                                    <path d="M16.5 9.75C16.5 10.4404 15.9404 11 15.25 11C14.5596 11 14 10.4404 14 9.75C14 9.05964 14.5596 8.5 15.25 8.5C15.9404 8.5 16.5 9.05964 16.5 9.75Z" fill="currentColor"></path>
+                                    <path d="M8.31939 14.125C8.11229 13.7663 7.65359 13.6434 7.29487 13.8505C6.93615 14.0576 6.81325 14.5163 7.02035 14.875C7.52502 15.7491 8.25089 16.475 9.125 16.9796C9.99911 17.4843 10.9907 17.75 12 17.75C13.0093 17.75 14.0009 17.4843 14.875 16.9796C15.7491 16.475 16.475 15.7491 16.9796 14.875C17.1868 14.5163 17.0638 14.0576 16.7051 13.8505C16.3464 13.6434 15.8877 13.7663 15.6806 14.125C15.3076 14.7711 14.7711 15.3076 14.125 15.6806C13.4789 16.0536 12.746 16.25 12 16.25C11.254 16.25 10.5211 16.0536 9.875 15.6806C9.22892 15.3076 8.69241 14.7711 8.31939 14.125Z" fill="currentColor"></path>
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM3.5 12C3.5 7.30558 7.30558 3.5 12 3.5C16.6944 3.5 20.5 7.30558 20.5 12C20.5 16.6944 16.6944 20.5 12 20.5C7.30558 20.5 3.5 16.6944 3.5 12Z" fill="currentColor"></path>
+                                </svg>
+                            </div>
+                            <span className="text-center font-semibold">Reactions</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <div className="bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center">
+                                <svg width="24px" viewBox="0 0 24 24" fill="none">
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" fill="currentColor"></path>
+                                </svg>
+                            </div>
+                            <span className="text-center font-semibold">More</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <button className="bg-[#262626] w-[80px] h-[40px] rounded-xl">
+                        <span className="text-red-600 font-semibold">Leave</span>
+                    </button>
+                </div>
             </div>
-
-            <div
-              onClick={() => onJoin({ name, meetingCode, meetingPassword })}
-              className="bg-[#3f81fd] py-3 rounded-lg text-center text-lg font-semibold cursor-pointer mt-4 max-w-md mx-auto p-2"
-            >
-              Create and join
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-6 mt-6">
-          <div className="flex bg-[#262626] w-[72px] h-[40px] rounded-xl justify-center items-center">
-            <svg width="33px" viewBox="0 0 24 24" fill="none">
-              <path d="M11.9999 2C10.0669 2 8.49994 3.67893 8.49994 5.75V11.75C8.49994 12.2471 8.59022 12.7216 8.75416 13.1557L7.45127 14.4586C7.08164 13.8449 6.83854 13.157 6.74353 12.4353C6.68946 12.0246 6.31272 11.7356 5.90205 11.7896C5.49138 11.8437 5.2023 12.2204 5.25636 12.6311C5.39487 13.6832 5.77814 14.6793 6.3658 15.5441L2.46967 19.4402C2.17678 19.7331 2.17678 20.208 2.46967 20.5009C2.76256 20.7938 3.23744 20.7938 3.53033 20.5009L7.34482 16.6864C7.34487 16.6864 7.34477 16.6864 7.34482 16.6864L8.40645 15.625C8.40649 15.6251 8.4064 15.625 8.40645 15.625L9.57605 14.4552C9.57609 14.4552 9.57601 14.4551 9.57605 14.4552L20.5009 3.53033C20.7938 3.23744 20.7938 2.76256 20.5009 2.46967C20.208 2.17678 19.7331 2.17678 19.4402 2.46967L15.4999 6.40996V5.75C15.4999 3.67893 13.9329 2 11.9999 2Z" fill="currentColor"></path>
-              <path d="M9.67204 16.4808L8.56313 17.5897C9.3702 18.0576 10.2676 18.3542 11.1986 18.4583V20.75C11.1986 21.1642 11.5344 21.5 11.9486 21.5C12.3628 21.5 12.6986 21.1642 12.6986 20.75V18.4583C14.0641 18.3056 15.3572 17.7388 16.3992 16.825C17.6304 15.7452 18.4271 14.2547 18.6409 12.6311C18.6949 12.2204 18.4058 11.8437 17.9952 11.7896C17.5845 11.7356 17.2078 12.0246 17.1537 12.4353C16.9875 13.6981 16.3678 14.8574 15.4102 15.6972C14.4526 16.537 13.2223 17 11.9486 17C11.1543 17 10.3769 16.82 9.67204 16.4808Z" fill="currentColor"></path>
-              <path d="M15.4999 10.6529L10.8572 15.2956C11.2153 15.4281 11.5998 15.5 11.9999 15.5C13.9329 15.5 15.4999 13.8211 15.4999 11.75V10.6529Z" fill="currentColor"></path>
-            </svg>
-            <svg width="25px" viewBox="0 0 24 24" fill="none">
-              <path fillRule="evenodd" clipRule="evenodd" d="M6.96967 9.9676C7.26256 9.67471 7.73744 9.67471 8.03033 9.9676L12 13.9373L15.9697 9.9676C16.2626 9.67471 16.7374 9.67471 17.0303 9.9676C17.3232 10.2605 17.3232 10.7354 17.0303 11.0283L12 16.0586L6.96967 11.0283C6.67678 10.7354 6.67678 10.2605 6.96967 9.9676Z" fill="currentColor"></path>
-            </svg>
-          </div>
-
-          <div className="flex bg-[#262626] w-[72px] h-[40px] rounded-xl justify-center items-center">
-            <svg width="33px" viewBox="0 0 24 24" fill="none">
-              <path d="M4.85714 6C3.27919 6 2 7.27919 2 8.85714V15.1429C2 16.7208 3.27919 18 4.85714 18H13.1429C14.7208 18 16 16.7208 16 15.1429V8.85714C16 7.27919 14.7208 6 13.1429 6H4.85714Z" fill="currentColor"></path>
-              <path d="M22.0003 8.79931C22.0003 7.95084 20.9745 7.52592 20.3745 8.12587L17.1488 11.3515C16.7867 11.7136 16.7758 12.2972 17.1241 12.6726L20.3497 16.1496C20.9386 16.7843 22.0003 16.3676 22.0003 15.5018V8.79931Z" fill="currentColor"></path>
-            </svg>
-            <svg width="25px" viewBox="0 0 24 24" fill="none">
-              <path fillRule="evenodd" clipRule="evenodd" d="M6.96967 9.9676C7.26256 9.67471 7.73744 9.67471 8.03033 9.9676L12 13.9373L15.9697 9.9676C16.2626 9.67471 16.7374 9.67471 17.0303 9.9676C17.3232 10.2605 17.3232 10.7354 17.0303 11.0283L12 16.0586L6.96967 11.0283C6.67678 10.7354 6.67678 10.2605 6.96967 9.9676Z" fill="currentColor"></path>
-            </svg>
-          </div>
-        </div>
-
-      </div>
+        </footer>
     </div>
   );
 }

@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import Sidebar from "../ui/SideBar";
+import MeetRoom from "./MeetRoom";
 
-export default function JoinScreen({ onBack, onJoin }) {
+export default function CreateRoomScreen({ onBack, onJoin }) {
   const [loaded, setLoaded] = useState(false);
+  const [screen, setScreen] = useState("join");
 
   useEffect(() => setLoaded(true), []);
 
@@ -11,6 +13,16 @@ export default function JoinScreen({ onBack, onJoin }) {
   const [meetingPassword, setMeetingPassword] = useState("");
   const [micMuted, setMicMuted] = useState(false);
   const [camMuted, setCamMuted] = useState(false);
+
+  if (screen === "meet") {
+    return (
+      <MeetRoom
+        name={name}
+        meetingTitle={meetingPassword}
+        onBack={() => setScreen("create")}
+      />
+    );
+  } 
 
   return (
     <div className="min-h-screen flex bg-black text-white relative overflow-hidden">
@@ -85,7 +97,9 @@ export default function JoinScreen({ onBack, onJoin }) {
             </div>
 
             <div
-              onClick={() => onJoin({ name, meetingCode, meetingPassword })}
+              onClick={() => {
+                setScreen("meet");
+              }}
               className="bg-[#3f81fd] py-3 rounded-lg text-center text-lg font-semibold cursor-pointer mt-4 max-w-md mx-auto p-2"
             >
               Create and join
