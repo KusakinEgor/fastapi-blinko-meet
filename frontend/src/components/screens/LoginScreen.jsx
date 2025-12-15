@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const LoginScreen = ({ onLogin }) => {
+const LoginScreen = ({ onLogin, onBack }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
@@ -10,7 +10,7 @@ const LoginScreen = ({ onLogin }) => {
 
   return (
     <div className="relative min-h-screen flex flex-col justify-center items-center bg-black text-white p-4 gap-8">
-      <svg className="absolute top-4 left-4 w-6 h-6 text-white" viewBox="0 0 24 24" fill="none">
+      <svg onClick={onBack} className="absolute top-4 left-4 w-6 h-6 text-white hover:cursor-pointer" viewBox="0 0 24 24" fill="none">
         <path
           fillRule="evenodd"
           clipRule="evenodd"

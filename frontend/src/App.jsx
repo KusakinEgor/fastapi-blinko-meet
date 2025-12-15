@@ -3,6 +3,7 @@ import { useState } from "react";
 import LandingScreen from "./components/screens/LandingScreen";
 import JoinRoomScreen from "./components/screens/JoinRoomScreen";
 import CreateRoomScreen from "./components/screens/CreateRoomScreen";
+import LoginScreen from "./components/screens/LoginScreen";
 
 function App() {
   const [screen, setScreen] = useState("landing");
@@ -26,6 +27,10 @@ function App() {
 
       {screen === "create" && (
         <CreateRoomScreen onBack={() => goTo("landing")} />
+      )}
+
+      {screen === "login" && (
+        <LoginScreen onBack={() => goTo("landing")} />
       )}
     </div>
   );
