@@ -22,7 +22,7 @@ async def login(
     data: Login,
     db: AsyncSession = Depends(get_db_session)
 ) -> SuccessRegister:
-    token = await login_user_service(db, data.password)
+    token = await login_user_service(db, data.password, data.email)
     
     return SuccessRegister(
         done=True
