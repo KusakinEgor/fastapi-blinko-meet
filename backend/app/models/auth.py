@@ -10,4 +10,6 @@ class SuccessRegister(BaseModel):
 
 class Login(BaseModel):
     username: str = Field(..., min_length=1)
-    password: str = Field(..., min_length=6) 
+    password: str = Field(..., min_length=6)
+    email: EmailStr = Field(..., min_length=5)
+
