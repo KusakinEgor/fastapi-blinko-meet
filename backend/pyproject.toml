@@ -1,3 +1,6 @@
+[tool.poetry]
+package-mode = false
+
 [project]
 name = "video-conference"
 version = "0.1.0"
@@ -5,7 +8,6 @@ description = "Online platform for video calls, chat, and screen sharing"
 authors = [
     {name = "Your Name",email = "you@example.com"}
 ]
-readme = "README.md"
 requires-python = ">=3.11,<4.0"
 dependencies = [
     "uvicorn (>=0.38.0,<0.39.0)",
