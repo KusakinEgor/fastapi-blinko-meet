@@ -12,6 +12,7 @@ export default function LandingScreen({onJoin, onCreate, onLogin}) {
   const [loaded, setLoaded] = useState(false);
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
   const [showLoginPanel, setShowLoginPanel] = useState(false);
+  const [language, setLanguage] = useState(true);
 
   useEffect(() => setLoaded(true), []);
 
@@ -80,8 +81,13 @@ export default function LandingScreen({onJoin, onCreate, onLogin}) {
           <Button
             variant="secondary"
             className="py-1 px-3 text-sm hover:bg-white/20 rounded-lg"
+			onClick={() => setLanguage(!language)}
           >
-            RU
+			{language ? (
+				"RU"
+			) : (
+				"EN"
+			)}
           </Button>
 
           <p className="text-gray-400 text-xs mt-1">v25.0.1</p>
