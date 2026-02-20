@@ -8,21 +8,12 @@ import SidePanel from "./SidePanel";
 import JoinScreen from "./JoinScreen";
 import LoginPanel from "./LoginPanel";
 
-export default function LandingScreen() {
+export default function LandingScreen({onJoin, onCreate, onLogin}) {
   const [loaded, setLoaded] = useState(false);
-  const [screen, setScreen] = useState("landing");
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
   const [showLoginPanel, setShowLoginPanel] = useState(false);
 
   useEffect(() => setLoaded(true), []);
-
-  if (screen === "createRoom") {
-    return <CreateRoomScreen onBack={() => setScreen("landing")} />;
-  } else if (screen === "loginRoom") {
-    return <LoginScreen onBack={() => setScreen("landing")} />;
-  } else if (screen === "joinRoom") {
-    return <JoinScreen onBack={() => setScreen("landing")}/>
-  }
 
   return (
     <div className="min-h-screen bg-black text-white flex relative overflow-hidden">
@@ -56,7 +47,7 @@ export default function LandingScreen() {
 
           <Button
             variant="secondary"
-            onClick={() => setScreen("createRoom")}
+            onClick={onCreate}
             className="flex flex-col items-center py-2 px-3 hover:bg-white/10 rounded-lg transition-all duration-200"
           >
             <svg
@@ -102,7 +93,7 @@ export default function LandingScreen() {
             <div className="grid grid-cols-2 gap-4">
                 <div className="flex justify-end">
                     <DivButton
-                        onClick={() => setScreen("createRoom")}
+                        onClick={onCreate}
                         className="bg-blue-500 w-[320px] h-[568px] rounded-xl flex flex-col justify-between p-4 overflow-hidden cursor-pointer relative"
                     >
                         <svg width="120" height="97" viewBox="0 0 120 97" fill="none">
@@ -130,7 +121,7 @@ export default function LandingScreen() {
                     </div>
 
                     <DivButton
-                        onClick={() => setScreen("joinRoom")}
+                        onClick={onJoin}
                         className="bg-[#171717] flex flex-col flex-1 rounded-xl p-4 overflow-hidden cursor-pointer relative" 
                     >
                         <svg width="65" height="65" viewBox="0 0 65 65" fill="none">
@@ -152,7 +143,7 @@ export default function LandingScreen() {
                     <span className="text-[#999999] font-semibold text-[70px] leading-[70px]"> to manage your<br/>meetings and see it's<br/>history</span>
                 </div>
                 <DivButton
-                    onClick={() => setScreen("loginRoom")}
+                    onClick={onLogin}
                     className="bg-[#fff] py-2 px-4 rounded-xl mt-10 w-[220px] h-[48px] flex justify-center items-center"
                 >
                     <span className="text-black font-semibold">Sign in as an employee</span>

@@ -1,39 +1,54 @@
 import { useState } from "react";
+import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
 
 import LandingScreen from "./components/screens/LandingScreen";
 import JoinRoomScreen from "./components/screens/JoinRoomScreen";
 import CreateRoomScreen from "./components/screens/CreateRoomScreen";
 import LoginScreen from "./components/screens/LoginScreen";
+import JoinScreen from "./components/screens/JoinScreen";
 
-function App() {
-  const [screen, setScreen] = useState("landing");
-
-  function goTo(screenName) {
-    setScreen(screenName);
-  }
+function AppContent() {
+  const navigate = useNavigate();
 
   return (
-    <div>
-      {screen === "landing" && (
-        <LandingScreen
-          onJoin={() => goTo("join")}
-          onCreate={() => goTo("create")}
-        />
-      )}
+	<Routes>
+	  <Route
+		path="/"
+		element={
+			<LandingScreen
+				onJoin={() => navigate("/join")}
+				onCreate={() => navigate("/create")}
+				onLogin={() => navigate("/login")}
+			/>
+		}
+	  />
 
-      {screen === "join" && (
-        <JoinRoomScreen onBack={() => goTo("landing")} />
-      )}
+	  <Route
+		path="/join"
+		element={<JoinScreen onBack={() => navigate("/")} />}
+	  />
 
-      {screen === "create" && (
-        <CreateRoomScreen onBack={() => goTo("landing")} />
-      )}
+	  <Route
+		path="/create"
+		element={<CreateRoomScreen onBack={() => navigate("/")} />}
+	  />
 
-      {screen === "login" && (
-        <LoginScreen onBack={() => goTo("landing")} />
-      )}
-    </div>
+	  <Route
+		path="/login"
+		element={<LoginScreen onBack={() => navigate("/")} />}
+	  />
+	</Routes>
   );
+}
+
+function App() {
+	return(
+		<BrowserRouter>
+			<div className="app-container">
+				<AppContent />
+			</div>
+		</BrowserRouter>
+	);
 }
 
 export default App;
