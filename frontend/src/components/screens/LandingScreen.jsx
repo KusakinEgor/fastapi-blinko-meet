@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation, Trans } from "react-i18next";
 import Button from "../ui/Button";
 import CreateRoomScreen from "./CreateRoomScreen";
 import MyIcon from "../../assets/card.svg"
@@ -12,7 +13,13 @@ export default function LandingScreen({onJoin, onCreate, onLogin}) {
   const [loaded, setLoaded] = useState(false);
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
   const [showLoginPanel, setShowLoginPanel] = useState(false);
-  const [language, setLanguage] = useState(true);
+  const { i18n, t } = useTranslation();
+  const isRussian = i18n.language?.startsWith("ru");
+
+  const toggleLanguage = () => {
+	  const newLang = isRussian ? "en" : "ru";
+	  i18n.changeLanguage(newLang);
+  };
 
   useEffect(() => setLoaded(true), []);
 
@@ -81,13 +88,9 @@ export default function LandingScreen({onJoin, onCreate, onLogin}) {
           <Button
             variant="secondary"
             className="py-1 px-3 text-sm hover:bg-white/20 rounded-lg"
-			onClick={() => setLanguage(!language)}
+			onClick={toggleLanguage}
           >
-			{language ? (
-				"RU"
-			) : (
-				"EN"
-			)}
+			{isRussian ? "EN" : "RU"}
           </Button>
 
           <p className="text-gray-400 text-xs mt-1">v25.0.1</p>
@@ -105,7 +108,7 @@ export default function LandingScreen({onJoin, onCreate, onLogin}) {
                         <svg width="120" height="97" viewBox="0 0 120 97" fill="none">
                             <path fill-rule="evenodd" clip-rule="evenodd" d="M78.2756 46.5515L99.457 68.9399C99.6955 69.192 99.9044 69.2771 100.08 69.312C100.289 69.3537 100.554 69.3392 100.825 69.2355C101.097 69.1317 101.285 68.9731 101.391 68.8298C101.476 68.7164 101.561 68.5496 101.564 68.2341L102 27.4133C102.003 27.1125 101.926 26.9453 101.845 26.828C101.746 26.6831 101.569 26.5233 101.313 26.412C101.058 26.3009 100.801 26.2726 100.59 26.3026C100.41 26.3283 100.197 26.4027 99.9499 26.63L95.8896 22.2125C100.519 17.9572 108.066 21.2383 108 27.4774L107.564 68.2981C107.495 74.704 99.5311 77.7487 95.0985 73.0634L80.178 57.2927V70.7125C80.178 75.9384 75.88 80.1748 70.578 80.1748H21.6C16.2981 80.1748 12 75.9384 12 70.7125V25.6371C12 20.4112 16.2981 16.1748 21.6 16.1748H70.578C75.88 16.1748 80.178 20.4112 80.178 25.6371V36.6535L95.8896 22.2125L99.9499 26.63L78.2756 46.5515ZM74.1781 25.6371C74.1781 23.8064 72.6483 22.1748 70.578 22.1748H21.6C19.5298 22.1748 18 23.8064 18 25.6371V70.7125C18 72.5432 19.5298 74.1748 21.6 74.1748H70.578C72.6483 74.1748 74.1781 72.5432 74.1781 70.7125V25.6371Z" fill="white" fill-opacity="0.96"></path>
                         </svg>
-                        <span className="text-white mt-2 text-[56px] leading-[58px] font-bold">Create a meeting</span>
+                        <span className="text-white mt-2 text-[56px] leading-[58px] font-bold">{t("home.create_meeting")}</span>
                         <div className="absolute inset-0 bg-white/1 backdrop-blur-sm opacity-0 hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
                     </DivButton>
                 </div>
@@ -118,9 +121,9 @@ export default function LandingScreen({onJoin, onCreate, onLogin}) {
                         </svg>
 
                         <div className="mt-auto">
-                            <span className="text-white font-bold mt-2 text-[32px] leading-[36px]">Schedule a meeting</span>
+                            <span className="text-white font-bold mt-2 text-[32px] leading-[36px]">{t("home.schedule_title")}</span>
                             <br></br>
-                            <span className="text-[#999999] font-semibold mt-1 text-[18px]">up to 100 praticipants</span>    
+                            <span className="text-[#999999] font-semibold mt-1 text-[18px]">{t("home.schedule_desc")}</span>    
                         </div>
 
                         <div className="absolute inset-0 bg-white/1 backdrop-blur-sm opacity-0 hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
@@ -135,7 +138,7 @@ export default function LandingScreen({onJoin, onCreate, onLogin}) {
                         </svg>
 
                         <div className="mt-auto">
-                            <span className="text-white font-bold mt-2 text-[32px] leading-[36px]">Join the meeting</span>
+                            <span className="text-white font-bold mt-2 text-[32px] leading-[36px]">{t("home.join_meeting")}</span>
                         </div>
 
                         <div className="absolute inset-0 bg-white/1 backdrop-blur-sm opacity-0 hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
@@ -145,14 +148,14 @@ export default function LandingScreen({onJoin, onCreate, onLogin}) {
             
             <div className="flex flex-col justify-center items-start gap-4">
                 <div>
-                    <span className="text-white font-semibold text-[70px]">Log in</span>
-                    <span className="text-[#999999] font-semibold text-[70px] leading-[70px]"> to manage your<br/>meetings and see it's<br/>history</span>
+                    <span className="text-white font-semibold text-[70px]">{t("home.login_title")}</span>
+                    <span className="text-[#999999] font-semibold text-[70px] leading-[70px]"><Trans i18nKey="home.login_description">to manage your<br/>meetings and see it's<br/>history</Trans></span>
                 </div>
                 <DivButton
                     onClick={onLogin}
                     className="bg-[#fff] py-2 px-4 rounded-xl mt-10 w-[220px] h-[48px] flex justify-center items-center"
                 >
-                    <span className="text-black font-semibold">Sign in as an employee</span>
+                    <span className="text-black font-semibold">{t("home.sign_in_btn")}</span>
                 </DivButton> 
                 <div>
                     <img src={MyIcon} alt="icon"></img>
