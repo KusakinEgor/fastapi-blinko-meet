@@ -5,6 +5,7 @@ from app.database.db import Base
 from app.schemas.common import TimestampMixin
 
 class User(TimestampMixin, Base):
+    """Represents a reqistered system user and their authentication credentials."""
     __tablename__ = "users" 
 
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
