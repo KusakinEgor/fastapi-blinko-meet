@@ -1,28 +1,33 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import Optional, List
+from typing import Any, Optional, List, Dict
 
 class RoomCreate(BaseModel):
     name: str = Field(
             default=...,
             min_length=3,
             max_length=100,
-            examples=["Daily Standup"]
+            examples=["Daily Standup"],
+            description="The display name of the room"
     )
-    password: Optional[str] = Field(default=None)
+    password: Optional[str] = Field(
+            None,
+            examples=["secret123"],
+            description="Optional password for private rooms"
+    )
 
 class RoomOut(BaseModel):
-    id: int
-    slug: str
-    name: str
-    host_id: int
-    is_activate: bool
+    id: int = Field(..., examples=[1])
+    slug: str = Field(..., examples=["daily-standup-xyz"])
+    name: str = Field(..., examples=["Daily Standup"])
+    host_id: int = Field(..., examples=[123])
+    is_activate: bool = Field(..., description="Whether the room in currently active")
     created_at: datetime
 
 class Config:
     from_attributes = True
 
 class RoomJoinResponse(BaseModel):
-    room_slug: str
-    session_token: str
-    ice_servers: List[dict] = []
+    room_slug: str = Field(..., examples=["daily-standup-xyz"])
+    session_token: str = Field(..., examples=["sess_abc123"])
+    ice_servers: List[Dict[str, Any]] = Field(default_factory=list)
