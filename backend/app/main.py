@@ -13,7 +13,16 @@ async def lifespan(app: FastAPI):
     yield
     await engine.dispose()
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+        title="Blinko-Meet API",
+        description="API for control rooms and video-connection",
+        version="1.0.0",
+        contact={
+            "name": "Egor",
+            "url": "https://github.com/KusakinEgor"
+        },
+        lifespan=lifespan
+)
 
 origins = [
     "http://localhost:5173"
@@ -31,6 +40,6 @@ app.include_router(auth_router)
 app.include_router(rooms_router)
 app.include_router(media_router)
 
-@app.get("/")
+@app.get("/", summary="root endpoint")
 async def get_hello():
     return {"message": "Hello World"}

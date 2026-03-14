@@ -1,9 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from app.models.room import RoomCreate, RoomOut, RoomJoinResponse
 
 router = APIRouter(prefix="/rooms", tags=["Rooms"])
 
-@router.post("/", response_model=RoomOut)
+@router.post(
+        "/",
+        response_model=RoomOut,
+        status_code=status.HTTP_201_CREATED,
+        summary="Create a new room",
+        description="Initialize a new streaming or chat room. The slug will be generated auto."
+)
 async def create_room(room_data: RoomCreate):
     return {
             "id": 1,
@@ -14,7 +20,13 @@ async def create_room(room_data: RoomCreate):
             "created_at": "2024-01-01T00:00:00"
     }
 
-@router.post("/{slug}/join", response_model=RoomJoinResponse)
+@router.post(
+        "/{slug}/join",
+        response_model=RoomJoinResponse,
+        summary="Join an existing room",
+        description="Enter a room using its unique slug to receive a session token.",
+        responses={404: {"description": "Room not found"}}
+)
 async def join_room(slug: str):
     if slug == "not-found":
         raise HTTPException(status_code=404, detail="Room not found")
@@ -25,12 +37,21 @@ async def join_room(slug: str):
             "ice_servers": []
     }
 
-@router.get("/{slug}/participants")
+@router.get(
+        "/{slug}/participants",
+        summary="List room participants",
+        description="Returns a list of all users currently present in the room"
+)
 async def get_participants(slug: str):
     participants = [{"id": 1, "name": "User1"}, {"id": 2, "name": "User2"}]
     return participants
 
-@router.patch("/{slug}")
+@router.patch(
+        "/{slug}",
+        summary="Update room settings",
+        description="Modify room properties like name or privacy settings. Only available for the host",
+        responses={400: {"description": "Empty settings provided"}}
+)
 async def update_settings(slug: str, settings: dict):
     if not settings:
         raise HTTPException(status_code=400, detail="No settings provided")
