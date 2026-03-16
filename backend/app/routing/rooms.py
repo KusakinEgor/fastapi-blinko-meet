@@ -57,4 +57,3 @@ async def update_settings(slug: str, settings: dict):
         raise HTTPException(status_code=400, detail="No settings provided")
 
     return {"message": f"Room {slug} updated", "updated_fields": list(settings.keys())}
-
