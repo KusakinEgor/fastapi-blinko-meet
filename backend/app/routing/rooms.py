@@ -1,3 +1,4 @@
+import secrets
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.models.room import RoomCreate, RoomOut, RoomJoinResponse
 
@@ -11,7 +12,9 @@ router = APIRouter(prefix="/rooms", tags=["Rooms"])
         description="Initialize a new streaming or chat room. The slug will be generated auto."
 )
 async def create_room(room_data: RoomCreate):
-    return {
+    random_slug = f"{secrets.token_hex(3)}-{secrets.token_hex(3)}"
+
+    new_room = {
             "id": 1,
             "slug": "some-slug",
             "name": room_data.name,
@@ -19,6 +22,8 @@ async def create_room(room_data: RoomCreate):
             "is_activate": True,
             "created_at": "2024-01-01T00:00:00"
     }
+
+    return new_room
 
 @router.post(
         "/{slug}/join",
