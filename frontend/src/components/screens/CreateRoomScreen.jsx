@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import axios from 'axios';
 import Sidebar from "../ui/SideBar";
 import MeetRoom from "./MeetRoom";
 
@@ -19,10 +20,30 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
       <MeetRoom
         name={name}
         meetingTitle={meetingPassword}
+		slug={meetingCode}
         onBack={() => setScreen("create")}
       />
     );
   } 
+  
+  const handleCreateRoom = async () => {
+	  try {
+		  const response = await axios.post("http://localhost:8000/rooms/create", {
+			  name: name,
+			  password: meetingPassword || null
+		  });
+
+		  const { slug, host_token } = response.data;
+
+		  localStorage.setItem(`host_token_${slug}`, host_token);
+
+		  setMeetingCode(slug);
+		  setScreen("meet");
+	  } catch (error) {
+		  console.log("Validation Error Details:", error.response?.data);
+		  alert("Failed to create room: " + (error.response?.data?.detail[0]?.msg || "Unknown error"));
+	  }
+  }
 
   return (
     <div className="min-h-screen flex bg-black text-white relative overflow-hidden">
@@ -62,8 +83,8 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
               <input
                 type="text"
                 id="meetingCode"
-                value={meetingCode}
-                onChange={(e) => setMeetingCode(e.target.value)}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 className="peer w-full h-16 px-4 pt-5 pb-2 rounded-xl bg-[#171717] text-white placeholder-transparent outline-none"
                 placeholder="Meeting code"
               />
@@ -97,9 +118,7 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
             </div>
 
             <div
-              onClick={() => {
-                setScreen("meet");
-              }}
+              onClick={handleCreateRoom}
               className="bg-[#3f81fd] py-3 rounded-lg text-center text-lg font-semibold cursor-pointer mt-4 max-w-md mx-auto p-2"
             >
               Create and join
