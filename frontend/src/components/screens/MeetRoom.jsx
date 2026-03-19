@@ -1,15 +1,21 @@
 import { useState, useEffect } from "react";
 
-export default function MeetRoom({ name, meetingTitle, onBack }) {
+export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
   const [seconds, setSeconds] = useState(0);
+  const [isHost, setIsHost] = useState(() => {
+	  const savedToken = localStorage.getItem(`host_token_${slug}`);
+	  return !!savedToken;
+  });
 
   useEffect(() => {
+    console.log(isHost ? "Input like a host": "Input like a guest");
+
     const interval = setInterval(() => {
         setSeconds(prev => prev + 1)
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [slug, isHost]);
 
   const minutes = Math.floor(seconds / 60);
   const secs = seconds % 60;
