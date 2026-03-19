@@ -1,6 +1,9 @@
 import uuid
 import secrets
 from datetime import datetime, timezone
+from app.database.db import get_db_session
+from app.schemas.meeting import Rooms
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.models.room import RoomCreate, RoomOut, RoomJoinResponse
 
@@ -13,22 +16,32 @@ router = APIRouter(prefix="/rooms", tags=["Rooms"])
         summary="Create a new room",
         description="Initialize a new streaming or chat room. The slug will be generated auto."
 )
-async def create_room(room_data: RoomCreate):
+async def create_room(room_data: RoomCreate, db: AsyncSession = Depends(get_db_session)):
     random_slug = f"{secrets.token_hex(3)}-{secrets.token_hex(3)}"
 
     host_token = secrets.token_urlsafe(32)
 
-    new_room = {
-            "id": str(uuid.uuid4()),
-            "slug": random_slug,
-            "name": room_data.name,
-            "password": room_data.password,
-            "host_id": host_token,
-            "is_activate": True,
-            "created_at": datetime.now(timezone.utc) 
-    }
+    new_room = Rooms(
+            owner_id=host_token,
+            slug=random_slug,
+            name=room_data.name,
+            is_private=bool(room_data.password),
+            room_name=room_data.password,
+            is_active=True
+    )
 
-    return new_room
+    db.add(new_room)
+    await db.commit()
+    await db.refresh(new_room)
+
+    return {
+            "id": str(new_room.id),
+            "slug": new_room.slug,
+            "name": room_data.name,
+            "host_id": host_token,
+            "is_activate": new_room.is_active,
+            "created_at": new_room.created_at
+    }
 
 @router.post(
         "/{slug}/join",
