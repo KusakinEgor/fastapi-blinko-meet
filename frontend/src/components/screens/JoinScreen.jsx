@@ -1,16 +1,102 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Sidebar from "../ui/SideBar";
 
 export default function JoinScreen({ onBack, onJoin }) {
+  const localVideoRef = useRef(null);
+  const pc = useRef(null);
   const [loaded, setLoaded] = useState(false);
+  const [stream, setStream] = useState(null);
 
-  useEffect(() => setLoaded(true), []);
+  useEffect(() => {
+	  setLoaded(true);
+	  async function setupMedia() {
+		  try {
+			  const userStream = await navigator.mediaDevices.getUserMedia({
+				  video: true,
+				  audio: true
+			  });
+			  setStream(userStream);
+			  if (localVideoRef.current) {
+				  localVideoRef.current.srcObject = userStream;
+			  }
+		  } catch (err) {
+			  console.error("Error not access to cam:", err);
+		  }
+	  }
+	  setupMedia();
+
+	  return () => {
+		  if (stream) stream.getTracks().forEach(track => track.stop());
+	  };
+  }, []);
+
+  useEffect(() => {
+	  async function testMic() {
+		  try {
+			  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+			  const audioContext = new AudioContext();
+			  const source = audioContext.createMediaStreamSource(stream);
+			  const processor = audioContext.createScriptProcessor(2048, 1, 1);
+
+			  source.connect(processor);
+			  processor.connect(audioContext.destination);
+
+			  processor.onaudioprocess = (e) => {
+				  const input = e.inputBuffer.getChannelData(0);
+				  const sum = input.reduce((a, b) => a + Math.abs(b), 0);
+				  if (sum > 0.1) {
+					  console.log("Mic lvl:", sum.toFixed(2));
+				  }
+			  };
+		  } catch (err) {
+			  console.error("Mic not found:", err);
+		  }
+	  }
+	  testMic();
+  }, [])
 
   const [name, setName] = useState("");
   const [meetingCode, setMeetingCode] = useState("");
   const [meetingPassword, setMeetingPassword] = useState("");
   const [micMuted, setMicMuted] = useState(false);
   const [camMuted, setCamMuted] = useState(false);
+
+  const handleJoinClick = async () => {
+	  if (!stream) return alert("Cam not ready!");
+
+	  pc.current = new RTCPeerConnection({
+		  iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+	  });
+
+	  stream.getTracks().forEach(track => pc.current.addTrack(track, stream));
+
+	  const offer = await pc.current.createOffer();
+	  await pc.current.setLocalDescription(offer);
+
+	  try {
+		  const response = await fetch("http://127.0.0.1:3000/offer", {
+			  method: "POST",
+			  headers: { "Content-Type": "application/json" },
+			  body: JSON.stringify({
+				  sdp: offer.sdp
+			  })
+		  });
+
+		  const answer = await response.json();
+
+		  await pc.current.setRemoteDescription(
+			  new RTCSessionDescription({ type: "answer", sdp: answer.sdp })
+		  );
+
+		  console.log("WebRTC set connection!");
+
+		  onJoin({ name, meetingCode, meetingPassword });
+
+	  } catch (err) {
+		  console.error("Error signal:", err);
+	  }
+  }
 
   return (
     <div className="min-h-screen flex bg-black text-white relative overflow-hidden">
@@ -104,7 +190,7 @@ export default function JoinScreen({ onBack, onJoin }) {
             </div>
 
             <div
-              onClick={() => onJoin({ name, meetingCode, meetingPassword })}
+              onClick={handleJoinClick}
               className="bg-[#3f81fd] py-3 rounded-lg text-center text-lg font-semibold cursor-pointer mt-4 max-w-md mx-auto p-2"
             >
               Join the Meeting
