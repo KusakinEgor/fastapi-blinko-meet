@@ -1,11 +1,13 @@
+import uuid
 import secrets
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.models.room import RoomCreate, RoomOut, RoomJoinResponse
 
 router = APIRouter(prefix="/rooms", tags=["Rooms"])
 
 @router.post(
-        "/",
+        "/create",
         response_model=RoomOut,
         status_code=status.HTTP_201_CREATED,
         summary="Create a new room",
@@ -14,13 +16,16 @@ router = APIRouter(prefix="/rooms", tags=["Rooms"])
 async def create_room(room_data: RoomCreate):
     random_slug = f"{secrets.token_hex(3)}-{secrets.token_hex(3)}"
 
+    host_token = secrets.token_urlsafe(32)
+
     new_room = {
-            "id": 1,
-            "slug": "some-slug",
+            "id": str(uuid.uuid4()),
+            "slug": random_slug,
             "name": room_data.name,
-            "host_id": 123,
+            "password": room_data.password,
+            "host_id": host_token,
             "is_activate": True,
-            "created_at": "2024-01-01T00:00:00"
+            "created_at": datetime.now(timezone.utc) 
     }
 
     return new_room
