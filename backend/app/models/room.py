@@ -17,10 +17,10 @@ class RoomCreate(BaseModel):
     )
 
 class RoomOut(BaseModel):
-    id: int = Field(..., examples=[1])
-    slug: str = Field(..., examples=["daily-standup-xyz"])
+    id: str = Field(..., examples=["919d690c-a9bc-4a6f-9e25-df7f91cbd4a5"])
+    slug: str = Field(..., examples=["004eb9-8329c5"])
     name: str = Field(..., examples=["Daily Standup"])
-    host_id: int = Field(..., examples=[123])
+    host_id: str = Field(..., examples=["5ze80C3xk5Qf1rQnXnuZqXsUPFUpSRnZ1GHPXpzS3to"])
     is_activate: bool = Field(..., description="Whether the room in currently active")
     created_at: datetime
 
