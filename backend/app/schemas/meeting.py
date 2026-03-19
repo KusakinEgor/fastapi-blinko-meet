@@ -9,13 +9,15 @@ class Rooms(TimestampMixin, Base):
     """Conference rooms representing scheduled or active video mettings."""
     __tablename__ = "rooms"
 
-    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    owner_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     slug: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
 
     is_private: Mapped[bool] = mapped_column(Boolean, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    password_hash: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    room_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     closed_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
