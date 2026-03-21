@@ -9,6 +9,7 @@ export default function Sidebar({ loaded, onLogin, onCreate }) {
       <div className="flex flex-col gap-6 mt-4">
         <Button
             variant="secondary"
+			onClick={onLogin}
             className="flex flex-col items-center py-2 px-3 hover:bg-white/10 rounded-lg transition-all duration-200"
           >
             <svg
@@ -29,7 +30,7 @@ export default function Sidebar({ loaded, onLogin, onCreate }) {
 
           <Button
             variant="secondary"
-            onClick={() => setScreen("createRoom")}
+            onClick={onCreate}
             className="flex flex-col items-center py-2 px-3 hover:bg-white/10 rounded-lg transition-all duration-200"
           >
             <svg
