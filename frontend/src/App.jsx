@@ -6,6 +6,7 @@ import JoinRoomScreen from "./components/screens/JoinRoomScreen";
 import CreateRoomScreen from "./components/screens/CreateRoomScreen";
 import LoginScreen from "./components/screens/LoginScreen";
 import JoinScreen from "./components/screens/JoinScreen";
+import LoginScreenUser from "./components/screens/LoginScreenUser";
 
 function AppContent() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ function AppContent() {
 				onJoin={() => navigate("/join")}
 				onCreate={() => navigate("/create")}
 				onLogin={() => navigate("/login")}
+				onLoginUser={() => navigate("/login-user")}
 			/>
 		}
 	  />
@@ -36,6 +38,11 @@ function AppContent() {
 	  <Route
 		path="/login"
 		element={<LoginScreen onBack={() => navigate("/")} />}
+	  />
+
+	  <Route
+		path="/login-user"
+		element={<LoginScreenUser onBack={() => navigate("/")} />}
 	  />
 	</Routes>
   );
