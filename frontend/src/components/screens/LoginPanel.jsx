@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function LoginPanel({ visible, onClose }) {
     const [animate, setAnimate] = useState(false);
+	const navigate = useNavigate();
 
     useEffect(() => {
         if (visible) {
@@ -10,6 +12,11 @@ export default function LoginPanel({ visible, onClose }) {
             setAnimate(false);
         }
     }, [visible]);
+
+	const handleEmployeeLogin = () => {
+		onClose();
+		navigate("/login-user");
+	};
 
     if (!visible) return null;
 
@@ -34,8 +41,8 @@ export default function LoginPanel({ visible, onClose }) {
                 `}
                 onClick={(e) => e.stopPropagation()} 
             >
-                <button className="rounded-xl font-bold w-full p-4 bg-[#3f81fd]">
-                    Sign in as an employee
+                <button onClick={handleEmployeeLogin} className="rounded-xl font-bold w-full p-4 bg-[#3f81fd]">
+                    Sign in as an user
                 </button>
             </div>
         </>
