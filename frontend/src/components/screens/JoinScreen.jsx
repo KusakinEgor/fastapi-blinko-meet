@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Sidebar from "../ui/SideBar";
+import SettingsModal from "../ui/SettingsModal";
 
 export default function JoinScreen({ onBack, onJoin }) {
   const localVideoRef = useRef(null);
   const pc = useRef(null);
   const [loaded, setLoaded] = useState(false);
   const [stream, setStream] = useState(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const setupMedia = useCallback(async () => {
 	  try {
@@ -106,7 +108,7 @@ export default function JoinScreen({ onBack, onJoin }) {
 				/>
 			) : (
 				<>
-					<div className="bg-[#4e4e4e] w-[40px] h-[30px] rounded-full flex justify-center items-center absolute top-2 right-2">
+					<div onClick={() => setIsSettingsOpen(true)} className="bg-[#4e4e4e] w-[40px] h-[30px] rounded-full flex justify-center items-center absolute top-2 right-2">
 					  <svg width="30px" height="30px" viewBox="0 0 24 24">
 						<path
 						  fillRule="evenodd"
@@ -116,6 +118,13 @@ export default function JoinScreen({ onBack, onJoin }) {
 						</path>
 					  </svg>
 					</div>
+
+					{isSettingsOpen && (
+						<SettingsModal
+							isOpen={isSettingsOpen}
+							onClose={() => setIsSettingsOpen(false)}
+						/>
+					)}
 
 					<div className="text-[#999999] text-center text-3xl font-bold mb-2">Camera prohibited</div>
 					<div
