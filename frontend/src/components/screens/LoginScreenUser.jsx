@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const LoginScreen = ({ onLogin, onBack }) => {
+const LoginScreenUser = ({ onLogin, onBack }) => {
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -121,4 +121,4 @@ const LoginScreen = ({ onLogin, onBack }) => {
   );
 };
 
-export default LoginScreen;
+export default LoginScreenUser;
