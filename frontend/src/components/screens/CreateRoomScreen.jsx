@@ -1,19 +1,99 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import axios from 'axios';
 import Sidebar from "../ui/SideBar";
 import MeetRoom from "./MeetRoom";
 
 export default function CreateRoomScreen({ onBack, onJoin }) {
+  const localVideoRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const animationRef = useRef(null);
+
   const [loaded, setLoaded] = useState(false);
   const [screen, setScreen] = useState("join");
+  const [stream, setStream] = useState(null);
+  const [volume, setVolume] = useState(1);
 
   useEffect(() => setLoaded(true), []);
 
   const [name, setName] = useState("");
   const [meetingCode, setMeetingCode] = useState("");
   const [meetingPassword, setMeetingPassword] = useState("");
-  const [micMuted, setMicMuted] = useState(true);
-  const [camMuted, setCamMuted] = useState(true);
+  const [micMuted, setMicMuted] = useState(false);
+  const [camMuted, setCamMuted] = useState(false);
+
+  useEffect(() => {
+	  if (!micMuted) {
+		  navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+			  audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+			  analyserRef.current = audioContextRef.current.createAnalyser();
+			  const source = audioContextRef.current.createMediaStreamSource(stream);
+			  source.connect(analyserRef.current);
+			  analyserRef.current.fftSize = 64;
+
+			  const bufferLength = analyserRef.current.frequencyBinCount;
+			  const dataArray = new Uint8Array(bufferLength);
+
+			  const updateVolume = () => {
+				  analyserRef.current.getByteFrequencyData(dataArray);
+				  const sum = dataArray.reduce((a, b) => a + b, 0);
+				  const average = sum / bufferLength;
+
+				  const scale = 1 + (average / 255) * 0.5;
+				  setVolume(scale);
+				  animationRef.current = requestAnimationFrame(updateVolume);
+			  };
+
+			  updateVolume();
+		  }).catch(err => console.error("Error micro:", err));
+	  } else {
+		  if (animationRef.current) cancelAnimationFrame(animationRef.current);
+		  if (audioContextRef.current) audioContextRef.current.close();
+		  setVolume(1);
+	  }
+
+	  return () => {
+		  if (animationRef.current) cancelAnimationFrame(animationRef.current);
+	  };
+  }, [micMuted]);
+
+  const setupMedia = useCallback(async () => {
+	  try {
+		  const userStream = await navigator.mediaDevices.getUserMedia({
+			  video: true,
+			  audio: true
+		  });
+
+		  setStream(userStream);
+	  } catch (err) {
+		  console.error("Error accessing camera/mic:", err);
+		  setStream(null);
+	  }
+  }, []);
+
+  useEffect(() => {
+	  setLoaded(true);
+	  setupMedia();
+
+	  return () => {
+		  if (stream) {
+			  stream.getTracks().forEach(track => track.stop());
+		  }
+	  };
+  }, [setupMedia]);
+
+  useEffect(() => {
+	  if (stream && localVideoRef.current && !camMuted && !micMuted) {
+		  localVideoRef.current.srcObject = stream;
+	  }
+  }, [stream, camMuted, micMuted]);
+
+  useEffect(() => {
+	  if (stream) {
+		  stream.getVideoTracks().forEach(track => (track.enabled = !camMuted));
+		  stream.getAudioTracks().forEach(track => (track.enabled = !micMuted));
+	  }
+  }, [camMuted, micMuted, stream]);
 
   if (screen === "meet") {
     return (
@@ -61,19 +141,43 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
         <div className="flex flex-col md:flex-row gap-6 flex-1">
 
           <div className="flex flex-col relative items-center justify-center bg-[#1c1c1c] p-8 rounded-2xl shadow-xl flex-1">
-            <div className="bg-[#4e4e4e] w-[40px] h-[30px] rounded-full flex justify-center items-center absolute top-2 right-2">
-              <svg width="30px" height="30px" viewBox="0 0 24 24">
-                <path
-                  fillRule="evenodd"
-                  clipRule="evenodd"
-                  d="M18.99 9.894c.45.207 1.585.886 1.73.977.175.11.282.303.28.51v1.238a.598.598 0 01-.288.515c-.19.12-1.298.781-1.73.977l-.558 1.35c.18.476.502 1.75.54 1.916a.598.598 0 01-.162.558l-.875.874a.602.602 0 01-.558.162l-.022-.005c-.27-.07-1.46-.374-1.893-.535l-1.35.558c-.207.45-.885 1.586-.977 1.73a.603.603 0 01-.51.281h-1.236a.598.598 0 01-.515-.288c-.12-.19-.781-1.298-.977-1.73l-1.35-.558c-.476.18-1.75.502-1.916.54a.598.598 0 01-.558-.162l-.874-.875a.601.601 0 01-.162-.558l.005-.022c.07-.27.374-1.46.535-1.893l-.558-1.35c-.45-.207-1.586-.885-1.73-.977a.603.603 0 01-.281-.51v-1.236c0-.208.109-.401.286-.51.191-.12 1.298-.78 1.73-.977l.558-1.35c-.18-.475-.502-1.75-.54-1.915a.598.598 0 01.162-.558l.875-.88a.601.601 0 01.558-.162l.023.005c.27.07 1.46.374 1.892.535l1.35-.558c.207-.45.886-1.586.977-1.73a.603.603 0 01.51-.281h1.238c.208 0 .401.109.51.286.12.191.78 1.298.977 1.73l1.35.558c.475-.18 1.75-.502 1.915-.54a.598.598 0 01.558.162l.88.875a.601.601 0 01.162.558l-.005.022c-.07.271-.374 1.46-.535 1.893l.558 1.35zM8.08 11.993a3.922 3.922 0 107.845.007 3.922 3.922 0 00-7.845-.007z"
-                  fill="currentColor">
-                </path>
-              </svg>
-            </div>
+			{stream && !camMuted ? (
+				<video
+					ref={localVideoRef}
+					autoPlay
+					playsInline
+					muted
+					className={`w-full h-full object-cover rounded-xl ${camMuted ? 'hidden' : 'block'}`}
+				/>
+			) : (
+				<>
+					<div className="bg-[#4e4e4e] w-[40px] h-[30px] rounded-full flex justify-center items-center absolute top-2 right-2">
+					  <svg width="30px" height="30px" viewBox="0 0 24 24">
+						<path
+						  fillRule="evenodd"
+						  clipRule="evenodd"
+						  d="M18.99 9.894c.45.207 1.585.886 1.73.977.175.11.282.303.28.51v1.238a.598.598 0 01-.288.515c-.19.12-1.298.781-1.73.977l-.558 1.35c.18.476.502 1.75.54 1.916a.598.598 0 01-.162.558l-.875.874a.602.602 0 01-.558.162l-.022-.005c-.27-.07-1.46-.374-1.893-.535l-1.35.558c-.207.45-.885 1.586-.977 1.73a.603.603 0 01-.51.281h-1.236a.598.598 0 01-.515-.288c-.12-.19-.781-1.298-.977-1.73l-1.35-.558c-.476.18-1.75.502-1.916.54a.598.598 0 01-.558-.162l-.874-.875a.601.601 0 01-.162-.558l.005-.022c.07-.27.374-1.46.535-1.893l-.558-1.35c-.45-.207-1.586-.885-1.73-.977a.603.603 0 01-.281-.51v-1.236c0-.208.109-.401.286-.51.191-.12 1.298-.78 1.73-.977l.558-1.35c-.18-.475-.502-1.75-.54-1.915a.598.598 0 01.162-.558l.875-.88a.601.601 0 01.558-.162l.023.005c.27.07 1.46.374 1.892.535l1.35-.558c.207-.45.886-1.586.977-1.73a.603.603 0 01.51-.281h1.238c.208 0 .401.109.51.286.12.191.78 1.298.977 1.73l1.35.558c.475-.18 1.75-.502 1.915-.54a.598.598 0 01.558.162l.88.875a.601.601 0 01.162.558l-.005.022c-.07.271-.374 1.46-.535 1.893l.558 1.35zM8.08 11.993a3.922 3.922 0 107.845.007 3.922 3.922 0 00-7.845-.007z"
+						  fill="currentColor">
+						</path>
+					  </svg>
+					</div>
 
-            <div className="text-[#999999] text-center text-3xl font-bold mb-2">Camera prohibited</div>
-            <div className="text-center font-semibold text-[#3f7fdf]">Allow</div>
+					
+					<div className="text-[#999999] text-center text-3xl font-bold mb-2">
+						{camMuted ? "Camera is off" : "Camera prohibited"}
+					</div>
+					
+					{!stream && (
+						<div
+							onClick={setupMedia}
+							className="text-center font-semibold text-[#3f7fdf] cursor-pointer hover:underline"
+						>
+							Allow
+						</div>
+					)}
+				</>
+			)}
+
           </div>
 
           <div className="flex flex-col justify-center gap-4 flex-1 max-w-md w-full">
@@ -128,7 +232,12 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
 
         <div className="flex gap-6 mt-6">
           <div 
-			className="flex bg-[#262626] w-[72px] h-[40px] rounded-xl justify-center items-center"
+			className="flex bg-[#262626] w-[72px] h-[40px] rounded-xl justify-center items-center transition-transform duration-75 ease-out"
+			style={{
+				transform: `scale(${volume})`,
+				boxShadow: !micMuted && volume > 1.05 ? `0 0 ${volume * 10}px rgba(34, 197, 94, 0.4)` : 'none',
+				border: !micMuted ? '1px solid rgba(34, 197, 94, 0.5)' : '1px solid transparent'
+			}}
 			onClick={() => setMicMuted(!micMuted)}
 		  >
             <svg width="33px" viewBox="0 0 24 24" fill="none">
