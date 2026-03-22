@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Sidebar from "../ui/SideBar";
 
 export default function JoinScreen({ onBack, onJoin }) {
@@ -7,54 +7,36 @@ export default function JoinScreen({ onBack, onJoin }) {
   const [loaded, setLoaded] = useState(false);
   const [stream, setStream] = useState(null);
 
-  useEffect(() => {
-	  setLoaded(true);
-	  async function setupMedia() {
-		  try {
-			  const userStream = await navigator.mediaDevices.getUserMedia({
-				  video: true,
-				  audio: true
-			  });
-			  setStream(userStream);
-			  if (localVideoRef.current) {
-				  localVideoRef.current.srcObject = userStream;
-			  }
-		  } catch (err) {
-			  console.error("Error not access to cam:", err);
-		  }
-	  }
-	  setupMedia();
+  const setupMedia = useCallback(async () => {
+	  try {
+		  const userStream = await navigator.mediaDevices.getUserMedia({
+			  video: true,
+			  audio: true
+		  });
 
-	  return () => {
-		  if (stream) stream.getTracks().forEach(track => track.stop());
-	  };
+		  setStream(userStream);
+	  } catch (err) {
+		  console.error("Error accessing camera:", err);
+		  setStream(null);
+	  }
   }, []);
 
   useEffect(() => {
-	  async function testMic() {
-		  try {
-			  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+	  setLoaded(true);
+	  setupMedia();
 
-			  const audioContext = new AudioContext();
-			  const source = audioContext.createMediaStreamSource(stream);
-			  const processor = audioContext.createScriptProcessor(2048, 1, 1);
-
-			  source.connect(processor);
-			  processor.connect(audioContext.destination);
-
-			  processor.onaudioprocess = (e) => {
-				  const input = e.inputBuffer.getChannelData(0);
-				  const sum = input.reduce((a, b) => a + Math.abs(b), 0);
-				  if (sum > 0.1) {
-					  console.log("Mic lvl:", sum.toFixed(2));
-				  }
-			  };
-		  } catch (err) {
-			  console.error("Mic not found:", err);
+	  return () => {
+		  if (stream) {
+			  stream.getTracks.forEach((track) => track.stop());
 		  }
+	  };
+  }, [setupMedia])
+
+  useEffect(() => {
+	  if (stream && localVideoRef.current) {
+		  localVideoRef.current.srcObject = stream;
 	  }
-	  testMic();
-  }, [])
+  }, [stream]);
 
   const [name, setName] = useState("");
   const [meetingCode, setMeetingCode] = useState("");
@@ -114,19 +96,36 @@ export default function JoinScreen({ onBack, onJoin }) {
         <div className="flex flex-col md:flex-row gap-6 flex-1">
 
           <div className="flex flex-col relative items-center justify-center bg-[#1c1c1c] p-8 rounded-2xl shadow-xl flex-1">
-            <div className="bg-[#4e4e4e] w-[40px] h-[30px] rounded-full flex justify-center items-center absolute top-2 right-2">
-              <svg width="30px" height="30px" viewBox="0 0 24 24">
-                <path
-                  fillRule="evenodd"
-                  clipRule="evenodd"
-                  d="M18.99 9.894c.45.207 1.585.886 1.73.977.175.11.282.303.28.51v1.238a.598.598 0 01-.288.515c-.19.12-1.298.781-1.73.977l-.558 1.35c.18.476.502 1.75.54 1.916a.598.598 0 01-.162.558l-.875.874a.602.602 0 01-.558.162l-.022-.005c-.27-.07-1.46-.374-1.893-.535l-1.35.558c-.207.45-.885 1.586-.977 1.73a.603.603 0 01-.51.281h-1.236a.598.598 0 01-.515-.288c-.12-.19-.781-1.298-.977-1.73l-1.35-.558c-.476.18-1.75.502-1.916.54a.598.598 0 01-.558-.162l-.874-.875a.601.601 0 01-.162-.558l.005-.022c.07-.27.374-1.46.535-1.893l-.558-1.35c-.45-.207-1.586-.885-1.73-.977a.603.603 0 01-.281-.51v-1.236c0-.208.109-.401.286-.51.191-.12 1.298-.78 1.73-.977l.558-1.35c-.18-.475-.502-1.75-.54-1.915a.598.598 0 01.162-.558l.875-.88a.601.601 0 01.558-.162l.023.005c.27.07 1.46.374 1.892.535l1.35-.558c.207-.45.886-1.586.977-1.73a.603.603 0 01.51-.281h1.238c.208 0 .401.109.51.286.12.191.78 1.298.977 1.73l1.35.558c.475-.18 1.75-.502 1.915-.54a.598.598 0 01.558.162l.88.875a.601.601 0 01.162.558l-.005.022c-.07.271-.374 1.46-.535 1.893l.558 1.35zM8.08 11.993a3.922 3.922 0 107.845.007 3.922 3.922 0 00-7.845-.007z"
-                  fill="currentColor">
-                </path>
-              </svg>
-            </div>
+			{stream ? (
+				<video
+					ref={localVideoRef}
+					autoPlay
+					playsInline
+					muted
+					className="w-full h-full object-cover rounded-xl"
+				/>
+			) : (
+				<>
+					<div className="bg-[#4e4e4e] w-[40px] h-[30px] rounded-full flex justify-center items-center absolute top-2 right-2">
+					  <svg width="30px" height="30px" viewBox="0 0 24 24">
+						<path
+						  fillRule="evenodd"
+						  clipRule="evenodd"
+						  d="M18.99 9.894c.45.207 1.585.886 1.73.977.175.11.282.303.28.51v1.238a.598.598 0 01-.288.515c-.19.12-1.298.781-1.73.977l-.558 1.35c.18.476.502 1.75.54 1.916a.598.598 0 01-.162.558l-.875.874a.602.602 0 01-.558.162l-.022-.005c-.27-.07-1.46-.374-1.893-.535l-1.35.558c-.207.45-.885 1.586-.977 1.73a.603.603 0 01-.51.281h-1.236a.598.598 0 01-.515-.288c-.12-.19-.781-1.298-.977-1.73l-1.35-.558c-.476.18-1.75.502-1.916.54a.598.598 0 01-.558-.162l-.874-.875a.601.601 0 01-.162-.558l.005-.022c.07-.27.374-1.46.535-1.893l-.558-1.35c-.45-.207-1.586-.885-1.73-.977a.603.603 0 01-.281-.51v-1.236c0-.208.109-.401.286-.51.191-.12 1.298-.78 1.73-.977l.558-1.35c-.18-.475-.502-1.75-.54-1.915a.598.598 0 01.162-.558l.875-.88a.601.601 0 01.558-.162l.023.005c.27.07 1.46.374 1.892.535l1.35-.558c.207-.45.886-1.586.977-1.73a.603.603 0 01.51-.281h1.238c.208 0 .401.109.51.286.12.191.78 1.298.977 1.73l1.35.558c.475-.18 1.75-.502 1.915-.54a.598.598 0 01.558.162l.88.875a.601.601 0 01.162.558l-.005.022c-.07.271-.374 1.46-.535 1.893l.558 1.35zM8.08 11.993a3.922 3.922 0 107.845.007 3.922 3.922 0 00-7.845-.007z"
+						  fill="currentColor">
+						</path>
+					  </svg>
+					</div>
 
-            <div className="text-[#999999] text-center text-3xl font-bold mb-2">Camera prohibited</div>
-            <div className="text-center font-semibold text-[#3f7fdf]">Allow</div>
+					<div className="text-[#999999] text-center text-3xl font-bold mb-2">Camera prohibited</div>
+					<div
+						onClick={setupMedia}
+						className="text-center font-semibold text-[#3f7fdf] cursor-pointer hover:underline"
+					>
+						Allow	
+					</div>
+				</>
+			)}
           </div>
 
           <div className="flex flex-col justify-center gap-4 flex-1 max-w-md w-full">
