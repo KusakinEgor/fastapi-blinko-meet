@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import axios from 'axios';
 import Sidebar from "../ui/SideBar";
 import MeetRoom from "./MeetRoom";
+import SettingsModal from "../ui/SettingsModal";
 
 export default function CreateRoomScreen({ onBack, onJoin }) {
   const localVideoRef = useRef(null);
@@ -10,6 +11,7 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
   const animationRef = useRef(null);
 
   const [loaded, setLoaded] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [screen, setScreen] = useState("join");
   const [stream, setStream] = useState(null);
   const [volume, setVolume] = useState(1);
@@ -151,7 +153,7 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
 				/>
 			) : (
 				<>
-					<div className="bg-[#4e4e4e] w-[40px] h-[30px] rounded-full flex justify-center items-center absolute top-2 right-2">
+					<div onClick={() => setIsSettingsOpen(true)} className="bg-[#4e4e4e] w-[40px] h-[30px] rounded-full flex justify-center items-center absolute top-2 right-2">
 					  <svg width="30px" height="30px" viewBox="0 0 24 24">
 						<path
 						  fillRule="evenodd"
@@ -161,6 +163,13 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
 						</path>
 					  </svg>
 					</div>
+
+					{isSettingsOpen && (
+						<SettingsModal
+							isOpen={isSettingsOpen}
+							onClose={() => setIsSettingsOpen(false)}
+						/>
+					)}
 
 					
 					<div className="text-[#999999] text-center text-3xl font-bold mb-2">
