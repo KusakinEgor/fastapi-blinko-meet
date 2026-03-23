@@ -4,10 +4,15 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
   const [seconds, setSeconds] = useState(0);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
+  const [activeTab, setActiveTab] = useState(null);
   const [isHost, setIsHost] = useState(() => {
 	  const savedToken = localStorage.getItem(`host_token_${slug}`);
 	  return !!savedToken;
   });
+
+  const toggleTab = (tabName) => {
+	  setActiveTab(prev => (prev === tabName ? null : tabName));
+  };
 
   const EMOJIS = ['❤️', '👍', '😂', '🎉', '🔥', '👏', '🤝', '🙏', '🤔', '😢', '👎', '😮'];
 
@@ -56,30 +61,50 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
             </div>
         </header>
 
-        <main className="flex-1 grid grid-cols-[1fr_3fr_1fr] gap-4 p-4 place-items-center">
-            <div className="bg-[#171717] w-full h-full rounded-xl flex flex-col justify-between p-4">
-                <div className="flex w-full self-start justify-between">
-                    <span className="font-bold text-[25px] p-2">1 participant</span>
-                    <div className="flex gap-1 p-2">
-                        <svg width="30px" viewBox="0 0 24 24" fill="none">
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M9.75 3.5C6.29822 3.5 3.5 6.29822 3.5 9.75C3.5 13.2018 6.29822 16 9.75 16C13.2018 16 16 13.2018 16 9.75C16 6.29822 13.2018 3.5 9.75 3.5ZM2 9.75C2 5.46979 5.46979 2 9.75 2C14.0302 2 17.5 5.46979 17.5 9.75C17.5 11.62 16.8377 13.3353 15.7348 14.6742L20.7803 19.7197C21.0732 20.0126 21.0732 20.4874 20.7803 20.7803C20.4874 21.0732 20.0126 21.0732 19.7197 20.7803L14.6742 15.7348C13.3353 16.8377 11.62 17.5 9.75 17.5C5.46979 17.5 2 14.0302 2 9.75Z" fill="currentColor"></path>
-                        </svg>
-                        <svg width="30px" viewBox="0 0 24 24" fill="none">
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M5.46967 5.46967C5.76256 5.17678 6.23744 5.17678 6.53033 5.46967L12 10.9393L17.4697 5.46967C17.7626 5.17678 18.2374 5.17678 18.5303 5.46967C18.8232 5.76256 18.8232 6.23744 18.5303 6.53033L13.0607 12L18.5303 17.4697C18.8232 17.7626 18.8232 18.2374 18.5303 18.5303C18.2374 18.8232 17.7626 18.8232 17.4697 18.5303L12 13.0607L6.53033 18.5303C6.23744 18.8232 5.76256 18.8232 5.46967 18.5303C5.17678 18.2374 5.17678 17.7626 5.46967 17.4697L10.9393 12L5.46967 6.53033C5.17678 6.23744 5.17678 5.76256 5.46967 5.46967Z" fill="currentColor"></path>
-                        </svg>
-                    </div>
-                </div>
+        <main className={`flex-1 grid ${activeTab ? 'grid-cols-[1fr_3fr_1fr]' : 'grid-cols-[3fr_1fr]'} gap-4 p-4 place-items-center transition-all duration-300`}>
+			{activeTab && (
+				<div className="bg-[#171717] w-full h-full rounded-xl flex flex-col justify-between p-4">
+					<div className="flex w-full self-start justify-between">
+						<span className="font-bold text-[25px] p-2">1 participant</span>
+						<div className="flex gap-1 p-2">
+							<svg width="30px" viewBox="0 0 24 24" fill="none">
+								<path fill-rule="evenodd" clip-rule="evenodd" d="M9.75 3.5C6.29822 3.5 3.5 6.29822 3.5 9.75C3.5 13.2018 6.29822 16 9.75 16C13.2018 16 16 13.2018 16 9.75C16 6.29822 13.2018 3.5 9.75 3.5ZM2 9.75C2 5.46979 5.46979 2 9.75 2C14.0302 2 17.5 5.46979 17.5 9.75C17.5 11.62 16.8377 13.3353 15.7348 14.6742L20.7803 19.7197C21.0732 20.0126 21.0732 20.4874 20.7803 20.7803C20.4874 21.0732 20.0126 21.0732 19.7197 20.7803L14.6742 15.7348C13.3353 16.8377 11.62 17.5 9.75 17.5C5.46979 17.5 2 14.0302 2 9.75Z" fill="currentColor"></path>
+							</svg>
+							<svg width="30px" viewBox="0 0 24 24" fill="none">
+								<path fill-rule="evenodd" clip-rule="evenodd" d="M5.46967 5.46967C5.76256 5.17678 6.23744 5.17678 6.53033 5.46967L12 10.9393L17.4697 5.46967C17.7626 5.17678 18.2374 5.17678 18.5303 5.46967C18.8232 5.76256 18.8232 6.23744 18.5303 6.53033L13.0607 12L18.5303 17.4697C18.8232 17.7626 18.8232 18.2374 18.5303 18.5303C18.2374 18.8232 17.7626 18.8232 17.4697 18.5303L12 13.0607L6.53033 18.5303C6.23744 18.8232 5.76256 18.8232 5.46967 18.5303C5.17678 18.2374 5.17678 17.7626 5.46967 17.4697L10.9393 12L5.46967 6.53033C5.17678 6.23744 5.17678 5.76256 5.46967 5.46967Z" fill="currentColor"></path>
+							</svg>
+						</div>
+					</div>
+					
+					<div className="flex-1 overflow-y-auto">
+						{activeTab === 'participants' ? (
+							<div className="text-gray-500 italic p-2">No other participants...</div>
+						) : (
+							<div className="flex flex-col h-full">
+								<div className="flex-1 text-gray-500 text-sm italic">No messages yet...</div>
+								<input
+									type="text"
+									placeholder="Enter message"
+									className="w-full bg-[#262626] rounded-lg p-3 outline-none border border-transparent focus:border-blue-500 transition-all"
+								/>
+							</div>
+						)}
+					</div>
+					
+					{activeTab === 'participants' && (
+						<button className="bg-[#333333] w-full h-[50px] rounded-md px-4 py-2">
+							<div className="flex justify-center gap-2">
+								<svg width="24px" viewBox="0 0 24 24" fill="none">
+									<path fill-rule="evenodd" clip-rule="evenodd" d="M16.2504 7.49999C16.2504 9.84719 14.3476 11.75 12.0004 11.75C9.65318 11.75 7.75039 9.84719 7.75039 7.49999C7.75039 5.15278 9.65318 3.25 12.0004 3.25C14.3476 3.25 16.2504 5.15278 16.2504 7.49999ZM11.8696 20.75C11.3165 19.7939 11 18.6839 11 17.5C11 16.1039 11.4401 14.8107 12.1892 13.7514C12.1265 13.7505 12.0638 13.75 12.001 13.75C9.10759 13.75 6.4203 14.7482 4.19361 16.4568C3.73539 16.8084 3.48305 17.3648 3.50089 17.9421C3.52124 18.6009 3.58196 19.0294 3.76311 19.385C4.00279 19.8554 4.38524 20.2378 4.85565 20.4775C5.39043 20.75 6.09049 20.75 7.49063 20.75H11.8696Z" fill="currentColor"></path>
+									<path fill-rule="evenodd" clip-rule="evenodd" d="M17.5 23C20.5376 23 23 20.5376 23 17.5C23 14.4624 20.5376 12 17.5 12C14.4624 12 12 14.4624 12 17.5C12 20.5376 14.4624 23 17.5 23ZM18 14.5C18 14.2239 17.7761 14 17.5 14C17.2239 14 17 14.2239 17 14.5V17H14.5C14.2239 17 14 17.2239 14 17.5C14 17.7761 14.2239 18 14.5 18H17V20.5C17 20.7761 17.2239 21 17.5 21C17.7761 21 18 20.7761 18 20.5V18H20.5C20.7761 18 21 17.7761 21 17.5C21 17.2239 20.7761 17 20.5 17H18V14.5Z" fill="currentColor"></path>
+								</svg>
+								<span className="font-bold">Invite to meeting</span>
+							</div>
+						</button>
+					)}
+				</div>
+			)}
 
-                <button className="bg-[#333333] w-full h-[50px] rounded-md px-4 py-2">
-                    <div className="flex justify-center gap-2">
-                        <svg width="24px" viewBox="0 0 24 24" fill="none">
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M16.2504 7.49999C16.2504 9.84719 14.3476 11.75 12.0004 11.75C9.65318 11.75 7.75039 9.84719 7.75039 7.49999C7.75039 5.15278 9.65318 3.25 12.0004 3.25C14.3476 3.25 16.2504 5.15278 16.2504 7.49999ZM11.8696 20.75C11.3165 19.7939 11 18.6839 11 17.5C11 16.1039 11.4401 14.8107 12.1892 13.7514C12.1265 13.7505 12.0638 13.75 12.001 13.75C9.10759 13.75 6.4203 14.7482 4.19361 16.4568C3.73539 16.8084 3.48305 17.3648 3.50089 17.9421C3.52124 18.6009 3.58196 19.0294 3.76311 19.385C4.00279 19.8554 4.38524 20.2378 4.85565 20.4775C5.39043 20.75 6.09049 20.75 7.49063 20.75H11.8696Z" fill="currentColor"></path>
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M17.5 23C20.5376 23 23 20.5376 23 17.5C23 14.4624 20.5376 12 17.5 12C14.4624 12 12 14.4624 12 17.5C12 20.5376 14.4624 23 17.5 23ZM18 14.5C18 14.2239 17.7761 14 17.5 14C17.2239 14 17 14.2239 17 14.5V17H14.5C14.2239 17 14 17.2239 14 17.5C14 17.7761 14.2239 18 14.5 18H17V20.5C17 20.7761 17.2239 21 17.5 21C17.7761 21 18 20.7761 18 20.5V18H20.5C20.7761 18 21 17.7761 21 17.5C21 17.2239 20.7761 17 20.5 17H18V14.5Z" fill="currentColor"></path>
-                        </svg>
-                        <span className="font-bold">Invite to meeting</span>
-                    </div>
-                </button>
-            </div>
             <div className="bg-[#171717] w-full h-full rounded-xl flex items-center justify-center">
                 <div>
                     <span className="font-bold text-[30px] text-[#999595]">Руководитель отдела Python-разработки</span>
@@ -125,7 +150,7 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
 
                 <div className="flex">
                     <div className="flex gap-7 items-end">
-                        <div className="flex flex-col items-center">
+                        <div onClick={() => toggleTab('participants')} className="flex flex-col items-center cursor-pointer">
                             <div className="bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center">
                                 <svg width="24px" viewBox="0 0 24 24" fill="none">
                                     <path d="M5 8C5 5.79086 6.79087 4 9.00001 4C11.2092 4 13 5.79086 13 8C13 10.2091 11.2092 12 9.00001 12C6.79087 12 5 10.2091 5 8Z" fill="currentColor"></path>
@@ -136,7 +161,7 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
                             </div>
                             <span className="text-center font-semibold">Participants</span> 
                         </div>
-                        <div className="flex flex-col items-center">
+                        <div onClick={() => toggleTab('chat')} className="flex flex-col items-center cursor-pointer">
                             <div className="bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center">
                                 <svg width="24px" viewBox="0 0 24 24" fill="none">
                                     <path d="M9.74901 3C5.74494 3 2.49901 6.24594 2.49901 10.25C2.49901 10.9221 2.59066 11.574 2.76258 12.1933C2.93471 12.8133 2.99207 13.3793 2.86123 13.8765L2.35091 15.8157C2.05856 16.9267 3.07234 17.9404 4.18326 17.6481L6.12251 17.1378C6.61969 17.0069 7.18572 17.0643 7.80575 17.2364C8.42505 17.4084 9.07693 17.5 9.74901 17.5C13.7531 17.5 16.999 14.2541 16.999 10.25C16.999 6.24594 13.7531 3 9.74901 3Z" fill="currentColor"></path>
