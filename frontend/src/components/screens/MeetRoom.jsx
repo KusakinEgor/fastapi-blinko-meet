@@ -5,6 +5,9 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
   const [activeTab, setActiveTab] = useState(null);
+  const [showMore, setShowMore] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [screenStream, setScreenStream] = useState(null);
   const [isHost, setIsHost] = useState(() => {
 	  const savedToken = localStorage.getItem(`host_token_${slug}`);
 	  return !!savedToken;
@@ -14,7 +17,34 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
 	  setActiveTab(prev => (prev === tabName ? null : tabName));
   };
 
+  const toggleMore = () => {
+	  setShowMore(prev => !prev);
+  };
+
   const EMOJIS = ['❤️', '👍', '😂', '🎉', '🔥', '👏', '🤝', '🙏', '🤔', '😢', '👎', '😮'];
+
+  const startScreenShare = async () => {
+	  try {
+		  if (screenStream) {
+			  screenStream.getTracks().forEach(track => track.stop());
+			  setScreenStream(null);
+			  return;
+		  }
+
+		  const stream = await navigator.mediaDevices.getDisplayMedia({
+			  video: true,
+			  audio: true
+		  });
+
+		  setScreenStream(stream);
+
+		  stream.getVideoTracks()[0].onended = () => {
+			  setScreenStream(null);
+		  };
+	  } catch (err) {
+		  console.error("Error with sharing screen:", err);
+	  }
+  };
 
   useEffect(() => {
     console.log(isHost ? "Input like a host": "Input like a guest");
@@ -170,7 +200,7 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
                             </div>
                             <span className="text-center font-semibold">Chat</span>
                         </div>
-                        <div className="flex flex-col items-center">
+                        <div onClick={startScreenShare} className="flex flex-col items-center cursor-pointer">
                             <div className="bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center">
                                 <svg width="24px" viewBox="0 0 24 24" fill="none">
                                     <path d="M5.91957 4C5.38542 3.99999 4.93956 3.99998 4.57533 4.02974C4.19545 4.06078 3.83879 4.12789 3.50153 4.29973C2.98408 4.56339 2.56339 4.98408 2.29973 5.50153C2.12789 5.83879 2.06078 6.19545 2.02974 6.57533C1.99998 6.93956 1.99999 7.3854 2 7.91955V16.0804C1.99999 16.6146 1.99998 17.0604 2.02974 17.4247C2.06078 17.8046 2.12789 18.1612 2.29973 18.4985C2.56339 19.0159 2.98408 19.4366 3.50153 19.7003C3.83879 19.8721 4.19545 19.9392 4.57533 19.9703C4.93956 20 5.3854 20 5.91955 20H9.75V18.5H5.95C5.37757 18.5 4.99336 18.4994 4.69748 18.4752C4.41036 18.4518 4.27307 18.4099 4.18251 18.3638C3.94731 18.2439 3.75608 18.0527 3.63624 17.8175C3.5901 17.7269 3.54822 17.5896 3.52476 17.3025C3.50058 17.0066 3.5 16.6224 3.5 16.05V7.95C3.5 7.37757 3.50058 6.99336 3.52476 6.69748C3.54822 6.41036 3.5901 6.27307 3.63624 6.18251C3.75608 5.94731 3.94731 5.75608 4.18251 5.63624C4.27307 5.5901 4.41036 5.54822 4.69748 5.52476C4.99336 5.50058 5.37757 5.5 5.95 5.5H18.05C18.6224 5.5 19.0066 5.50058 19.3025 5.52476C19.5896 5.54822 19.7269 5.5901 19.8175 5.63624C20.0527 5.75608 20.2439 5.94731 20.3638 6.18251C20.4099 6.27307 20.4518 6.41036 20.4752 6.69748C20.4994 6.99336 20.5 7.37757 20.5 7.95V16.05C20.5 16.6224 20.4994 17.0066 20.4752 17.3025C20.4518 17.5896 20.4099 17.7269 20.3638 17.8175C20.2439 18.0527 20.0527 18.2439 19.8175 18.3638C19.7269 18.4099 19.5896 18.4518 19.3025 18.4752C19.0066 18.4994 18.6224 18.5 18.05 18.5H14.25V20H18.0805C18.6146 20 19.0604 20 19.4247 19.9703C19.8046 19.9392 20.1612 19.8721 20.4985 19.7003C21.0159 19.4366 21.4366 19.0159 21.7003 18.4985C21.8721 18.1612 21.9392 17.8046 21.9703 17.4247C22 17.0604 22 16.6146 22 16.0805V7.91955C22 7.3854 22 6.93956 21.9703 6.57533C21.9392 6.19545 21.8721 5.83879 21.7003 5.50153C21.4366 4.98408 21.0159 4.56339 20.4985 4.29973C20.1612 4.12789 19.8046 4.06078 19.4247 4.02974C19.0604 3.99998 18.6146 3.99999 18.0805 4H5.91957Z" fill="currentColor"></path>
@@ -225,8 +255,25 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
 								<span className="text-center font-semibold">Reactions</span>
 							</div>
 						</div>
-                        <div className="flex flex-col items-center">
-                            <div className="bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center">
+                        <div className="relative flex flex-col items-center cursor-pointer">
+							{showMore && (
+								<div
+									onClick={() => {
+										setIsRecording(!isRecording);
+										setShowMore(false);
+									}}
+									className="absolute bottom-full mb-4 bg-[#1c1c1c] border border-[#333] px-4 py-3 rounded-2xl flex items-center gap-3 whitespace-nowrap shadow-2xl z-50 hover:bg-[#262626] transition-colors"
+								>
+									<div className="w-5 h-5 border-2 border-white rounded-full flex items-center justify-center">
+										<div className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-white'}`}></div>
+									</div>
+
+									<span className="font-medium text-[15px]">
+										{isRecording ? 'Stop recording' : 'Record meeting'}
+									</span>
+								</div>
+							)}
+                            <div onClick={toggleMore} className={`bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center transition-colors ${showMore ? 'bg-[#333]' : 'bg-[#262626] hover:bg-[#333]'}`}>
                                 <svg width="24px" viewBox="0 0 24 24" fill="none">
                                     <path fill-rule="evenodd" clip-rule="evenodd" d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" fill="currentColor"></path>
                                 </svg>
