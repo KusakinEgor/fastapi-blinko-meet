@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import InviteModal from "../ui/InviteModal";
 
 export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
   const [seconds, setSeconds] = useState(0);
@@ -8,10 +9,19 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
   const [showMore, setShowMore] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [screenStream, setScreenStream] = useState(null);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [isHost, setIsHost] = useState(() => {
 	  const savedToken = localStorage.getItem(`host_token_${slug}`);
 	  return !!savedToken;
   });
+
+  const videoRef = useRef(null);
+
+  const meetingInfo = {
+	  url: "https://salutejazz.ru/call/doypd6?...",
+	  code: "doypd6@...",
+	  password: "y1vcc0yp"
+  };
 
   const toggleTab = (tabName) => {
 	  setActiveTab(prev => (prev === tabName ? null : tabName));
@@ -20,6 +30,14 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
   const toggleMore = () => {
 	  setShowMore(prev => !prev);
   };
+
+  useEffect(() => {
+	  if (videoRef.current && screenStream) {
+		  if (videoRef.current.srcObject !== screenStream) {
+			  videoRef.current.srcObject = screenStream;
+		  }
+	  }
+  }, [screenStream]);
 
   const EMOJIS = ['❤️', '👍', '😂', '🎉', '🔥', '👏', '🤝', '🙏', '🤔', '😢', '👎', '😮'];
 
@@ -122,7 +140,7 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
 					</div>
 					
 					{activeTab === 'participants' && (
-						<button className="bg-[#333333] w-full h-[50px] rounded-md px-4 py-2">
+						<button onClick={() => setIsInviteOpen(true)} className="bg-[#333333] w-full h-[50px] rounded-md px-4 py-2">
 							<div className="flex justify-center gap-2">
 								<svg width="24px" viewBox="0 0 24 24" fill="none">
 									<path fill-rule="evenodd" clip-rule="evenodd" d="M16.2504 7.49999C16.2504 9.84719 14.3476 11.75 12.0004 11.75C9.65318 11.75 7.75039 9.84719 7.75039 7.49999C7.75039 5.15278 9.65318 3.25 12.0004 3.25C14.3476 3.25 16.2504 5.15278 16.2504 7.49999ZM11.8696 20.75C11.3165 19.7939 11 18.6839 11 17.5C11 16.1039 11.4401 14.8107 12.1892 13.7514C12.1265 13.7505 12.0638 13.75 12.001 13.75C9.10759 13.75 6.4203 14.7482 4.19361 16.4568C3.73539 16.8084 3.48305 17.3648 3.50089 17.9421C3.52124 18.6009 3.58196 19.0294 3.76311 19.385C4.00279 19.8554 4.38524 20.2378 4.85565 20.4775C5.39043 20.75 6.09049 20.75 7.49063 20.75H11.8696Z" fill="currentColor"></path>
@@ -132,13 +150,28 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
 							</div>
 						</button>
 					)}
+					
+					<InviteModal
+						isOpen={isInviteOpen}
+						onClose={() => setIsInviteOpen(false)}
+						meetingData={meetingInfo}
+					/>
 				</div>
 			)}
 
             <div className="bg-[#171717] w-full h-full rounded-xl flex items-center justify-center">
-                <div>
-                    <span className="font-bold text-[30px] text-[#999595]">Руководитель отдела Python-разработки</span>
-                </div>
+				{screenStream ? (
+					<video
+						autoPlay
+						playsInline
+						ref={videoRef}
+						className="w-full h-full object-contain rounded-xl"
+					/>
+				) : (
+					<div>
+						<span className="font-bold text-[30px] text-[#999595]">Руководитель отдела Python-разработки</span>
+					</div>
+				)}
             </div>
             <div className="bg-[#171717] w-full h-[100px] rounded-xl flex items-center self-start relative">
                 <div className="flex">
