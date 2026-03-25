@@ -186,7 +186,7 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
 					</div>
 					
 					{activeTab === 'participants' && (
-						<button onClick={() => setIsInviteOpen(true)} className="bg-[#333333] w-full h-[50px] rounded-md px-4 py-2">
+						<button onClick={() => setIsInviteOpen(true)} className="bg-[#333333] w-full h-[50px] rounded-md px-4 py-2 cursor-pointer">
 							<div className="flex justify-center gap-2">
 								<svg width="24px" viewBox="0 0 24 24" fill="none">
 									<path fill-rule="evenodd" clip-rule="evenodd" d="M16.2504 7.49999C16.2504 9.84719 14.3476 11.75 12.0004 11.75C9.65318 11.75 7.75039 9.84719 7.75039 7.49999C7.75039 5.15278 9.65318 3.25 12.0004 3.25C14.3476 3.25 16.2504 5.15278 16.2504 7.49999ZM11.8696 20.75C11.3165 19.7939 11 18.6839 11 17.5C11 16.1039 11.4401 14.8107 12.1892 13.7514C12.1265 13.7505 12.0638 13.75 12.001 13.75C9.10759 13.75 6.4203 14.7482 4.19361 16.4568C3.73539 16.8084 3.48305 17.3648 3.50089 17.9421C3.52124 18.6009 3.58196 19.0294 3.76311 19.385C4.00279 19.8554 4.38524 20.2378 4.85565 20.4775C5.39043 20.75 6.09049 20.75 7.49063 20.75H11.8696Z" fill="currentColor"></path>
@@ -219,7 +219,7 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
 					</div>
 				)}
             </div>
-            <div className="bg-[#171717] w-full h-[100px] min-h-0 rounded-xl flex items-center relative">
+            <div className="bg-[#171717] w-full h-[200px] min-h-0 rounded-xl flex items-center relative">
                 <div className="flex">
                     <svg width="24px" viewBox="0 0 24 24" fill="none" className="absolute bottom-2 left-2">
                         <path d="M11.9999 2C10.0669 2 8.49994 3.67893 8.49994 5.75V11.75C8.49994 12.2471 8.59022 12.7216 8.75416 13.1557L7.45127 14.4586C7.08164 13.8449 6.83854 13.157 6.74353 12.4353C6.68946 12.0246 6.31272 11.7356 5.90205 11.7896C5.49138 11.8437 5.2023 12.2204 5.25636 12.6311C5.39487 13.6832 5.77814 14.6793 6.3658 15.5441L2.46967 19.4402C2.17678 19.7331 2.17678 20.208 2.46967 20.5009C2.76256 20.7938 3.23744 20.7938 3.53033 20.5009L7.34482 16.6864C7.34477 16.6864 7.34487 16.6864 7.34482 16.6864L8.40645 15.625C8.4064 15.625 8.40649 15.6251 8.40645 15.625L9.57605 14.4552C9.57601 14.4551 9.57609 14.4552 9.57605 14.4552L20.5009 3.53033C20.7938 3.23744 20.7938 2.76256 20.5009 2.46967C20.208 2.17678 19.7331 2.17678 19.4402 2.46967L15.4999 6.40996V5.75C15.4999 3.67893 13.9329 2 11.9999 2Z" fill="red"></path>
