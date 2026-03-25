@@ -4,10 +4,10 @@ from datetime import datetime, timezone
 
 from sqlalchemy import select
 from app.database.db import get_db_session
-from app.schemas.meeting import Rooms
+from app.schemas.meeting import Rooms, Participants
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, HTTPException, status
-from app.models.room import RoomCreate, RoomOut, RoomJoinResponse
+from app.models.room import RoomCreate, RoomOut, RoomJoinResponse, RoomJoinRequest
 
 router = APIRouter(prefix="/rooms", tags=["Rooms"])
 
@@ -28,7 +28,7 @@ async def create_room(room_data: RoomCreate, db: AsyncSession = Depends(get_db_s
             slug=random_slug,
             name=room_data.name,
             is_private=bool(room_data.password),
-            room_name=room_data.password,
+            password=room_data.password,
             is_active=True
     )
 
@@ -56,14 +56,27 @@ async def create_room(room_data: RoomCreate, db: AsyncSession = Depends(get_db_s
         description="Enter a room using its unique slug to receive a session token.",
         responses={404: {"description": "Room not found"}}
 )
-async def join_room(slug: str, db: AsyncSession = Depends(get_db_session)):
-    room = await db.execute(select(Rooms).filter(Rooms.slug == slug))
-    room = room.scalar_one_or_none()
+async def join_room(slug: str, data: RoomJoinRequest, db: AsyncSession = Depends(get_db_session)):
+    result = await db.execute(select(Rooms).where(Rooms.slug == slug))
+    room = result.scalar_one_or_none()
 
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
 
+    if room.is_private:
+        if not data.password or data.password != room.password:
+            raise HTTPException(status_code=403, detail="Wrong password")
+
     session_token = secrets.token_urlsafe(32)
+
+    participant = Participants(
+            room_id=room.id,
+            user_id=None,
+            session_token=session_token
+    )
+
+    db.add(participant)
+    await db.commit()
 
     return {
             "room_slug": slug,
