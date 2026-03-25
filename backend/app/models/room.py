@@ -23,6 +23,7 @@ class RoomOut(BaseModel):
     host_id: str = Field(..., examples=["5ze80C3xk5Qf1rQnXnuZqXsUPFUpSRnZ1GHPXpzS3to"])
     is_activate: bool = Field(..., description="Whether the room in currently active")
     created_at: datetime
+    invite_link: str = Field(..., examples=["sh"])
 
 class Config:
     from_attributes = True
