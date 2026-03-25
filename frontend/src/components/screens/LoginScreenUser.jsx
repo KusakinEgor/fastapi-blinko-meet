@@ -10,8 +10,39 @@ const LoginScreenUser = ({ onLogin, onBack }) => {
     onLogin({ username, password });
   };
   
-  const handleSubmit = () => {
-	  onLogin({ email, password, username, type: isRegister ? "register" : "login"});
+  const handleSubmit = async () => {
+	  const url = isRegister
+		? "http://localhost:8000/register"
+		: "http://localhost:8000/login";
+
+	  const body = isRegister
+		? { email, password, username }
+		: { email, password };
+
+	  try {
+		  const res = await fetch(url, {
+			  method: "POST",
+			  headers: { "Content-Type": "application/json" },
+			  body: JSON.stringify(body)
+		  });
+
+		  if (!res.ok) {
+			  const err = await res.json();
+			  console.error(err);
+			  alert(err.detail || "Error");
+			  return;
+		  }
+
+		  const data = await res.json();
+
+		  if (!isRegister) {
+			  localStorage.setItem("access_token", data.access_token);
+		  }
+
+		  console.log("SUCCESS:", data);
+	  } catch (err) {
+		  console.error(err);
+	  }
   };
 
   return (
