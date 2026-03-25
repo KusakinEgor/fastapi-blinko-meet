@@ -14,6 +14,7 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
   const [inputValue, setInputValue] = useState('');
   const [micMuted, setMicMuted] = useState(false);
   const [camMuted, setCamMuted] = useState(false);
+  const [meetingInfo, setMeetingInfo] = useState(null);
   const [isHost, setIsHost] = useState(() => {
 	  const savedToken = localStorage.getItem(`host_token_${slug}`);
 	  return !!savedToken;
@@ -21,11 +22,25 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
 
   const videoRef = useRef(null);
 
-  const meetingInfo = {
-	  url: "https://salutejazz.ru/call/doypd6?...",
-	  code: "doypd6@...",
-	  password: "y1vcc0yp"
-  };
+  useEffect(() => {
+	  const createRoom = async () => {
+		  const res = await fetch("http://localhost:8000/rooms/create", {
+			  method: "POST",
+			  headers: { "Content-Type": "application/json" },
+			  body: JSON.stringify({ name: meetingTitle, password: "1234" })
+		  });
+
+		  const data = await res.json();
+
+		  setMeetingInfo({
+			  url: data.invite_link,
+			  code: data.slug,
+			  password: data.password
+		  });
+	  };
+
+	  createRoom();
+  }, []);
 
   const toggleTab = (tabName) => {
 	  setActiveTab(prev => (prev === tabName ? null : tabName));
