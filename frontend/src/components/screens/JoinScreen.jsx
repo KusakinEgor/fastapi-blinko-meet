@@ -1,13 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Sidebar from "../ui/SideBar";
 import SettingsModal from "../ui/SettingsModal";
+import { useNavigate, useParams } from "react-router-dom";
 
 export default function JoinScreen({ onBack, onJoin }) {
+  const { slug } = useParams();
   const localVideoRef = useRef(null);
   const pc = useRef(null);
   const [loaded, setLoaded] = useState(false);
   const [stream, setStream] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const navigate = useNavigate();
 
   const setupMedia = useCallback(async () => {
 	  try {
@@ -32,7 +35,7 @@ export default function JoinScreen({ onBack, onJoin }) {
 			  stream.getTracks.forEach((track) => track.stop());
 		  }
 	  };
-  }, [setupMedia])
+  }, [setupMedia, slug, stream, navigate])
 
   useEffect(() => {
 	  if (stream && localVideoRef.current) {
@@ -40,11 +43,32 @@ export default function JoinScreen({ onBack, onJoin }) {
 	  }
   }, [stream]);
 
+  const [isRoomFound, setIsRoomFound] = useState(true);
   const [name, setName] = useState("");
   const [meetingCode, setMeetingCode] = useState("");
   const [meetingPassword, setMeetingPassword] = useState("");
   const [micMuted, setMicMuted] = useState(false);
   const [camMuted, setCamMuted] = useState(false);
+
+  const joinRoom = async () => {
+	  try {
+		  const response = await fetch(`http://127.0.0.1:3000/rooms/${slug}/join`, {
+			  method: "POST",
+			  body: JSON.stringify({ name }),
+			  headers: { "Content-Type": "application/json" },
+		  });
+
+		  if (response.status === 404) {
+			  setIsRoomFound(false);
+			  return;
+		  }
+
+		  const data = await response.json();
+		  console.log("Successfully joined the room!", data);
+	  } catch (err) {
+		  console.error("Error while joining the room:", err)
+	  }
+  };
 
   const handleJoinClick = async () => {
 	  if (!stream) return alert("Cam not ready!");
