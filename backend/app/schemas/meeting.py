@@ -17,7 +17,7 @@ class Rooms(TimestampMixin, Base):
     is_private: Mapped[bool] = mapped_column(Boolean, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    room_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    password: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     closed_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
@@ -27,6 +27,7 @@ class Participants(TimestampMixin, Base):
 
     room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id", ondelete="CASCADE"), nullable=False)
     user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=False)
+    session_token: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
 
     role: Mapped[ParticipantRole] = mapped_column(default=ParticipantRole.LISTENER)
 
