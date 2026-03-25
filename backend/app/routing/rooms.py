@@ -1,6 +1,8 @@
 import uuid
 import secrets
 from datetime import datetime, timezone
+
+from sqlalchemy import select
 from app.database.db import get_db_session
 from app.schemas.meeting import Rooms
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,13 +36,17 @@ async def create_room(room_data: RoomCreate, db: AsyncSession = Depends(get_db_s
     await db.commit()
     await db.refresh(new_room)
 
+    base_url = "http://localhost:5173"
+    meeting_link = f"{base_url}/call/{new_room.slug}"
+
     return {
             "id": str(new_room.id),
             "slug": new_room.slug,
             "name": room_data.name,
             "host_id": host_token,
             "is_activate": new_room.is_active,
-            "created_at": new_room.created_at
+            "created_at": new_room.created_at,
+            "invite_link": meeting_link
     }
 
 @router.post(
@@ -50,13 +56,18 @@ async def create_room(room_data: RoomCreate, db: AsyncSession = Depends(get_db_s
         description="Enter a room using its unique slug to receive a session token.",
         responses={404: {"description": "Room not found"}}
 )
-async def join_room(slug: str):
-    if slug == "not-found":
+async def join_room(slug: str, db: AsyncSession = Depends(get_db_session)):
+    room = await db.execute(select(Rooms).filter(Rooms.slug == slug))
+    room = room.scalar_one_or_none()
+
+    if not room:
         raise HTTPException(status_code=404, detail="Room not found")
+
+    session_token = secrets.token_urlsafe(32)
 
     return {
             "room_slug": slug,
-            "session_token": "test_token-123",
+            "session_token": session_token,
             "ice_servers": []
     }
 
