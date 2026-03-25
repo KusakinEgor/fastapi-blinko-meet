@@ -19,7 +19,5 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 class Login(BaseModel):
-    username: str = Field(..., min_length=1, examples=["CoolGuest123"])
     password: str = Field(..., min_length=3, examples=["StrongPass123"])
     email: EmailStr = Field(..., examples=["user@example.com"])
-
