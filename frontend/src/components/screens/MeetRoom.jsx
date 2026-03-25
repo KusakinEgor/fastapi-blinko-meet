@@ -10,6 +10,8 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
   const [isRecording, setIsRecording] = useState(false);
   const [screenStream, setScreenStream] = useState(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [inputValue, setInputValue] = useState('');
   const [isHost, setIsHost] = useState(() => {
 	  const savedToken = localStorage.getItem(`host_token_${slug}`);
 	  return !!savedToken;
@@ -29,6 +31,31 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
 
   const toggleMore = () => {
 	  setShowMore(prev => !prev);
+  };
+
+  const handleSendMessage = () => {
+	  const text = inputValue.trim();
+	  if (!text) return;
+
+	  const newMessage = {
+		  id: Date.now(),
+		  text: text,
+		  sender: 'me',
+		  time: new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
+	  };
+
+	  setMessages((prev) => [...prev, newMessage]);
+	  setInputValue('');
+  };
+
+  const handleKeyDown = (e) => {
+	  if (e.key === 'Enter') {
+		  if (inputValue.trim() !== ''){
+			  console.log("Send message:", inputValue);
+			  handleSendMessage();
+			  setInputValue('');
+		  }
+	  }
   };
 
   useEffect(() => {
@@ -109,10 +136,10 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
             </div>
         </header>
 
-        <main className={`flex-1 grid ${activeTab ? 'grid-cols-[1fr_3fr_1fr]' : 'grid-cols-[3fr_1fr]'} gap-4 p-4 place-items-center transition-all duration-300`}>
+        <main className={`flex-1 grid ${activeTab ? 'grid-cols-[1fr_3fr_1fr]' : 'grid-cols-[3fr_1fr]'} grid-rows-[minmax(0,1fr)] gap-4 p-4 h-screen box-border items-stretch overflow-hidden transition-all duration-300`}>
 			{activeTab && (
-				<div className="bg-[#171717] w-full h-full rounded-xl flex flex-col justify-between p-4">
-					<div className="flex w-full self-start justify-between">
+				<div className="bg-[#171717] w-full h-full min-h-0 rounded-xl flex flex-col overflow-hidden p-4">
+					<div className="flex w-full justify-between flex-none">
 						<span className="font-bold text-[25px] p-2">1 participant</span>
 						<div className="flex gap-1 p-2">
 							<svg width="30px" viewBox="0 0 24 24" fill="none">
@@ -124,17 +151,36 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
 						</div>
 					</div>
 					
-					<div className="flex-1 overflow-y-auto">
+					<div className="flex-1 flex flex-col min-h-0">
 						{activeTab === 'participants' ? (
 							<div className="text-gray-500 italic p-2">No other participants...</div>
 						) : (
-							<div className="flex flex-col h-full">
-								<div className="flex-1 text-gray-500 text-sm italic">No messages yet...</div>
-								<input
-									type="text"
-									placeholder="Enter message"
-									className="w-full bg-[#262626] rounded-lg p-3 outline-none border border-transparent focus:border-blue-500 transition-all"
-								/>
+							<div className="flex flex-col flex-1 min-h-0">
+								<div className="flex-1 overflow-y-auto mb-4 space-y-3 pr-2 custom-scrollbar" style={{ maxHeight: 'calc(100vh - 34vh)' }}>
+									{messages.length === 0 ? (
+										<div className="text-gray-500 text-sm italic">No messages yet...</div>
+									) : (
+										messages.map((msg) => (
+											<div key={msg.id} className="self-end bg-[#262626] text-white p-3 rounded-2xl rounded-tr-none max-w-[80%] ml-auto shadow-sm">
+												<p className="text-sm leading-relaxed break-words">{msg.text}</p>
+												<span className="block text-[10px] text-gray-500 text-right mt-1">
+													{msg.time}
+												</span>
+											</div>
+										))
+									)}
+								</div>
+								
+								<div className="flex-none pt-2 mt-auto">
+									<input
+										type="text"
+										placeholder="Enter message"
+										value={inputValue}
+										onChange={(e) => setInputValue(e.target.value)}
+										onKeyDown={handleKeyDown}
+										className="w-full bg-[#262626] rounded-lg p-3 outline-none border border-transparent focus:border-blue-500 transition-all"
+									/>
+								</div>
 							</div>
 						)}
 					</div>
@@ -173,7 +219,7 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
 					</div>
 				)}
             </div>
-            <div className="bg-[#171717] w-full h-[100px] rounded-xl flex items-center self-start relative">
+            <div className="bg-[#171717] w-full h-[100px] min-h-0 rounded-xl flex items-center relative">
                 <div className="flex">
                     <svg width="24px" viewBox="0 0 24 24" fill="none" className="absolute bottom-2 left-2">
                         <path d="M11.9999 2C10.0669 2 8.49994 3.67893 8.49994 5.75V11.75C8.49994 12.2471 8.59022 12.7216 8.75416 13.1557L7.45127 14.4586C7.08164 13.8449 6.83854 13.157 6.74353 12.4353C6.68946 12.0246 6.31272 11.7356 5.90205 11.7896C5.49138 11.8437 5.2023 12.2204 5.25636 12.6311C5.39487 13.6832 5.77814 14.6793 6.3658 15.5441L2.46967 19.4402C2.17678 19.7331 2.17678 20.208 2.46967 20.5009C2.76256 20.7938 3.23744 20.7938 3.53033 20.5009L7.34482 16.6864C7.34477 16.6864 7.34487 16.6864 7.34482 16.6864L8.40645 15.625C8.4064 15.625 8.40649 15.6251 8.40645 15.625L9.57605 14.4552C9.57601 14.4551 9.57609 14.4552 9.57605 14.4552L20.5009 3.53033C20.7938 3.23744 20.7938 2.76256 20.5009 2.46967C20.208 2.17678 19.7331 2.17678 19.4402 2.46967L15.4999 6.40996V5.75C15.4999 3.67893 13.9329 2 11.9999 2Z" fill="red"></path>
