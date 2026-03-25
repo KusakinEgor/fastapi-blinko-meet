@@ -26,6 +26,11 @@ function AppContent() {
 	  />
 
 	  <Route
+		path="/call/:slug"
+		element={<JoinScreen onBack={() => navigate("/")} />}
+	  />
+
+	  <Route
 		path="/join"
 		element={<JoinScreen onBack={() => navigate("/")} />}
 	  />
