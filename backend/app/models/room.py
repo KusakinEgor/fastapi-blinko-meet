@@ -32,3 +32,6 @@ class RoomJoinResponse(BaseModel):
     room_slug: str = Field(..., examples=["daily-standup-xyz"])
     session_token: str = Field(..., examples=["sess_abc123"])
     ice_servers: List[Dict[str, Any]] = Field(default_factory=list)
+
+class RoomJoinRequest(BaseModel):
+    password: Optional[str] = None
