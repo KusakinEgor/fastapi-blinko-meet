@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, status
 from app.models.auth import Registration, Login, TokenResponse, UserResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.db import get_db_session
+from app.schemas.auth import User
 from app.services.auth import login_user_service, register_user_service
+from app.services.get_user import get_current_user
 
 router = APIRouter(tags=["Auth"])
 
@@ -47,4 +49,14 @@ async def login(
             access_token=token_data["access_token"],
             token_type=token_data["token_type"]
     )
-    
+
+@router.get(
+        "/profile",
+        response_model=UserResponse,
+        summary="Get current user profile",
+        description="Return detailed information about the currently authenticated user."
+)
+async def get_profile(
+        current_user: User = Depends(get_current_user)
+):
+    return current_user
