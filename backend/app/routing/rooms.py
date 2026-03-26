@@ -4,10 +4,12 @@ from datetime import datetime, timezone
 
 from sqlalchemy import select
 from app.database.db import get_db_session
+from app.schemas.auth import User
 from app.schemas.meeting import Rooms, Participants
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.models.room import RoomCreate, RoomOut, RoomJoinResponse, RoomJoinRequest
+from app.services.get_user import get_current_user
 
 router = APIRouter(prefix="/rooms", tags=["Rooms"])
 
@@ -18,13 +20,15 @@ router = APIRouter(prefix="/rooms", tags=["Rooms"])
         summary="Create a new room",
         description="Initialize a new streaming or chat room. The slug will be generated auto."
 )
-async def create_room(room_data: RoomCreate, db: AsyncSession = Depends(get_db_session)):
+async def create_room(
+        room_data: RoomCreate,
+        db: AsyncSession = Depends(get_db_session),
+        current_user: User = Depends(get_current_user)
+):
     random_slug = f"{secrets.token_hex(3)}-{secrets.token_hex(3)}"
 
-    host_token = secrets.token_urlsafe(32)
-
     new_room = Rooms(
-            owner_id=host_token,
+            owner_id=current_user.id,
             slug=random_slug,
             name=room_data.name,
             is_private=bool(room_data.password),
@@ -43,7 +47,7 @@ async def create_room(room_data: RoomCreate, db: AsyncSession = Depends(get_db_s
             "id": str(new_room.id),
             "slug": new_room.slug,
             "name": room_data.name,
-            "host_id": host_token,
+            "host_id": str(current_user.id),
             "is_activate": new_room.is_active,
             "created_at": new_room.created_at,
             "invite_link": meeting_link
