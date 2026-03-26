@@ -1,8 +1,8 @@
 from typing import Optional
 from sqlalchemy import String, Boolean, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.db import Base
-from app.schemas.common import TimestampMixin
+from .common import TimestampMixin
 
 class UserProfile(TimestampMixin, Base):
     """User profile containing public information and conference presets."""
@@ -17,6 +17,8 @@ class UserProfile(TimestampMixin, Base):
     default_camera_off: Mapped[bool] = mapped_column(Boolean, default=True)
     blur_background: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    user: Mapped["User"] = relationship("User", back_populates="profile")
+
 class UserSettings(TimestampMixin, Base):
     """Technical setttings for the interface and audio processing."""
     __tablename__ = "user_settings"
@@ -28,3 +30,5 @@ class UserSettings(TimestampMixin, Base):
 
     enable_noise_suppression: Mapped[bool] = mapped_column(Boolean, default=True)
     auto_gain_control: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    user: Mapped["User"] = relationship("User", back_populates="settings")
