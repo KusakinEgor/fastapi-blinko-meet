@@ -7,6 +7,7 @@ import CreateRoomScreen from "./components/screens/CreateRoomScreen";
 import LoginScreen from "./components/screens/LoginScreen";
 import JoinScreen from "./components/screens/JoinScreen";
 import LoginScreenUser from "./components/screens/LoginScreenUser";
+import UserProfile from "./components/screens/UserProfile";
 
 function AppContent() {
   const navigate = useNavigate();
@@ -48,6 +49,11 @@ function AppContent() {
 	  <Route
 		path="/login-user"
 		element={<LoginScreenUser onBack={() => navigate("/")} />}
+	  />
+
+	  <Route
+		path="/profile"
+		element={<UserProfile />}
 	  />
 	</Routes>
   );
