@@ -110,20 +110,35 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
   
   const handleCreateRoom = async () => {
 	  try {
-		  const response = await axios.post("http://localhost:8000/rooms/create", {
-			  name: name,
-			  password: meetingPassword || null
-		  });
+		  const token = localStorage.getItem("access_token");
 
-		  const { slug, host_token } = response.data;
+		  const response = await axios.post(
+			  "http://localhost:8000/rooms/create",
+			  {
+				  name: name,
+				  password: meetingPassword || null
+			  },
+			  {
+				  headers: {
+					  Authorization: `Bearer ${token}`
+				  }
+			  }
+		  );
 
-		  localStorage.setItem(`host_token_${slug}`, host_token);
+		  const { slug, host_id } = response.data;
+
+		  localStorage.setItem(`host_id_${slug}`, host_id);
 
 		  setMeetingCode(slug);
 		  setScreen("meet");
-	  } catch (error) {
-		  console.log("Validation Error Details:", error.response?.data);
-		  alert("Failed to create room: " + (error.response?.data?.detail[0]?.msg || "Unknown error"));
+	  } catch (err) {
+		  console.error("Error details:", err.response?.data);
+
+		  if (err.response?.status === 401) {
+			  alert("Please login first!");
+		  } else {
+			  alert("Failed to create room: " + (err.response?.data?.detail || "Unknown error"));
+		  }
 	  }
   }
 
