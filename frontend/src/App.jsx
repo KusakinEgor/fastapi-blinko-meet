@@ -48,7 +48,7 @@ function AppContent() {
 
 	  <Route
 		path="/login-user"
-		element={<LoginScreenUser onBack={() => navigate("/")} />}
+		element={<LoginScreenUser onBack={() => navigate("/")} onLogin={() => navigate("/profile")} />}
 	  />
 
 	  <Route
