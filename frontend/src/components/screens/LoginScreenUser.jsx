@@ -37,6 +37,10 @@ const LoginScreenUser = ({ onLogin, onBack }) => {
 
 		  if (!isRegister) {
 			  localStorage.setItem("access_token", data.access_token);
+			  onLogin();
+		  } else {
+			  alert("Registration success!");
+			  setIsRegister(false);
 		  }
 
 		  console.log("SUCCESS:", data);
