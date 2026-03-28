@@ -5,6 +5,8 @@ export default function LoginPanel({ visible, onClose }) {
     const [animate, setAnimate] = useState(false);
 	const navigate = useNavigate();
 
+	const isLoggedIn = !!localStorage.getItem("access_token");
+
     useEffect(() => {
         if (visible) {
             setTimeout(() => setAnimate(true), 10);
@@ -13,9 +15,14 @@ export default function LoginPanel({ visible, onClose }) {
         }
     }, [visible]);
 
-	const handleEmployeeLogin = () => {
+	const handleAction = () => {
 		onClose();
-		navigate("/login-user");
+
+		if (isLoggedIn) {
+			navigate("/profile");
+		} else {
+			navigate("/login-user")
+		}
 	};
 
     if (!visible) return null;
@@ -41,9 +48,41 @@ export default function LoginPanel({ visible, onClose }) {
                 `}
                 onClick={(e) => e.stopPropagation()} 
             >
-                <button onClick={handleEmployeeLogin} className="rounded-xl font-bold w-full p-4 bg-[#3f81fd]">
-                    Sign in as an user
-                </button>
+				{isLoggedIn ? (
+					<div className="flex flex-col h-full">
+						<div className="flex items-center gap-4 mb-8 p-2">
+							<div className="w-12 h-12 bg-zinc-800 rounded-full border border-white/10 flex items-center justify-center text-xl">
+								👤
+							</div>
+							<div>
+								<p className="text-xs text-zinc-500 uppercase font-bold tracking-widest">Account</p>
+								<p className="font-bold text-white">Auth</p>
+							</div>
+						</div>
+						
+						<button
+							onClick={handleAction}
+							className="rounded-xl font-bold w-full p-4 bg-zinc-900 border border-white/5 hover:bg-zinc-800 transition-colors"
+						>
+							Перейти в профиль
+						</button>
+
+						<button
+							onClick={() => {
+								localStorage.removeItem("access_token");
+								onClose();
+								navigate("/");
+							}}
+							className="mt-auto text-[10px] text-zinc-600 hover:text-red-500 uppercase font-bold tracking-[0.2em] transition-colors"
+						>
+							Log Out
+						</button>
+					</div>
+				) : (
+					<button onClick={handleAction} className="rounded-xl font-bold w-full p-4 bg-[#3f81fd]">
+						Sign in as an user
+					</button>
+				)}
             </div>
         </>
     );
