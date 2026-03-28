@@ -1,6 +1,7 @@
 use axum::{extract::State, routing::post, Json, Router};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use std::collections::HashMap;
 use tokio::sync::Mutex;
 use tower_http::cors::CorsLayer;
 use webrtc::api::media_engine::MediaEngine;
@@ -12,11 +13,12 @@ use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 #[derive(Serialize, Deserialize)]
 struct Sdp {
     sdp: String,
+    room_id: String,
 }
 
 struct AppState {
     api: API,
-    connections: Mutex<Vec<Arc<RTCPeerConnection>>>,
+    rooms: Mutex<HashMap<String, Vec<Arc<RTCPeerConnection>>>>,
 }
 
 #[tokio::main]
@@ -27,7 +29,7 @@ async fn main() {
 
     let shared_state = Arc::new(AppState {
         api,
-        connections: Mutex::new(Vec::new()),
+        rooms: Mutex::new(HashMap::new()),
     });
 
     let app = Router::new()
@@ -44,14 +46,16 @@ async fn handle_offer(
     State(state): State<Arc<AppState>>, 
     Json(offer): Json<Sdp>
 ) -> Json<Sdp> {
-    println!("Get new request on /offer");
+    let room_id_clone = offer.room_id.clone();
     let config = RTCConfiguration::default();
     
     let peer_connection = Arc::new(state.api.new_peer_connection(config).await.unwrap());
 
     peer_connection.on_track(Box::new(move |track, _, _| {
+        let room_id = room_id_clone.clone();
+
         Box::pin(async move {
-            println!("Get tracker: Kind={}, ID={}", track.kind(), track.id());
+            println!("Track in room {}: Kind={}, ID={}", room_id, track.kind(), track.id());
         })
     }));
 
@@ -61,11 +65,16 @@ async fn handle_offer(
     let answer = peer_connection.create_answer(None).await.unwrap();
     peer_connection.set_local_description(answer.clone()).await.unwrap();
 
-    let mut conns = state.connections.lock().await;
-    conns.push(Arc::clone(&peer_connection));
+    let mut rooms = state.rooms.lock().await;
+    rooms.entry(offer.room_id.clone())
+        .or_insert_with(Vec::new)
+        .push(Arc::clone(&peer_connection));
+
+    println!("User joined room: {}. Total in room: {}", offer.room_id, rooms.get(&offer.room_id).unwrap().len());
 
     Json(Sdp {
         sdp: answer.sdp,
+        room_id: offer.room_id,
     })
 }
 
