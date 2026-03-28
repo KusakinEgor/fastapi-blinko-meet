@@ -32,10 +32,10 @@ export default function JoinScreen({ onBack, onJoin }) {
 
 	  return () => {
 		  if (stream) {
-			  stream.getTracks.forEach((track) => track.stop());
+			  stream.getTracks().forEach((track) => track.stop());
 		  }
 	  };
-  }, [setupMedia, slug, stream, navigate])
+  }, [setupMedia, slug, navigate])
 
   useEffect(() => {
 	  if (stream && localVideoRef.current) {
@@ -49,6 +49,7 @@ export default function JoinScreen({ onBack, onJoin }) {
   const [meetingPassword, setMeetingPassword] = useState("");
   const [micMuted, setMicMuted] = useState(false);
   const [camMuted, setCamMuted] = useState(false);
+  const [remoteStreams, setRemoteStreams] = useState([]);
 
   const joinRoom = async () => {
 	  try {
@@ -71,40 +72,78 @@ export default function JoinScreen({ onBack, onJoin }) {
   };
 
   const handleJoinClick = async () => {
-	  if (!stream) return alert("Cam not ready!");
+	  if (!stream) {
+		  console.error("Stream is not initialized yet!");
+		  alert("Пожалуйста, подождите, пока камера включится");
+		  return; 
+	  }
 
 	  pc.current = new RTCPeerConnection({
 		  iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
 	  });
 
+	  const negotiate = async () => {
+		  try {
+			  const offer = await pc.current.createOffer();
+			  await pc.current.setLocalDescription(offer);
+
+			  await new Promise((resolve) => {
+				  if (pc.current.iceGatheringState === "complete") resolve();
+				  else {
+					  const check = () => {
+						  if (pc.current.iceGatheringState === "complete") {
+							  pc.current.removeEventListener("icegatheringstatechange", check);
+							  resolve();
+						  }
+					  }
+					  pc.current.addEventListener("icegatheringstatechange", check);
+				  }
+			  });
+
+			  const response = await fetch("http://127.0.0.1:3000/offer", {
+				  method: "POST",
+				  headers: { "Content-Type": "application/json" },
+				  body: JSON.stringify({
+					  sdp: pc.current.localDescription.sdp,
+					  room_id: slug
+				  })
+			  });
+
+			  const answer = await response.json();
+
+			  await pc.current.setRemoteDescription(
+				  new RTCSessionDescription({ type: "answer", sdp: answer.sdp })
+			  );
+			  console.log("WeRTC connection success!");
+		  } catch (e) {
+			  console.error("Error:", e);
+		  }
+	  };
+
+	  pc.current.ontrack = (event) => {
+		  console.log("Get new track by other participant!", event.streams[0]);
+
+		  setRemoteStreams((prev) => {
+			  if (prev.find(s => s.id === event.streams[0].id)) return prev;
+			  return [...prev, event.streams[0]];
+		  });
+	  };
+
+	  const socket = new WebSocket(`ws://127.0.0.1:3000/ws/${slug}`);
+
+	  socket.onmessage = async (event) => {
+		  if (event.data === "update_needed") {
+			  console.log("Server ask update list tracks...");
+			  await negotiate();
+		  }
+	  };
+
+	  pc.current.onnegotiationneeded = negotiate;
+
 	  stream.getTracks().forEach(track => pc.current.addTrack(track, stream));
 
-	  const offer = await pc.current.createOffer();
-	  await pc.current.setLocalDescription(offer);
-
-	  try {
-		  const response = await fetch("http://127.0.0.1:3000/offer", {
-			  method: "POST",
-			  headers: { "Content-Type": "application/json" },
-			  body: JSON.stringify({
-				  sdp: offer.sdp
-			  })
-		  });
-
-		  const answer = await response.json();
-
-		  await pc.current.setRemoteDescription(
-			  new RTCSessionDescription({ type: "answer", sdp: answer.sdp })
-		  );
-
-		  console.log("WebRTC set connection!");
-
-		  onJoin({ name, meetingCode, meetingPassword });
-
-	  } catch (err) {
-		  console.error("Error signal:", err);
-	  }
-  }
+	  onJoin({ name, meetingCode, meetingPassword });
+  };
 
   return (
     <div className="min-h-screen flex bg-black text-white relative overflow-hidden">
@@ -122,14 +161,28 @@ export default function JoinScreen({ onBack, onJoin }) {
         <div className="flex flex-col md:flex-row gap-6 flex-1">
 
           <div className="flex flex-col relative items-center justify-center bg-[#1c1c1c] p-8 rounded-2xl shadow-xl flex-1">
+			{remoteStreams.length > 0 && (
+					<video
+						autoPlay
+						playsInline
+						muted={false}
+						className="absolute top-4 right-4 w-64 h-48 border-2 border-blue-500 rounded-lg z-10"
+						ref={(node) => {
+							if (node) node.srcObject = remoteStreams[0];
+						}}
+					/>
+			)}
+
 			{stream ? (
-				<video
-					ref={localVideoRef}
-					autoPlay
-					playsInline
-					muted
-					className="w-full h-full object-cover rounded-xl"
-				/>
+				<>
+					<video
+						ref={localVideoRef}
+						autoPlay
+						playsInline
+						muted
+						className="w-full h-full object-cover rounded-xl"
+					/>
+				</>
 			) : (
 				<>
 					<div onClick={() => setIsSettingsOpen(true)} className="bg-[#4e4e4e] w-[40px] h-[30px] rounded-full flex justify-center items-center absolute top-2 right-2">
