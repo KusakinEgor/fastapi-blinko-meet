@@ -28,12 +28,12 @@ function AppContent() {
 
 	  <Route
 		path="/call/:slug"
-		element={<JoinScreen onBack={() => navigate("/")} />}
+		element={<JoinScreen onBack={() => navigate("/")} onJoin={(data) => console.log("User login:", data)} />}
 	  />
 
 	  <Route
 		path="/join"
-		element={<JoinScreen onBack={() => navigate("/")} />}
+		element={<JoinScreen onBack={() => navigate("/")} onJoin={(data) => console.log("Log In:", data)} />}
 	  />
 
 	  <Route
