@@ -8,9 +8,11 @@ import LoginScreen from "./components/screens/LoginScreen";
 import JoinScreen from "./components/screens/JoinScreen";
 import LoginScreenUser from "./components/screens/LoginScreenUser";
 import UserProfile from "./components/screens/UserProfile";
+import MeetRoom from "./components/screens/MeetRoom";
 
 function AppContent() {
   const navigate = useNavigate();
+  const [localStream, setLocalStream] = useState(null);
 
   return (
 	<Routes>
@@ -27,8 +29,19 @@ function AppContent() {
 	  />
 
 	  <Route
+		path="/meet-room/:slug"
+		element={<MeetRoom localStream={localStream} />}
+	  />
+
+	  <Route
 		path="/call/:slug"
-		element={<JoinScreen onBack={() => navigate("/")} onJoin={(data) => console.log("User login:", data)} />}
+		element={<JoinScreen 
+			onBack={() => navigate("/")} 
+			onJoin={(data) => {
+				console.log("User login:", data);
+				setLocalStream(data.stream);
+				navigate(`/meet-room/${data.slug}`);
+			}} />}
 	  />
 
 	  <Route
