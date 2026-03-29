@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import InviteModal from "../ui/InviteModal";
+import { useParams } from "react-router-dom";
 
-export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
+export default function MeetRoom({ name, meetingTitle, localStream, onBack }) {
+  const { slug } = useParams();
   const [seconds, setSeconds] = useState(0);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
@@ -9,6 +11,7 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
   const [showMore, setShowMore] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [screenStream, setScreenStream] = useState(null);
+  const [remoteStreams, setRemoteStreams] = useState([]);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
@@ -20,7 +23,14 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
 	  return !!savedToken;
   });
 
+  const pc = useRef(null);
+  const pcCreated = useRef(false);
+  const isNegotiating = useRef(false);
+  const socket = useRef(null);
   const videoRef = useRef(null);
+  const localVideoRef = useRef(null);
+  const remoteVideoRef = useRef(null);
+  const [userId] = useState(() => Math.random().toString(36).substring(7));
 
   useEffect(() => {
 	  const createRoom = async () => {
@@ -74,6 +84,123 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
 		  }
 	  }
   };
+
+  useEffect(() => {
+	  console.log("stream:", localStream);
+	  if (localStream && localVideoRef.current) {
+		  localVideoRef.current.srcObject = localStream;
+	  }
+  }, [localStream]);
+
+  const negotiate = useCallback(async () => {
+	  if (!pc.current || pc.current.signalingState === "closed" || isNegotiating.current) return;
+
+	  try {
+		  isNegotiating.current = true;
+		  console.log("WebRTC: Negotiating...");
+
+		  const offer = await pc.current.createOffer();
+		  await pc.current.setLocalDescription(offer);
+
+		  const response = await fetch("http://127.0.0.1:3000/offer", {
+			  method: "POST",
+			  headers: { "Content-Type": "application/json" },
+			  body: JSON.stringify({
+				  sdp: pc.current.localDescription.sdp,
+				  room_id: slug,
+				  user_id: userId
+			  })
+		  });
+
+		  const answer = await response.json();
+
+		  if (pc.current && pc.current.signalingState === "have-local-offer") {
+			  await pc.current.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: answer.sdp }));
+			  console.log("WebRTC: Remote description set!");
+		  }
+	  } catch (e) {
+		  console.error("WebRTC: Negotiation failed", e);
+	  } finally {
+		  isNegotiating.current = false;
+	  }
+  }, [slug, userId]);
+
+  useEffect(() => {
+	  if (!localStream || !slug || pc.current) return;
+
+	  console.log("WebRTC: Initializing...");
+
+	  const peer = new RTCPeerConnection({
+		  iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+	  });
+
+	  localStream.getTracks().forEach(track => {
+		  peer.addTrack(track, localStream);
+	  });
+
+	  peer.ontrack = (event) => {
+		  console.log("WebRTC: Received remote track", event.track.kind);
+		  const stream = event.streams[0];
+		  if (stream) {
+			  setRemoteStreams(prev => {
+				  if (prev.find(s => s.id === stream.id)) return prev;
+				  return [...prev, stream];
+			  });
+		  }
+	  };
+
+	  peer.onnegotiationneeded = () => {
+		  negotiate();
+	  };
+
+	  pc.current = peer;
+
+	  const ws = new WebSocket(`ws://127.0.0.1:3000/ws/${slug}/${userId}`);
+
+	  ws.onmessage = async (e) => {
+		  if (e.data === "update_needed") {
+			  console.log("Signal: Server requested update");
+			  await negotiate();
+		  } else {
+			  try {
+				  const data = JSON.parse(e.data);
+				  if (data.candidate && pc.current) {
+					  await pc.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+				  }
+			  } catch (err) {
+				  console.error("what:", err);
+			  }
+		  }
+	  };
+
+	  ws.onopen = () => {
+		  console.log("Signal: WS Connected");
+		  negotiate();
+	  };
+
+	  socket.current = ws;
+
+	  return () => {
+		  console.log("Cleaning up WebRTC...");
+		  peer.close();
+		  ws.close();
+		  pc.current = null;
+		  socket.current = null;
+	  };
+  }, [localStream, slug, userId, negotiate]);
+
+  useEffect(() => {
+	  if (remoteVideoRef.current && remoteStreams.length > 0) {
+		  console.log("Remote stream tracks:", remoteStreams[0].getTracks());
+		  remoteVideoRef.current.srcObject = remoteStreams[0];
+
+		  remoteVideoRef.current.onloadedmetadata = () => {
+			  console.log("PLAYING REMOTE VIDEO NOW");
+			  remoteVideoRef.current.play().catch(e => console.error("Auto-play blocked:", e));
+		  };
+	  }
+  }, [remoteStreams]);
+
 
   useEffect(() => {
 	  if (videoRef.current && screenStream) {
@@ -230,6 +357,20 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
 						ref={videoRef}
 						className="w-full h-full object-contain rounded-xl"
 					/>
+				) : remoteStreams.length > 0 ? (
+					remoteStreams.map((stream) => {
+						<video
+							key={stream.id}
+							autoPlay
+							muted={true}
+							ref={(el) => {
+								if (el && el.srcObject !== stream) {
+									el.srcObject = stream;
+								}
+							}}
+							className="w-full h-full object-contain rounded-xl"
+						/>
+					})
 				) : (
 					<div>
 						<span className="font-bold text-[30px] text-[#999595]">Руководитель отдела Python-разработки</span>
@@ -237,14 +378,24 @@ export default function MeetRoom({ name, meetingTitle, slug, onBack }) {
 				)}
             </div>
             <div className="bg-[#171717] w-full h-[200px] min-h-0 rounded-xl flex items-center relative">
-                <div className="flex">
-                    <svg width="24px" viewBox="0 0 24 24" fill="none" className="absolute bottom-2 left-2">
-                        <path d="M11.9999 2C10.0669 2 8.49994 3.67893 8.49994 5.75V11.75C8.49994 12.2471 8.59022 12.7216 8.75416 13.1557L7.45127 14.4586C7.08164 13.8449 6.83854 13.157 6.74353 12.4353C6.68946 12.0246 6.31272 11.7356 5.90205 11.7896C5.49138 11.8437 5.2023 12.2204 5.25636 12.6311C5.39487 13.6832 5.77814 14.6793 6.3658 15.5441L2.46967 19.4402C2.17678 19.7331 2.17678 20.208 2.46967 20.5009C2.76256 20.7938 3.23744 20.7938 3.53033 20.5009L7.34482 16.6864C7.34477 16.6864 7.34487 16.6864 7.34482 16.6864L8.40645 15.625C8.4064 15.625 8.40649 15.6251 8.40645 15.625L9.57605 14.4552C9.57601 14.4551 9.57609 14.4552 9.57605 14.4552L20.5009 3.53033C20.7938 3.23744 20.7938 2.76256 20.5009 2.46967C20.208 2.17678 19.7331 2.17678 19.4402 2.46967L15.4999 6.40996V5.75C15.4999 3.67893 13.9329 2 11.9999 2Z" fill="red"></path>
-                        <path d="M9.67204 16.4808L8.56313 17.5897C9.3702 18.0576 10.2676 18.3542 11.1986 18.4583V20.75C11.1986 21.1642 11.5344 21.5 11.9486 21.5C12.3628 21.5 12.6986 21.1642 12.6986 20.75V18.4583C14.0641 18.3056 15.3572 17.7388 16.3992 16.825C17.6304 15.7452 18.4271 14.2547 18.6409 12.6311C18.6949 12.2204 18.4058 11.8437 17.9952 11.7896C17.5845 11.7356 17.2078 12.0246 17.1537 12.4353C16.9875 13.6981 16.3678 14.8574 15.4102 15.6972C14.4526 16.537 13.2223 17 11.9486 17C11.1543 17 10.3769 16.82 9.67204 16.4808Z" fill="red"></path>
-                        <path d="M15.4999 10.6529L10.8572 15.2956C11.2153 15.4281 11.5998 15.5 11.9999 15.5C13.9329 15.5 15.4999 13.8211 15.4999 11.75V10.6529Z" fill="red"></path>
-                    </svg>
-                    <span className="text-[#999595] text-[20px] font-bold text-center">Руководитель отдела Python-разработки</span>
-                </div>
+				{localStream ? (
+					<video
+						ref={localVideoRef}
+						autoPlay
+						playsInline
+						muted
+						className="w-full h-full object-cover rounded-xl"
+					/>
+				) : (
+					<div className="flex flex-col items-center justify-center h-full w-full">
+						<svg width="24px" viewBox="0 0 24 24" fill="none" className="absolute bottom-2 left-2">
+							<path d="M11.9999 2C10.0669 2 8.49994 3.67893 8.49994 5.75V11.75C8.49994 12.2471 8.59022 12.7216 8.75416 13.1557L7.45127 14.4586C7.08164 13.8449 6.83854 13.157 6.74353 12.4353C6.68946 12.0246 6.31272 11.7356 5.90205 11.7896C5.49138 11.8437 5.2023 12.2204 5.25636 12.6311C5.39487 13.6832 5.77814 14.6793 6.3658 15.5441L2.46967 19.4402C2.17678 19.7331 2.17678 20.208 2.46967 20.5009C2.76256 20.7938 3.23744 20.7938 3.53033 20.5009L7.34482 16.6864C7.34477 16.6864 7.34487 16.6864 7.34482 16.6864L8.40645 15.625C8.4064 15.625 8.40649 15.6251 8.40645 15.625L9.57605 14.4552C9.57601 14.4551 9.57609 14.4552 9.57605 14.4552L20.5009 3.53033C20.7938 3.23744 20.7938 2.76256 20.5009 2.46967C20.208 2.17678 19.7331 2.17678 19.4402 2.46967L15.4999 6.40996V5.75C15.4999 3.67893 13.9329 2 11.9999 2Z" fill="red"></path>
+							<path d="M9.67204 16.4808L8.56313 17.5897C9.3702 18.0576 10.2676 18.3542 11.1986 18.4583V20.75C11.1986 21.1642 11.5344 21.5 11.9486 21.5C12.3628 21.5 12.6986 21.1642 12.6986 20.75V18.4583C14.0641 18.3056 15.3572 17.7388 16.3992 16.825C17.6304 15.7452 18.4271 14.2547 18.6409 12.6311C18.6949 12.2204 18.4058 11.8437 17.9952 11.7896C17.5845 11.7356 17.2078 12.0246 17.1537 12.4353C16.9875 13.6981 16.3678 14.8574 15.4102 15.6972C14.4526 16.537 13.2223 17 11.9486 17C11.1543 17 10.3769 16.82 9.67204 16.4808Z" fill="red"></path>
+							<path d="M15.4999 10.6529L10.8572 15.2956C11.2153 15.4281 11.5998 15.5 11.9999 15.5C13.9329 15.5 15.4999 13.8211 15.4999 11.75V10.6529Z" fill="red"></path>
+						</svg>
+						<span className="text-[#999595] text-[20px] font-bold text-center">Руководитель отдела Python-разработки</span>
+					</div>
+				)}
             </div> 
         </main>
 
