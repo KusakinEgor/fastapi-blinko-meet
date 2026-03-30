@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import InviteModal from "../ui/InviteModal";
 import { useParams } from "react-router-dom";
+import { useWebRTC } from "../../webrtc/useWebRTC";
 
 export default function MeetRoom({ name, meetingTitle, localStream, onBack }) {
   const { slug } = useParams();
@@ -11,7 +12,6 @@ export default function MeetRoom({ name, meetingTitle, localStream, onBack }) {
   const [showMore, setShowMore] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [screenStream, setScreenStream] = useState(null);
-  const [remoteStreams, setRemoteStreams] = useState([]);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
@@ -23,10 +23,8 @@ export default function MeetRoom({ name, meetingTitle, localStream, onBack }) {
 	  return !!savedToken;
   });
 
-  const pc = useRef(null);
   const pcCreated = useRef(false);
   const isNegotiating = useRef(false);
-  const socket = useRef(null);
   const videoRef = useRef(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -85,122 +83,18 @@ export default function MeetRoom({ name, meetingTitle, localStream, onBack }) {
 	  }
   };
 
+  const { remoteStreams } = useWebRTC({
+	  localStream,
+	  roomId: slug,
+	  userId
+  })
+
   useEffect(() => {
 	  console.log("stream:", localStream);
 	  if (localStream && localVideoRef.current) {
 		  localVideoRef.current.srcObject = localStream;
 	  }
   }, [localStream]);
-
-  const negotiate = useCallback(async () => {
-	  if (!pc.current || pc.current.signalingState === "closed" || isNegotiating.current) return;
-
-	  try {
-		  isNegotiating.current = true;
-		  console.log("WebRTC: Negotiating...");
-
-		  const offer = await pc.current.createOffer();
-		  await pc.current.setLocalDescription(offer);
-
-		  const response = await fetch("http://127.0.0.1:3000/offer", {
-			  method: "POST",
-			  headers: { "Content-Type": "application/json" },
-			  body: JSON.stringify({
-				  sdp: pc.current.localDescription.sdp,
-				  room_id: slug,
-				  user_id: userId
-			  })
-		  });
-
-		  const answer = await response.json();
-
-		  if (pc.current && pc.current.signalingState === "have-local-offer") {
-			  await pc.current.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: answer.sdp }));
-			  console.log("WebRTC: Remote description set!");
-		  }
-	  } catch (e) {
-		  console.error("WebRTC: Negotiation failed", e);
-	  } finally {
-		  isNegotiating.current = false;
-	  }
-  }, [slug, userId]);
-
-  useEffect(() => {
-	  if (!localStream || !slug || pc.current) return;
-
-	  console.log("WebRTC: Initializing...");
-
-	  const peer = new RTCPeerConnection({
-		  iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-	  });
-
-	  localStream.getTracks().forEach(track => {
-		  peer.addTrack(track, localStream);
-	  });
-
-	  peer.ontrack = (event) => {
-		  console.log("WebRTC: Received remote track", event.track.kind);
-		  const stream = event.streams[0];
-		  if (stream) {
-			  setRemoteStreams(prev => {
-				  if (prev.find(s => s.id === stream.id)) return prev;
-				  return [...prev, stream];
-			  });
-		  }
-	  };
-
-	  peer.onnegotiationneeded = () => {
-		  negotiate();
-	  };
-
-	  pc.current = peer;
-
-	  const ws = new WebSocket(`ws://127.0.0.1:3000/ws/${slug}/${userId}`);
-
-	  ws.onmessage = async (e) => {
-		  if (e.data === "update_needed") {
-			  console.log("Signal: Server requested update");
-			  await negotiate();
-		  } else {
-			  try {
-				  const data = JSON.parse(e.data);
-				  if (data.candidate && pc.current) {
-					  await pc.current.addIceCandidate(new RTCIceCandidate(data.candidate));
-				  }
-			  } catch (err) {
-				  console.error("what:", err);
-			  }
-		  }
-	  };
-
-	  ws.onopen = () => {
-		  console.log("Signal: WS Connected");
-		  negotiate();
-	  };
-
-	  socket.current = ws;
-
-	  return () => {
-		  console.log("Cleaning up WebRTC...");
-		  peer.close();
-		  ws.close();
-		  pc.current = null;
-		  socket.current = null;
-	  };
-  }, [localStream, slug, userId, negotiate]);
-
-  useEffect(() => {
-	  if (remoteVideoRef.current && remoteStreams.length > 0) {
-		  console.log("Remote stream tracks:", remoteStreams[0].getTracks());
-		  remoteVideoRef.current.srcObject = remoteStreams[0];
-
-		  remoteVideoRef.current.onloadedmetadata = () => {
-			  console.log("PLAYING REMOTE VIDEO NOW");
-			  remoteVideoRef.current.play().catch(e => console.error("Auto-play blocked:", e));
-		  };
-	  }
-  }, [remoteStreams]);
-
 
   useEffect(() => {
 	  if (videoRef.current && screenStream) {
@@ -357,20 +251,18 @@ export default function MeetRoom({ name, meetingTitle, localStream, onBack }) {
 						ref={videoRef}
 						className="w-full h-full object-contain rounded-xl"
 					/>
-				) : remoteStreams.length > 0 ? (
-					remoteStreams.map((stream) => {
+				) : Array.isArray(remoteStreams) && remoteStreams.length > 0 ? (
+					remoteStreams.map((stream, index) => (
 						<video
-							key={stream.id}
+							key={stream.id || index}
 							autoPlay
-							muted={true}
+							playsInline
 							ref={(el) => {
-								if (el && el.srcObject !== stream) {
-									el.srcObject = stream;
-								}
+								if (el) el.srcObject = stream;
 							}}
 							className="w-full h-full object-contain rounded-xl"
 						/>
-					})
+					))
 				) : (
 					<div>
 						<span className="font-bold text-[30px] text-[#999595]">Руководитель отдела Python-разработки</span>
