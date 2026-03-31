@@ -56,7 +56,7 @@ export default function JoinScreen({ onBack, onJoin }) {
 		  return;
 	  }
 
-	  onJoin({ name, meetingCode, meetingPassword, stream, slug });
+	  onJoin({ name, meetingCode, meetingPassword, slug });
 
 	  navigate(`/meet-room/${slug}`);
   };
