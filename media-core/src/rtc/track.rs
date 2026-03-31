@@ -28,6 +28,7 @@ pub fn setup_on_track(
 
         Box::pin(async move {
             println!("Creating local track");
+            println!("TRACK RECEIVED: {:?}", track.kind());
 
             let local_track = Arc::new(TrackLocalStaticRTP::new(
                 track.codec().capability,

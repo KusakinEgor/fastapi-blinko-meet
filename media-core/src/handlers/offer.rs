@@ -8,6 +8,11 @@ use crate::rtc::peer::create_peer;
 use crate::rtc::track::setup_on_track;
 
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
+use webrtc::rtp_transceiver::{
+    rtp_codec::RTPCodecType,
+    rtp_transceiver_direction::RTCRtpTransceiverDirection,
+    RTCRtpTransceiverInit,
+};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Sdp {
@@ -87,6 +92,7 @@ pub async fn handle_offer(
     println!("Creating answer");
 
     let answer = pc.create_answer(None).await.unwrap();
+    println!("ANSWER SDP:\n{}", answer.sdp);
     pc.set_local_description(answer.clone()).await.unwrap();
 
     println!("ANSWER ready");
