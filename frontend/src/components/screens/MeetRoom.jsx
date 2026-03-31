@@ -3,7 +3,7 @@ import InviteModal from "../ui/InviteModal";
 import { useParams } from "react-router-dom";
 import { useWebRTC } from "../../webrtc/useWebRTC";
 
-export default function MeetRoom({ name, meetingTitle, localStream, onBack }) {
+export default function MeetRoom({ name, meetingTitle, onBack }) {
   const { slug } = useParams();
   const [seconds, setSeconds] = useState(0);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -12,6 +12,7 @@ export default function MeetRoom({ name, meetingTitle, localStream, onBack }) {
   const [showMore, setShowMore] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [screenStream, setScreenStream] = useState(null);
+  const [localStream, setLocalStream] = useState(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
@@ -26,8 +27,8 @@ export default function MeetRoom({ name, meetingTitle, localStream, onBack }) {
   const pcCreated = useRef(false);
   const isNegotiating = useRef(false);
   const videoRef = useRef(null);
+  const videoRefs = useRef({});
   const localVideoRef = useRef(null);
-  const remoteVideoRef = useRef(null);
   const [userId] = useState(() => Math.random().toString(36).substring(7));
 
   useEffect(() => {
@@ -83,6 +84,26 @@ export default function MeetRoom({ name, meetingTitle, localStream, onBack }) {
 	  }
   };
 
+  const setupMedia = useCallback(async () => {
+	  try {
+		  const userStream = await navigator.mediaDevices.getUserMedia({
+			  video: true,
+			  audio: true
+		  });
+
+		  console.log(userStream.getVideoTracks());
+
+		  setLocalStream(userStream);
+	  } catch (err) {
+		  console.error("Error accessing camera:", err);
+		  setLocalStream(null);
+	  }
+  }, []);
+  
+  useEffect(() => {
+	  setupMedia();
+  }, [setupMedia])
+
   const { remoteStreams } = useWebRTC({
 	  localStream,
 	  roomId: slug,
@@ -103,6 +124,36 @@ export default function MeetRoom({ name, meetingTitle, localStream, onBack }) {
 		  }
 	  }
   }, [screenStream]);
+
+  useEffect(() => {
+	  remoteStreams.forEach((stream, index) => {
+		  const video = videoRefs.current[index];
+
+		  if (!video) {
+			  console.log("no video");
+			  return;
+		  }
+
+		  if (video.srcObject !== stream) {
+			  video.srcObject = stream;
+
+			  video.onloadedmetadata = () => {
+				  video.play().catch(err => {
+					  console.log("play error:", err);
+				  });
+			  };
+		  }
+	  });
+  }, [remoteStreams]);
+
+  useEffect(() => {
+	  remoteStreams.forEach((stream, i) => {
+		console.log("---- STREAM", i);
+	  	console.log("tracks:", stream.getTracks());
+	  	console.log("video:", stream.getVideoTracks());
+	  	console.log("audio:", stream.getAudioTracks());
+	  });
+  }, [remoteStreams]);
 
   const EMOJIS = ['❤️', '👍', '😂', '🎉', '🔥', '👏', '🤝', '🙏', '🤔', '😢', '👎', '😮'];
 
@@ -254,11 +305,14 @@ export default function MeetRoom({ name, meetingTitle, localStream, onBack }) {
 				) : Array.isArray(remoteStreams) && remoteStreams.length > 0 ? (
 					remoteStreams.map((stream, index) => (
 						<video
-							key={stream.id || index}
+							key={index}
 							autoPlay
 							playsInline
+							muted
 							ref={(el) => {
-								if (el) el.srcObject = stream;
+								if (el) {
+									videoRefs.current[index] = el;
+								}
 							}}
 							className="w-full h-full object-contain rounded-xl"
 						/>
