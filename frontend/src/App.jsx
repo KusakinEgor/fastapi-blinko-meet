@@ -12,7 +12,6 @@ import MeetRoom from "./components/screens/MeetRoom";
 
 function AppContent() {
   const navigate = useNavigate();
-  const [localStream, setLocalStream] = useState(null);
 
   return (
 	<Routes>
@@ -30,7 +29,7 @@ function AppContent() {
 
 	  <Route
 		path="/meet-room/:slug"
-		element={<MeetRoom localStream={localStream} />}
+		element={<MeetRoom />}
 	  />
 
 	  <Route
@@ -39,7 +38,6 @@ function AppContent() {
 			onBack={() => navigate("/")} 
 			onJoin={(data) => {
 				console.log("User login:", data);
-				setLocalStream(data.stream);
 				navigate(`/meet-room/${data.slug}`);
 			}} />}
 	  />
