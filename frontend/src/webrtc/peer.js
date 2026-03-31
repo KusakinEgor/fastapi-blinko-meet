@@ -10,8 +10,11 @@ export function createPeer({ localStream, onTrack, onIceCandidate }) {
 	});
 
 	pc.ontrack = (event) => {
-		const stream = event.streams[0];
-		onTrack(stream);
+		console.log("ON TRACK FIRED");
+
+		if (event.streams && event.streams[0]) {
+			onTrack(event.streams[0]);
+		}
 	};
 
 	pc.onicecandidate = (event) => {

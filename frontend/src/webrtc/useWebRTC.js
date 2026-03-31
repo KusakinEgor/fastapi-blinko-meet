@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPeer } from "./peer";
 import { createSignaling, sendOffer } from "./signaling";
 
-export function useWebRTC({ roomId, userId }) {
-	const [localStream, setLocalStream] = useState(null);
+export function useWebRTC({ localStream, roomId, userId }) {
 	const pc = useRef(null);
 	const socket = useRef(null);
 	const [remoteStreams, setRemoteStreams] = useState([]); useEffect(() => {
@@ -13,6 +12,8 @@ export function useWebRTC({ roomId, userId }) {
 			localStream,
 
 			onTrack: (stream) => {
+				console.log("GOT REMOTE STREAM", stream.id);
+
 				setRemoteStreams(prev => {
 					if (prev.find(s => s.id === stream.id)) return prev;
 					return [...prev, stream];
