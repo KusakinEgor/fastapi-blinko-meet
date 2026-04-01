@@ -15,7 +15,7 @@ pub fn setup_on_track(
     user_id: String,
     participant: Arc<Participant>,
 ) {
-    pc.on_track(Box::new(move |track, _receiver, _| {
+    pc.on_track(Box::new(move |track, receiver, _| {
         println!("/. TRACK RECEIVED ./");
         println!("kind: {:?}", track.kind());
         println!("id: {}", track.id());
@@ -68,6 +68,26 @@ pub fn setup_on_track(
                     });
                 }
             }
+
+            let receiver = receiver.clone();
+
+            tokio::spawn(async move {
+                println!("Starting RTCP reader");
+
+                loop {
+                    match receiver.read_rtcp().await {
+                        Ok((pkts, _)) => {
+                            for pkt in pkts {
+                                println!("RTCP packet: {:?}", pkt);
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("RTCP read error: {:?}. Stopping reader.", e);
+                            break;
+                        }
+                    }
+                }
+            });
 
             println!("Start RTP forwarding");
 
