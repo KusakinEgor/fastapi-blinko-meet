@@ -5,7 +5,10 @@ import { createSignaling, sendOffer } from "./signaling";
 export function useWebRTC({ localStream, roomId, userId }) {
 	const pc = useRef(null);
 	const socket = useRef(null);
-	const [remoteStreams, setRemoteStreams] = useState([]); useEffect(() => {
+	const iceQueue = useRef([]);
+	const [remoteStreams, setRemoteStreams] = useState([]); 
+
+	useEffect(() => {
 		if (!localStream) return;
 
 		const peer = createPeer({
@@ -21,10 +24,14 @@ export function useWebRTC({ localStream, roomId, userId }) {
 			},
 
 			onIceCandidate: (candidate) => {
-				socket.current?.send(JSON.stringify({
-					type: "candidate",
-					candidate
-				}));
+				const message = JSON.stringify({ type: "candidate", candidate });
+
+				if (socket.current?.readyState === WebSocket.OPEN) {
+					socket.current.send(message);
+				} else {
+					console.warn("WS not open, candidate skipped");
+					iceQueue.current.push(message);
+				}
 			}
 		});
 
@@ -56,6 +63,9 @@ export function useWebRTC({ localStream, roomId, userId }) {
 			},
 
 			onOpen: async () => {
+				iceQueue.current.forEach(msg => ws.send(msg));
+				iceQueue.current = [];
+
 				await sendOffer({ pc: peer, roomId, userId });
 			}
 		});

@@ -130,21 +130,24 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 		  const video = videoRefs.current[index];
 
 		  if (!video) {
-			  console.log("no video");
+			  console.log("no video", index);
 			  return;
 		  }
 
 		  if (video.srcObject !== stream) {
+			  console.log("Assigned stream to video element", index);
 			  video.srcObject = stream;
 
 			  video.onloadedmetadata = () => {
-				  video.play().catch(err => {
-					  console.log("play error:", err);
-				  });
+				  setTimeout(() => {
+					  video.play().catch(err => {
+						  console.log("play error:", err);
+					  });
+				  }, 100);
 			  };
 		  }
 	  });
-  }, [remoteStreams]);
+  }, [remoteStreams, remoteStreams.length]);
 
   useEffect(() => {
 	  remoteStreams.forEach((stream, i) => {
@@ -294,7 +297,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 				</div>
 			)}
 
-            <div className="bg-[#171717] w-full h-full rounded-xl flex items-center justify-center">
+            <div className="bg-[#171717] w-full h-full rounded-xl flex items-center justify-center relative overflow-hidden">
 				{screenStream ? (
 					<video
 						autoPlay
@@ -305,16 +308,17 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 				) : Array.isArray(remoteStreams) && remoteStreams.length > 0 ? (
 					remoteStreams.map((stream, index) => (
 						<video
-							key={index}
+							key={stream.id}
 							autoPlay
 							playsInline
 							muted
 							ref={(el) => {
-								if (el) {
+								if (el && stream) {
 									videoRefs.current[index] = el;
 								}
 							}}
-							className="w-full h-full object-contain rounded-xl"
+							className="absolute inset-0 w-full h-full object-contain rounded-xl border-4 border-red-500 bg-black"
+							style={{ maxWidth: '100%', maxHeight: '100%' }}
 						/>
 					))
 				) : (

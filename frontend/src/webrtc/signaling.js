@@ -39,6 +39,8 @@ export async function sendOffer({ pc, roomId, userId }) {
 
 	const answer = await res.json()
 
+	//const fixedSdp = answer.sdp.replace(/a=recvonly/g, 'a=sendrecv');
+
 	await pc.setRemoteDescription({
 		type: "answer",
 		sdp: answer.sdp
@@ -49,4 +51,9 @@ export async function sendOffer({ pc, roomId, userId }) {
 			? "remote has video"
 			: "remote no video"
 	);
+
+	console.log(pc.getTransceivers().map(t => ({
+		kind: t.receiver.track.kind,
+		currentDirection: t.currentDirection // Должно быть "sendrecv" или "recvonly"
+	})))
 }
