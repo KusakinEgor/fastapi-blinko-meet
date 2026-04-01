@@ -43,6 +43,14 @@ pub async fn handle_offer(
 
         let pc = create_peer(&state.api).await;
 
+        pc.add_transceiver_from_kind(
+            RTPCodecType::Video,
+            Some(RTCRtpTransceiverInit {
+                direction: RTCRtpTransceiverDirection::Recvonly,
+                send_encodings: vec![],
+            }),
+        ).await.unwrap();
+
         let (tx, _) = broadcast::channel(64);
 
         let new_p = Arc::new(Participant {
