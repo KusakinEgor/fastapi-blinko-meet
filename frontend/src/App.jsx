@@ -9,6 +9,7 @@ import JoinScreen from "./components/screens/JoinScreen";
 import LoginScreenUser from "./components/screens/LoginScreenUser";
 import UserProfile from "./components/screens/UserProfile";
 import MeetRoom from "./components/screens/MeetRoom";
+import EmojiGuide from "./components/chat/EmojiGuide";
 
 function AppContent() {
   const navigate = useNavigate();
@@ -65,6 +66,11 @@ function AppContent() {
 	  <Route
 		path="/profile"
 		element={<UserProfile />}
+	  />
+
+	  <Route
+		path="/emoji-guide"
+		element={<EmojiGuide />}
 	  />
 	</Routes>
   );
