@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import InviteModal from "../ui/InviteModal";
 import { useParams } from "react-router-dom";
 import { useWebRTC } from "../../webrtc/useWebRTC";
+import { parseMessage } from "../../lib/chat/parseMessage.jsx";
 
 export default function MeetRoom({ name, meetingTitle, onBack }) {
   const { slug } = useParams();
@@ -254,7 +255,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 									) : (
 										messages.map((msg) => (
 											<div key={msg.id} className="self-end bg-[#262626] text-white p-3 rounded-2xl rounded-tr-none max-w-[80%] ml-auto shadow-sm">
-												<p className="text-sm leading-relaxed break-words">{msg.text}</p>
+												<p className="text-sm leading-relaxed break-words">{parseMessage(msg.text)}</p>
 												<span className="block text-[10px] text-gray-500 text-right mt-1">
 													{msg.time}
 												</span>
