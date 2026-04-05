@@ -186,9 +186,20 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 
   useEffect(() => {
     console.log(isHost ? "Input like a host": "Input like a guest");
+	
+	const storageKey = `timer_start_${slug}`;
+	let startTime = localStorage.getItem(storageKey);
+
+	if (!startTime) {
+		startTime = Date.now();
+		localStorage.setItem(storageKey, startTime);
+	}
 
     const interval = setInterval(() => {
-        setSeconds(prev => prev + 1)
+		const now = Date.now();
+		const diffInSeconds = Math.floor((now - parseInt(startTime)) / 1000);
+
+		setSeconds(diffInSeconds);
     }, 1000);
 
     return () => clearInterval(interval);
