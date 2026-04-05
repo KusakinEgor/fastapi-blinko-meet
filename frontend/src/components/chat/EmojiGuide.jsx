@@ -1,11 +1,14 @@
 import React from "react";
 import { EMOJI_CATEGORIES } from "../../lib/chat/emojiMap";
+import { useNavigate } from "react-router-dom";
 
-export default function EmojiGuide({ onSelect, onClose }) {
+export default function EmojiGuide({ onSelect }) {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#121212] p-6 relative">
       <button
-        onClick={onClose}
+        onClick={() => navigate("/")}
         className="fixed top-4 left-4 z-50 flex items-center justify-center w-10 h-10 rounded-full bg-[#2a2a2a] shadow-md hover:bg-[#3a3a3a] transition-all duration-200 transform hover:scale-110"
         title="Back"
       >
