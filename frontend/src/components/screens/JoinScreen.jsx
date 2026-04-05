@@ -84,7 +84,8 @@ export default function JoinScreen({ onBack, onJoin }) {
 						autoPlay
 						playsInline
 						muted
-						className="w-full h-full object-cover rounded-xl"
+						className="absolute inset-0 w-full h-full object-cover rounded-xl"
+						style={{ maxWidth: '100%', maxHeight: '100%' }}
 					/>
 				</>
 			) : (
