@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 import Sidebar from "../ui/SideBar";
 import MeetRoom from "./MeetRoom";
 import SettingsModal from "../ui/SettingsModal";
 
 export default function CreateRoomScreen({ onBack, onJoin }) {
+  const navigate = useNavigate();
   const localVideoRef = useRef(null);
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
@@ -125,12 +127,15 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
 			  }
 		  );
 
-		  const { slug, host_id } = response.data;
+		  const { slug, host_id, invite_link } = response.data;
 
 		  localStorage.setItem(`host_id_${slug}`, host_id);
+		  localStorage.setItem(`invite_link_${slug}`, invite_link);
+		  localStorage.setItem(`room_code_${slug}`, meetingCode);
+		  localStorage.setItem(`room_password_${slug}`, meetingPassword || "");
 
 		  setMeetingCode(slug);
-		  setScreen("meet");
+		  navigate(`/meet-room/${slug}`, { state: { inviteLink: invite_link } });
 	  } catch (err) {
 		  console.error("Error details:", err.response?.data);
 
@@ -164,7 +169,8 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
 					autoPlay
 					playsInline
 					muted
-					className={`w-full h-full object-cover rounded-xl ${camMuted ? 'hidden' : 'block'}`}
+					className={`absolute inset-0 w-full h-full object-cover rounded-xl ${camMuted ? 'hidden' : 'block'}`}
+					style={{ maxWidth: '100%', maxHeight: '100%' }}
 				/>
 			) : (
 				<>
