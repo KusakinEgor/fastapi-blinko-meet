@@ -3,7 +3,16 @@ import { useNavigate } from "react-router-dom";
 
 export default function LoginPanel({ visible, onClose }) {
     const [animate, setAnimate] = useState(false);
+	const [user, setUser] = useState(null);
 	const navigate = useNavigate();
+
+	useEffect(() => {
+		const stored = localStorage.getItem("user");
+
+		if (stored) {
+			setUser(JSON.parse(stored));
+		}
+	}, []);
 
 	const isLoggedIn = !!localStorage.getItem("access_token");
 
@@ -51,12 +60,24 @@ export default function LoginPanel({ visible, onClose }) {
 				{isLoggedIn ? (
 					<div className="flex flex-col h-full">
 						<div className="flex items-center gap-4 mb-8 p-2">
-							<div className="w-12 h-12 bg-zinc-800 rounded-full border border-white/10 flex items-center justify-center text-xl">
-								👤
-							</div>
+							{user?.avatarPreview ? (
+								<img
+									src={user.avatarPreview}
+									className="w-12 h-12 rounded-full object-cover border border-white/10"
+								/>
+							) : (
+								<div className="w-12 h-12 bg-zinc-800 rounded-full border border-white/10 flex items-center justify-center text-xl">
+									{user?.username?.charAt(0) || "👤"}
+								</div>
+							)}
+							
 							<div>
-								<p className="text-xs text-zinc-500 uppercase font-bold tracking-widest">Account</p>
-								<p className="font-bold text-white">Auth</p>
+								<p className="text-xs text-zinc-500 uppercase font-bold tracking-widest">
+									Account
+								</p>
+								<p className="font-bold text-white">
+									{user?.username || "Unknown"}
+								</p>
 							</div>
 						</div>
 						
