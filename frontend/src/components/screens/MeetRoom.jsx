@@ -19,7 +19,13 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   const [inputValue, setInputValue] = useState('');
   const [micMuted, setMicMuted] = useState(false);
   const [camMuted, setCamMuted] = useState(false);
-  const [meetingInfo, setMeetingInfo] = useState(null);
+
+  const [meetingInfo, setMeetingInfo] = useState({
+	  url: "",
+	  code: "",
+	  password: ""
+  });
+
   const [isHost, setIsHost] = useState(() => {
 	  const savedToken = localStorage.getItem(`host_token_${slug}`);
 	  return !!savedToken;
@@ -33,24 +39,16 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   const [userId] = useState(() => Math.random().toString(36).substring(7));
 
   useEffect(() => {
-	  const createRoom = async () => {
-		  const res = await fetch("http://localhost:8000/rooms/create", {
-			  method: "POST",
-			  headers: { "Content-Type": "application/json" },
-			  body: JSON.stringify({ name: meetingTitle, password: "1234" })
-		  });
+	  const invite = location.state?.inviteLink || localStorage.getItem(`invite_link_${slug}`);
+	  const code = localStorage.getItem(`room_code_${slug}`) || slug;
+	  const password = localStorage.getItem(`room_password_${slug}`) || "";
 
-		  const data = await res.json();
-
-		  setMeetingInfo({
-			  url: data.invite_link,
-			  code: data.slug,
-			  password: data.password
-		  });
-	  };
-
-	  createRoom();
-  }, []);
+	  setMeetingInfo({
+		  url: invite || "",
+		  code,
+		  password
+	  });
+  }, [slug, location.state]);
 
   const toggleTab = (tabName) => {
 	  setActiveTab(prev => (prev === tabName ? null : tabName));
@@ -329,7 +327,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 									videoRefs.current[index] = el;
 								}
 							}}
-							className="absolute inset-0 w-full h-full object-contain rounded-xl border-4 border-red-500 bg-black"
+							className="absolute inset-0 w-full h-full object-cover rounded-xl"
 							style={{ maxWidth: '100%', maxHeight: '100%' }}
 						/>
 					))
