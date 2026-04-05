@@ -78,6 +78,7 @@ pub fn setup_on_track(
                     match receiver.read_rtcp().await {
                         Ok((pkts, _)) => {
                             for pkt in pkts {
+                                println!("RTCP type: {}", pkt.header().packet_type);
                                 println!("RTCP packet: {:?}", pkt);
                             }
                         }
