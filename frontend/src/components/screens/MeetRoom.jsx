@@ -50,6 +50,26 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  });
   }, [slug, location.state]);
 
+  useEffect(() => {
+	  const handler = (e) => {
+		  const msg = e.detail;
+
+		  setMessages(prev => [
+			  ...prev,
+			  {
+				  id: Date.now(),
+				  text: msg.content,
+				  sender: msg.user_id,
+				  time: new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
+			  }
+		  ]);
+	  };
+
+	  window.addEventListener("chat_message", handler);
+
+	  return () => window.removeEventListener("chat_message", handler);
+  }, []);
+
   const toggleTab = (tabName) => {
 	  setActiveTab(prev => (prev === tabName ? null : tabName));
   };
@@ -62,14 +82,13 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  const text = inputValue.trim();
 	  if (!text) return;
 
-	  const newMessage = {
-		  id: Date.now(),
-		  text: text,
-		  sender: 'me',
-		  time: new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
-	  };
+	  if (ws && ws.readyState === WebSocket.OPEN) {
+		  ws.send(JSON.stringify({
+			  type: "chat_message",
+			  content: text
+		  }));
+	  }
 
-	  setMessages((prev) => [...prev, newMessage]);
 	  setInputValue('');
   };
 
@@ -103,7 +122,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  setupMedia();
   }, [setupMedia])
 
-  const { remoteStreams } = useWebRTC({
+  const { remoteStreams, ws } = useWebRTC({
 	  localStream,
 	  roomId: slug,
 	  userId
