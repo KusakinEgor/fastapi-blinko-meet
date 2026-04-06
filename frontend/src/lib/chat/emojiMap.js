@@ -17,5 +17,6 @@ export const EMOJI_CATEGORIES = {
     arch: { src: "/emojis/arch.png", alt: "arch" },
     nah: { src: "/emojis/nah.png", alt: "nah" },
     stup: { src: "/emojis/stup.png", alt: "stup" },
+	red: { src: "/emojis/red.webp", alt:"red" },
   },
 };
