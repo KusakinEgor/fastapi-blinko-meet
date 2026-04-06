@@ -60,6 +60,12 @@ export function useWebRTC({ localStream, roomId, userId }) {
 				if (data.type === "candidate") {
 					await peer.addIceCandidate(new RTCIceCandidate(data.candidate));
 				}
+
+				if (data.type === "chat_message") {
+					setRemoteStreams(prev => prev);
+
+					window.dispatchEvent(new CustomEvent("chat_message", { detail: data }));
+				}
 			},
 
 			onOpen: async () => {
@@ -78,5 +84,8 @@ export function useWebRTC({ localStream, roomId, userId }) {
 		};
 	}, [localStream, roomId, userId]);
 
-	return { remoteStreams };
+	return {
+		remoteStreams,
+		ws: socket.current
+	};
 }
