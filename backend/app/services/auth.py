@@ -1,4 +1,4 @@
-from app.core.security import hash_password, verify_password, create_access_token
+from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token
 from app.models.auth import Registration, Login
 from app.schemas.auth import User
 
@@ -43,5 +43,10 @@ async def login_user_service(db: AsyncSession, data: Login) -> dict:
         )
 
     token = create_access_token(user.id)
+    refresh_token = create_refresh_token(user.id)
 
-    return {"access_token": token, "token_type": "bearer"}
+    return {
+            "access_token": token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer"
+    }
