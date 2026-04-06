@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Header, status
+from fastapi.exceptions import HTTPException
+from app.core.security import create_access_token, create_refresh_token, decode_access_token
 from app.models.auth import Registration, Login, TokenResponse, UserResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.db import get_db_session
@@ -45,10 +47,8 @@ async def login(
 ) -> TokenResponse:
     token_data = await login_user_service(db, data)
 
-    return TokenResponse(
-            access_token=token_data["access_token"],
-            token_type=token_data["token_type"]
-    )
+    return TokenResponse(**token_data)
+
 
 @router.get(
         "/profile",
@@ -60,3 +60,30 @@ async def get_profile(
         current_user: User = Depends(get_current_user)
 ):
     return current_user
+
+@router.post(
+        "/refresh",
+        response_model=TokenResponse,
+        summary="Refresh access token using refresh token",
+        description="Provide a valid refresh token to get a new access token."
+)
+async def refresh_token(
+        x_refresh_token: str = Header(...),
+):
+    user_id = decode_access_token(x_refresh_token)
+
+    if not user_id:
+        raise HTTPException(
+                status_code=401,
+                detail="Invalid refresh token"
+        )
+
+    new_access_token = create_access_token(user_id)
+    new_refresh_token = create_refresh_token(user_id)
+
+    return TokenResponse(
+            access_token=new_access_token,
+            refresh_token=new_refresh_token,
+            token_type="bearer"
+    )
+
