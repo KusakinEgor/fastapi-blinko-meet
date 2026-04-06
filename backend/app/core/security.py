@@ -15,11 +15,36 @@ def verify_password(password: str, hashed: str) -> bool:
 def create_access_token(user_id: int) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=float(ACCESS_TOKEN_EXPIRE_MINUTES))
     payload = {"sub": str(user_id), "exp": expire}
-    return jwt.encode(payload, str(SECRET_KEY), str(ALGORITHM))
+    return jwt.encode(payload, SECRET_KEY, ALGORITHM)
+
+def create_refresh_token(user_id: int) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(days=7)
+    payload = {
+            "sub": str(user_id),
+            "exp": expire,
+            "type": "refresh"
+    }
+
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 def decode_access_token(token: str) -> Optional[int]:
     try:
-        payload = jwt.decode(token, str(SECRET_KEY), algorithms=[str(ALGORITHM)])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id_str = payload.get("sub")
+
+        if user_id_str is None:
+            return None
+        return int(user_id_str)
+    except (JWTError, ValueError):
+        return None
+
+def decode_refresh_token(token: str) -> Optional[int]:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
+        if payload.get("type") != "refresh":
+            return None
+
         user_id_str = payload.get("sub")
 
         if user_id_str is None:
