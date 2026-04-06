@@ -16,7 +16,7 @@ export function createSignaling({ roomId, userId, onMessage, onOpen }) {
 export async function sendOffer({ pc, roomId, userId }) {
 	console.log("TRACKS BEFORE OFFER:", pc.getSenders().map(s => s.track?.kind));
 
-	if (pc.getSenders === 0) {
+	if (pc.getSenders() === 0) {
 		console.error("NO TRACKS");
 		return;
 	}
