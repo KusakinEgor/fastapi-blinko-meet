@@ -16,6 +16,7 @@ class UserResponse(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str = Field(..., examples=["eyJhbGciOiJIUzI1Ni..."])
+    refresh_token: str = Field(..., examples=["eyJhbGciOiJIUzI1Ni..."])
     token_type: str = "bearer"
 
 class Login(BaseModel):
