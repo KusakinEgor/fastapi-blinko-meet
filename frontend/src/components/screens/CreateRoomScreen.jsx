@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { refreshAccessToken } from "../../api/auth";
 import axios from 'axios';
 import Sidebar from "../ui/SideBar";
 import MeetRoom from "./MeetRoom";
@@ -109,23 +110,43 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
       />
     );
   } 
+
+  async function createRoomRequest(data) {
+	  let token = localStorage.getItem("access_token");
+
+	  try {
+		  return await axios.post(
+			  "http://localhost:8000/rooms/create",
+			  data,
+			  {
+				  headers: { Authorization: `Bearer ${token}` }
+			  }
+		  );
+	  } catch (err) {
+		  if (err.response?.status === 401) {
+			  token = await refreshAccessToken();
+
+			  if (!token) throw err;
+
+			  return await axios.post(
+				  "http://localhost:8000/rooms/create",
+				  data,
+				  {
+					  headers: { Authorization: `Bearer ${token}` }
+				  }
+			  );
+		  }
+
+		  throw err;
+	  }
+  }
   
   const handleCreateRoom = async () => {
 	  try {
-		  const token = localStorage.getItem("access_token");
-
-		  const response = await axios.post(
-			  "http://localhost:8000/rooms/create",
-			  {
-				  name: name,
-				  password: meetingPassword || null
-			  },
-			  {
-				  headers: {
-					  Authorization: `Bearer ${token}`
-				  }
-			  }
-		  );
+		  const response = await createRoomRequest({
+			  name: name,
+			  password: meetingPassword || null
+		  });
 
 		  const { slug, host_id, invite_link } = response.data;
 
@@ -140,7 +161,7 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
 		  console.error("Error details:", err.response?.data);
 
 		  if (err.response?.status === 401) {
-			  alert("Please login first!");
+			  alert("Session expired. Please login again.");
 		  } else {
 			  alert("Failed to create room: " + (err.response?.data?.detail || "Unknown error"));
 		  }
