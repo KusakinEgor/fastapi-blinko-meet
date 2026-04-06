@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use crate::state::AppState;
 
-use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
+use webrtc::{dtls::content, peer_connection::sdp::session_description::RTCSessionDescription};
 
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
@@ -63,6 +63,27 @@ pub async fn ws_handler(
                         if let Some(sdp) = json["sdp"].as_str() {
                             let desc = RTCSessionDescription::answer(sdp.to_string()).unwrap();
                             let _ = pc.set_remote_description(desc).await;
+                        }
+                    }
+
+                    if json["type"] == "chat_message" {
+                        if let Some(content) = json["content"].as_str() {
+                            let participants = {
+                                let rooms = state.rooms.lock().await;
+                                rooms.get(&room_id).cloned()
+                            };
+
+                            if let Some(participants) = participants {
+                                let msg = serde_json::json!({
+                                    "type": "chat_message",
+                                    "user_id": user_id,
+                                    "content": content
+                                }).to_string();
+
+                                for participant in participants {
+                                    let _ = participant.sender.send(msg.clone());
+                                }
+                            }
                         }
                     }
                 }
