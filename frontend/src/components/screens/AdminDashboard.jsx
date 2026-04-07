@@ -4,41 +4,88 @@ import { useNavigate } from "react-router-dom";
 const AdminDashboard = () => {
 	const navigate = useNavigate();
 
-	const [users, setUsers] = useState([
-		{ id: 1, username: "Ivan_Zolo", email: "ivan_zolo2006@gmail.com", status: "PRO", likes: 1337 },
-		{ id: 2, username: "Admin_King", email: "boss@system.com", status: "ADMIN", likes: 9999 },
-		{ id: 3, username: "User_777", email: "lucky@mail.ru", status: "FREE", likes: 12 },
-	]);
-
+	const [users, setUsers] = useState([]);
+	const [stats, setStats] = useState({ total_users: 0, pro_users: 0, total_likes: 0 });
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [currentUser, setCurrentUser] = useState(null);
 	const [search, setSearch] = useState("");
 
-	const deleteUser = (id) => {
-		if (window.confirm("Удалить пользователя безвозвратно?")) {
-			setUsers(users.filter((u) => u.id !== id));
+	const API_URL = "http://localhost:8000/admin";
+	const token = localStorage.getItem("access_token");
+
+	const fetchData = async () => {
+		try {
+			const headers = { "Authorization": `Bearer ${token}` };
+
+			const [usersRes, statsRes] = await Promise.all([
+				fetch(`${API_URL}/users`, { headers }),
+				fetch(`${API_URL}/stats`, { headers })
+			]);
+
+			if (usersRes.ok && statsRes.ok) {
+				setUsers(await usersRes.json());
+				setStats(await statsRes.json());
+			}
+		} catch (err) {
+			console.error("Error download:", err);
+		}
+	}
+
+	useEffect(() => {
+		fetchData();
+	}, []);
+
+	const deleteUser = async (id) => {
+		if (!window.confirm("Удалить пользователя?")) return;
+
+		try {
+			const res = await fetch(`${API_URL}/users/${id}`, {
+				method: "DELETE",
+				headers: { "Authorization": `Bearer ${token}` }
+			});
+			if (res.ok) fetchData();
+		} catch (err) {
+			console.error(err);
 		}
 	};
 
-	const saveUser = (e) => {
+	const saveUser = async (e) => {
 		e.preventDefault();
 		const formData = new FormData(e.target);
+
 		const userData = {
-			id: currentUser?.id || Date.now(),
 			username: formData.get("username"),
 			email: formData.get("email"),
 			status: formData.get("status"),
 			likes: parseInt(formData.get("likes") || 0),
+			password: formData.get("password") || null
 		};
 
-		if (currentUser) {
-			setUsers(users.map((u) => (u.id === currentUser.id ? userData : u)));
-		} else {
-			setUsers([...users, userData]);
-		}
+		try {
+			const isEdit = !!currentUser;
+			const url = isEdit ? `${API_URL}/users/${currentUser.id}` : `${API_URL}/users`;
+			const method = isEdit ? "PATCH" : "POST";
 
-		setIsModalOpen(false);
-		setCurrentUser(null);
+			const res = await fetch(url, {
+				method: method,
+				headers: {
+					"Authorization": `Bearer ${token}`,
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify(userData)
+			});
+
+			if (res.ok) {
+				setIsModalOpen(false);
+				setCurrentUser(null);
+				fetchData();
+			} else {
+				const errData = await res.json();
+				alert(`Ошибка: ${errData.detail || "Действие не удалось"}`);
+			}
+		} catch (err) {
+			console.error(err);
+		}
 	};
 
 	const filteredUsers = users.filter(u =>
@@ -133,6 +180,24 @@ const AdminDashboard = () => {
 						))}
 					</div>
 				</main>
+				
+				<aside className="hidden lg:block w-80 border-l border-white/5 pl-6 ml-6">
+					<h3 className="text-zinc-600 font-bold text-[10px] uppercase tracking-[0.2em] mb-4">Системный лог</h3>
+					<div className="space-y-4 font-mono text-[10px]">
+						{[
+							{ time: '12:44', msg: 'DB connection stable', type: 'success' },
+							{ time: '12:40', msg: 'New user registered: alex_v', type: 'info' },
+							{ time: '12:32', msg: 'Failed login attempt: root', type: 'error' },
+						].map((log, i) => (
+							<div key={i} className="flex gap-3 text-zinc-500">
+								<span className="text-zinc-700">{log.time}</span>
+								<span className={log.type === 'error' ? 'text-red-500' : log.type === 'success' ? 'text-emerald-500' : 'text-zinc-300'}>
+									{log.msg}
+								</span>
+							</div>
+						))}
+					</div>
+				</aside>
 			</div>
 			
 			{isModalOpen && (
@@ -147,6 +212,18 @@ const AdminDashboard = () => {
 							<div className="space-y-1">
 								<label className="text-[10px] uppercase text-zinc-500 font-bold ml-1">Email</label>
 								<input name="email" type="email" defaultValue={currentUser?.email} required className="w-full bg-zinc-900 border border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#3f81fd] outline-none" />
+							</div>
+							<div className="space-y-1">
+								<label className="text-[10px] uppercase text-zinc-500 font-bold ml-1">
+									{currentUser ? "Новый пароль (необязательно)" : "Пароль"}
+								</label>
+								<input
+									name="password"
+									type="password"
+									placeholder="••••••••"
+									required={!currentUser}
+									className="w-full bg-zinc-900 border border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#3f81fd] outline-none"
+								/>
 							</div>
 							<div className="grid grid-cols-2 gap-4">
 								<div className="space-y-1">
