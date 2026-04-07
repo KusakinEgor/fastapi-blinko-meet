@@ -10,6 +10,8 @@ import LoginScreenUser from "./components/screens/LoginScreenUser";
 import UserProfile from "./components/screens/UserProfile";
 import MeetRoom from "./components/screens/MeetRoom";
 import EditProfile from "./components/screens/EditProfile";
+import AdminDashboard from "./components/screens/AdminDashboard";
+import AdminAuth from "./components/screens/AdminLogin";
 import EmojiGuide from "./components/chat/EmojiGuide";
 
 function AppContent() {
@@ -72,6 +74,15 @@ function AppContent() {
 	  <Route
 		path="/profile/edit"
 		element={<EditProfile />}
+	  />
+
+	  <Route
+		path="/admin"
+		element={
+			<AdminAuth>
+				<AdminDashboard />
+			</AdminAuth>
+		}
 	  />
 
 	  <Route
