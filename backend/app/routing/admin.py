@@ -6,7 +6,8 @@ from typing import List
 
 from app.database.db import get_db_session
 from app.schemas.auth import User
-from app.models.admin import UserAdminOut, UserAdminUpdate, AdminStatsResponse
+from app.schemas.admin import AuditLog
+from app.models.admin import UserAdminOut, UserAdminUpdate, AdminStatsResponse, AuditLogModel
 from app.services.get_user import get_current_user
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -72,8 +73,19 @@ async def update_user_admin(
 
     data = update_data.model_dump(exclude_unset=True)
 
+    changes = ", ".join([f"{k}: {v}" for k, v in data.items() if k != "password"])
+
     for key, value in data.items():
-        setattr(db_user, key, value)
+        if key == "password":
+            setattr(db_user, "hashed_password", pwd_context.hash(value))
+        else:
+            setattr(db_user, key, value)
+
+    new_log = AuditLog(
+            action="USER_UPDATED",
+            details=f"Admin {admin.username} updated user {db_user.username} (ID: {user_id}). Changes: {changes}"
+    )
+    db.add(new_log)
 
     await db.commit()
     await db.refresh(db_user)
@@ -96,7 +108,16 @@ async def delete_user_admin(
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    user_name = db_user.username
+
     await db.delete(db_user)
+
+    new_log = AuditLog(
+            action="USER_DELETED",
+            details=f"Admin {admin.username} deleted user {user_name} (ID: {user_id})"
+    )
+    db.add(new_log)
+
     await db.commit()
 
     return None
@@ -129,7 +150,34 @@ async def create_user_admin(
     )
 
     db.add(new_user)
+
+    await db.flush()
+
+    new_log = AuditLog(
+            action="USER_CREATED",
+            details=f"Admin {admin.username} created user {new_user.username} (ID: {new_user.id})"
+    )
+    db.add(new_log)
+
     await db.commit()
     await db.refresh(new_user)
 
     return new_user
+
+@router.get(
+        "/logs",
+        response_model=List[AuditLogModel],
+        summary="Get recent audit logs"
+)
+async def get_admin_logs(
+        limit: int = 20,
+        db: AsyncSession = Depends(get_db_session),
+        admin: User = Depends(verify_admin)
+):
+    result = await db.execute(
+            select(AuditLog)
+            .order_by(AuditLog.created_at.desc())
+            .limit(limit)
+    )
+
+    return result.scalars().all()
