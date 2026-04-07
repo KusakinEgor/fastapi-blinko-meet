@@ -29,3 +29,12 @@ class AdminStatsResponse(BaseModel):
     total_users: int = Field(..., examples=[150])
     pro_users: int = Field(..., examples=[45])
     total_likes: int = Field(..., examples=[13370])
+
+class AuditLogModel(BaseModel):
+    id: int = Field(..., examples=[1])
+    action: str = Field(..., examples=["USER_DELETED"], description="Type of administrative action")
+    details: str = Field(..., examples=["Admin admin_user deleted user test_user (ID: 5)"])
+    created_at: datetime = Field(..., examples=["2023-10-24T14:20:00"])
+
+    class Config:
+        from_attributes = True
