@@ -9,6 +9,7 @@ const AdminDashboard = () => {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [currentUser, setCurrentUser] = useState(null);
 	const [search, setSearch] = useState("");
+	const [logs, setLogs] = useState([]);
 
 	const API_URL = "http://localhost:8000/admin";
 	const token = localStorage.getItem("access_token");
@@ -17,14 +18,16 @@ const AdminDashboard = () => {
 		try {
 			const headers = { "Authorization": `Bearer ${token}` };
 
-			const [usersRes, statsRes] = await Promise.all([
+			const [usersRes, statsRes, logsRes] = await Promise.all([
 				fetch(`${API_URL}/users`, { headers }),
-				fetch(`${API_URL}/stats`, { headers })
+				fetch(`${API_URL}/stats`, { headers }),
+				fetch(`${API_URL}/logs`, { headers })
 			]);
 
 			if (usersRes.ok && statsRes.ok) {
 				setUsers(await usersRes.json());
 				setStats(await statsRes.json());
+				setLogs(await logsRes.json());
 			}
 		} catch (err) {
 			console.error("Error download:", err);
@@ -181,21 +184,30 @@ const AdminDashboard = () => {
 					</div>
 				</main>
 				
-				<aside className="hidden lg:block w-80 border-l border-white/5 pl-6 ml-6">
-					<h3 className="text-zinc-600 font-bold text-[10px] uppercase tracking-[0.2em] mb-4">Системный лог</h3>
-					<div className="space-y-4 font-mono text-[10px]">
-						{[
-							{ time: '12:44', msg: 'DB connection stable', type: 'success' },
-							{ time: '12:40', msg: 'New user registered: alex_v', type: 'info' },
-							{ time: '12:32', msg: 'Failed login attempt: root', type: 'error' },
-						].map((log, i) => (
-							<div key={i} className="flex gap-3 text-zinc-500">
-								<span className="text-zinc-700">{log.time}</span>
-								<span className={log.type === 'error' ? 'text-red-500' : log.type === 'success' ? 'text-emerald-500' : 'text-zinc-300'}>
-									{log.msg}
-								</span>
+				<aside className="hidden lg:flex flex-col w-auto border-l border-white/5 pl-6 ml-6 h-full overflow-hidden">
+					<h3 className="text-zinc-600 font-bold text-[10px] uppercase tracking-[0.2em] mb-4 shrink-0">Системный лог</h3>
+					<div className="flex-1 overflow-y-auto scrollbar-hide space-y-4 font-mono text-[10px] pr-2 pb-10">
+						{logs.map((log, i) => (
+							<div key={i} className="flex flex-col gap-1.5 border-b border-white/5 pb-4">
+								<div className="flex justify-between items-center">
+									<span className={`font-black tracking-wider ${
+										log.action === 'USER_DELETED' ? 'text-red-500' :
+										log.action === 'USER_CREATED' ? 'text-emerald-500' : 'text-[#3f81fd]'
+									}`}>
+										{log.action}
+									</span>
+									<span className="text-zinc-700 text-[9px]">
+										{new Date(log.created_at).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}
+									</span>
+								</div>
+								<p className="text-zinc-500 leading-normal lowercase first-letter:uppercase">
+									{log.details}
+								</p>
 							</div>
 						))}
+						{logs.length === 0 && (
+							<p className="text-zinc-800 italic">Событий пока не зафиксировано...</p>
+						)}
 					</div>
 				</aside>
 			</div>
