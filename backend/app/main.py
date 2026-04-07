@@ -7,6 +7,7 @@ from app.database.db import engine
 from app.routing.auth import router as auth_router
 from app.routing.rooms import router as rooms_router
 from app.routing.media import router as media_router
+from app.routing.admin import router as admin_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -39,6 +40,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(rooms_router)
 app.include_router(media_router)
+app.include_router(admin_router)
 
 @app.get("/", summary="root endpoint")
 async def get_hello():
