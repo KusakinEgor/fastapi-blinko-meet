@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import InviteModal from "../ui/InviteModal";
 import FloatingEmoji from "../ui/FloatingEmoji.jsx";
+import { useScreenRecorder } from "../../hooks/useScreenRecorder.js";
 import { useParams } from "react-router-dom";
 import { useWebRTC } from "../../webrtc/useWebRTC";
 import { parseMessage } from "../../lib/chat/parseMessage.jsx";
 
 export default function MeetRoom({ name, meetingTitle, onBack }) {
   const { slug } = useParams();
+  const { isScreenRecording, startRecording, stopRecording } = useScreenRecorder();
   const [activeEmojis, setActiveEmojis] = useState([]);
   const [seconds, setSeconds] = useState(0);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -21,6 +23,16 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   const [inputValue, setInputValue] = useState('');
   const [micMuted, setMicMuted] = useState(false);
   const [camMuted, setCamMuted] = useState(false);
+
+  const handleToogleRecord = () => {
+	  if (isScreenRecording) {
+		  stopRecording();
+	  } else {
+		  startRecording();
+	  }
+
+	  setShowMore(false);
+  };
 
   const handleEmojiClick = (emoji) => {
 	  const id = Date.now();
@@ -518,8 +530,9 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
                         <div className="relative flex flex-col items-center cursor-pointer">
 							{showMore && (
 								<div
-									onClick={() => {
-										setIsRecording(!isRecording);
+									onClick={(e) => {
+										e.stopPropagation();
+										handleToogleRecord();
 										setShowMore(false);
 									}}
 									className="absolute bottom-full mb-4 bg-[#1c1c1c] border border-[#333] px-4 py-3 rounded-2xl flex items-center gap-3 whitespace-nowrap shadow-2xl z-50 hover:bg-[#262626] transition-colors"
