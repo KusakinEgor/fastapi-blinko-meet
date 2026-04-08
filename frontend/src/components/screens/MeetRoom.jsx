@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import InviteModal from "../ui/InviteModal";
+import FloatingEmoji from "../ui/FloatingEmoji.jsx";
 import { useParams } from "react-router-dom";
 import { useWebRTC } from "../../webrtc/useWebRTC";
 import { parseMessage } from "../../lib/chat/parseMessage.jsx";
 
 export default function MeetRoom({ name, meetingTitle, onBack }) {
   const { slug } = useParams();
+  const [activeEmojis, setActiveEmojis] = useState([]);
   const [seconds, setSeconds] = useState(0);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
@@ -19,6 +21,17 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   const [inputValue, setInputValue] = useState('');
   const [micMuted, setMicMuted] = useState(false);
   const [camMuted, setCamMuted] = useState(false);
+
+  const handleEmojiClick = (emoji) => {
+	  const id = Date.now();
+	  setActiveEmojis((prev) => [...prev, { id, emoji }]);
+
+	  setShowReactions(false);
+  };
+
+  const removeEmoji = (id) => {
+	  setActiveEmojis((prev) => prev.filter((e) => e.id !== id));
+  };
 
   const [meetingInfo, setMeetingInfo] = useState({
 	  url: "",
@@ -461,10 +474,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 										{EMOJIS.map((emoji) => (
 											<button
 												key={emoji}
-												onClick={() => {
-													console.log("Sent reaction:", emoji);
-													setShowReactions(false);
-												}}
+												onClick={() => handleEmojiClick(emoji)}
 												className="text-2xl hover:scale-125 transition-transform active:scale-90"
 											>
 												{emoji}
@@ -497,6 +507,14 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 								<span className="text-center font-semibold">Reactions</span>
 							</div>
 						</div>
+						
+						{activeEmojis.map(({ id, emoji }) => (
+							<FloatingEmoji
+								key={id}
+								emoji={emoji}
+								onComplete={() => removeEmoji(id)}
+							/>
+						))}
                         <div className="relative flex flex-col items-center cursor-pointer">
 							{showMore && (
 								<div
