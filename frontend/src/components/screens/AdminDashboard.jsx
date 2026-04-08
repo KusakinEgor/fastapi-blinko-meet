@@ -184,9 +184,9 @@ const AdminDashboard = () => {
 					</div>
 				</main>
 				
-				<aside className="hidden lg:flex flex-col w-auto border-l border-white/5 pl-6 ml-6 h-full overflow-hidden">
+				<aside className="hidden lg:flex flex-col w-auto border-l border-white/5 pl-1 ml-1 mt-5 h-full overflow-hidden">
 					<h3 className="text-zinc-600 font-bold text-[10px] uppercase tracking-[0.2em] mb-4 shrink-0">Системный лог</h3>
-					<div className="flex-1 overflow-y-auto scrollbar-hide space-y-4 font-mono text-[10px] pr-2 pb-10">
+					<div className="flex-1 overflow-y-auto custom-scrollbar space-y-4 font-mono text-[10px] pr-2 pb-10">
 						{logs.map((log, i) => (
 							<div key={i} className="flex flex-col gap-1.5 border-b border-white/5 pb-4">
 								<div className="flex justify-between items-center">
