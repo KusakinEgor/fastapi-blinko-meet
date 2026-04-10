@@ -2,9 +2,11 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from typing import Optional
-from app.config import ALGORITHM, SECRET_KEY, ACCESS_TOKEN_EXPIRE_MINUTES
+from cryptography.fernet import Fernet
+from app.config import ALGORITHM, SECRET_CRYPTO_KEY, SECRET_KEY, ACCESS_TOKEN_EXPIRE_MINUTES
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+cipher_suite = Fernet(SECRET_CRYPTO_KEY.encode())
 
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
@@ -52,6 +54,12 @@ def decode_refresh_token(token: str) -> Optional[int]:
         return int(user_id_str)
     except (JWTError, ValueError):
         return None
+
+def encrypt_message(text: str) -> str:
+    return cipher_suite.encrypt(text.encode()).decode()
+
+def decrypt_message(encrypted_text: str) -> str:
+    return cipher_suite.decrypt(encrypted_text.encode()).decode()
 
 # check for self will use that later
 if __name__ == "__main__":
