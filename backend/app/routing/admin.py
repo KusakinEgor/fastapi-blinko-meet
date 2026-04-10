@@ -26,7 +26,12 @@ async def verify_admin(current_user: User = Depends(get_current_user)):
 @router.get(
         "/stats",
         response_model=AdminStatsResponse,
-        summary="Get dashboard statistics"
+        summary="Get dashboard statistics",
+        description="Calculates and returns general system metrics including total users, PRO accounts, and aggregate likes.",
+        responses={
+            200: {"description": "Statistics successfully retrieved"},
+            403: {"description": "Insufficient permission"}
+        }
 )
 async def get_users(
         db: AsyncSession = Depends(get_db_session),
@@ -45,7 +50,12 @@ async def get_users(
 @router.get(
         "/users",
         response_model=List[UserAdminOut],
-        summary="List all users"
+        summary="List all users",
+        description="Returns a list of all registered users in descending order by ID for management purposes.",
+        responses={
+            200: {"description": "Full list of users retrieved"},
+            403: {"description": "Access denied"}
+        }
 )
 async def list_all_users(
         db: AsyncSession = Depends(get_db_session),
@@ -57,7 +67,13 @@ async def list_all_users(
 @router.patch(
         "/users/{user_id}",
         response_model=UserAdminOut,
-        summary="Update user details"
+        summary="Update user details",
+        description="Allows an admin to update any user field including password and status. Creates an audit log entry.",
+        responses={
+            200: {"description": "User updated successfully"},
+            404: {"description": "User not found"},
+            403: {"description": "Action forbidden"}
+        }
 )
 async def update_user_admin(
         user_id: int,
@@ -95,7 +111,12 @@ async def update_user_admin(
 @router.delete(
         "/users/{user_id}",
         status_code=status.HTTP_204_NO_CONTENT,
-        summary="Delete user"
+        summary="Delete user",
+        description="Permanently removes a user from the system and logs the deletion action.",
+        responses={
+            204: {"description": "User successfully deleted"},
+            404: {"description": "User not found"}
+        }
 )
 async def delete_user_admin(
         user_id: int,
@@ -126,7 +147,12 @@ async def delete_user_admin(
         "/users",
         response_model=UserAdminOut,
         status_code=status.HTTP_201_CREATED,
-        summary="Create a new user manually"
+        summary="Create a new user manually",
+        description="Bypasses standard registration to create a user with specific roles/likes. Email must be unique.",
+        responses={
+            201: {"description": "User created manually"},
+            400: {"description": "Email already exists or invalid data"}
+        }
 )
 async def create_user_admin(
         user_data: UserAdminUpdate,
@@ -167,7 +193,11 @@ async def create_user_admin(
 @router.get(
         "/logs",
         response_model=List[AuditLogModel],
-        summary="Get recent audit logs"
+        summary="Get recent audit logs",
+        description="Retrieves the most recent system actions performed by admins for security monitoring.",
+        responses={
+            200: {"description": "Audit logs retrieved successfully"}
+        }
 )
 async def get_admin_logs(
         limit: int = 20,
