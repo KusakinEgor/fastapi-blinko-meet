@@ -19,3 +19,5 @@ class User(TimestampMixin, Base):
 
     profile: Mapped["UserProfile"] = relationship("UserProfile", back_populates="user", uselist=False)
     settings: Mapped["UserSettings"] = relationship("UserSettings", back_populates="user", uselist=False)
+
+    messages: Mapped[list["Message"]] = relationship("Message", back_populates="user", cascade="all, delete-orphan")
