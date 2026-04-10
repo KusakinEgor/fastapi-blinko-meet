@@ -5,6 +5,7 @@ import { useScreenRecorder } from "../../hooks/useScreenRecorder.js";
 import { useParams } from "react-router-dom";
 import { useWebRTC } from "../../webrtc/useWebRTC";
 import { parseMessage } from "../../lib/chat/parseMessage.jsx";
+import { sendMessage } from "../../api/chat.js";
 
 export default function MeetRoom({ name, meetingTitle, onBack }) {
   const { slug } = useParams();
@@ -103,18 +104,25 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  setShowMore(prev => !prev);
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
 	  const text = inputValue.trim();
 	  if (!text) return;
 
-	  if (ws && ws.readyState === WebSocket.OPEN) {
-		  ws.send(JSON.stringify({
-			  type: "chat_message",
-			  content: text
-		  }));
-	  }
+	  try {
+		  const savedMessage = await sendMessage(text);
 
-	  setInputValue('');
+		  if (ws && ws.readyState === WebSocket.OPEN) {
+			  ws.send(JSON.stringify({
+				  type: "chat_message",
+				  content: text
+			  }));
+		  }
+
+		  setInputValue('');
+	  } catch (err) {
+		  console.error("Error save message:", err.message);
+		  alert("Не удалось отправить сообщение");
+	  }
   };
 
   const handleKeyDown = (e) => {
@@ -122,7 +130,6 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 		  if (inputValue.trim() !== ''){
 			  console.log("Send message:", inputValue);
 			  handleSendMessage();
-			  setInputValue('');
 		  }
 	  }
   };
