@@ -244,6 +244,7 @@ const AdminDashboard = () => {
 										<option value="FREE">FREE</option>
 										<option value="PRO">PRO</option>
 										<option value="ADMIN">ADMIN</option>
+										<option value="EMPLOYEE">EMPLOYEE</option>
 									</select>
 								</div>
 								<div className="space-y-1">
