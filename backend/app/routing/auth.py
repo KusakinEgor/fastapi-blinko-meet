@@ -3,6 +3,7 @@ from fastapi.exceptions import HTTPException
 from app.core.security import create_access_token, create_refresh_token, decode_access_token
 from app.models.auth import Registration, Login, TokenResponse, UserResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from app.database.db import get_db_session
 from app.schemas.auth import User
 from app.services.auth import login_user_service, register_user_service
@@ -49,6 +50,32 @@ async def login(
 
     return TokenResponse(**token_data)
 
+@router.post(
+        "/employee/login",
+        response_model=TokenResponse,
+        summary="Employee/Admin Login",
+        description="Special login endpoint for staff members only.",
+        responses={
+            401: {"description": "Invalid credentials"},
+            403: {"description": "Access denied: Not a staff member"}
+        }
+)
+async def employee_login(
+        data: Login,
+        db: AsyncSession = Depends(get_db_session)
+) -> TokenResponse:
+    token_data = await login_user_service(db, data)
+
+    result = await db.execute(select(User).where(User.email == data.email))
+    user = result.scalar_one_or_none()
+
+    if not user or user.status not in ["ADMIN", "EMPLOYEE"]:
+        raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: Not a staff memeber"
+        )
+
+    return TokenResponse(**token_data)
 
 @router.get(
         "/profile",
