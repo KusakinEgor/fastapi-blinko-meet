@@ -1,4 +1,5 @@
 use axum::{extract::State, Json};
+use axum::extract::Path;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::{broadcast, Mutex};
@@ -87,6 +88,17 @@ pub async fn handle_offer(
         );
 
         participants.push(new_p.clone());
+
+        let user_ids: Vec<String> = participants.iter().map(|p| p.user_id.clone()).collect();
+        let update_msg = serde_json::json!({
+            "type": "participants_update",
+            "users": user_ids
+        }).to_string();
+
+        for p in participants.iter() {
+            let _ = p.sender.send(update_msg.clone());
+        }
+
         new_p
     };
 
@@ -110,4 +122,15 @@ pub async fn handle_offer(
         room_id,
         user_id,
     })
+}
+
+pub async fn get_participants(
+    State(state): State<Arc<AppState>>,
+    Path(room_id): Path<String>,
+) -> Json<Vec<String>> {
+    let rooms = state.rooms.lock().await;
+    let users = rooms.get(&room_id)
+        .map(|list| list.iter().map(|p| p.user_id.clone()).collect())
+        .unwrap_or_default();
+    Json(users)
 }
