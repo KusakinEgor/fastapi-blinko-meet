@@ -6,6 +6,7 @@ import { useParams } from "react-router-dom";
 import { useWebRTC } from "../../webrtc/useWebRTC";
 import { parseMessage } from "../../lib/chat/parseMessage.jsx";
 import { sendMessage } from "../../api/chat.js";
+import { useParticipants } from "../../hooks/useParticipants.js";
 
 export default function MeetRoom({ name, meetingTitle, onBack }) {
   const { slug } = useParams();
@@ -63,6 +64,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   const videoRefs = useRef({});
   const localVideoRef = useRef(null);
   const [userId] = useState(() => Math.random().toString(36).substring(7));
+  const { participants, count } = useParticipants(slug, userId);
 
   useEffect(() => {
 	  const invite = location.state?.inviteLink || localStorage.getItem(`invite_link_${slug}`);
@@ -293,7 +295,9 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 			{activeTab && (
 				<div className="bg-[#171717] w-full h-full min-h-0 rounded-xl flex flex-col overflow-hidden p-4">
 					<div className="flex w-full justify-between flex-none">
-						<span className="font-bold text-[25px] p-2">1 participant</span>
+						<span className="font-bold text-[25px] p-2">
+							{count} {count === 1 ? "participant" : "participants"}
+						</span>
 						<div className="flex gap-1 p-2">
 							<svg width="30px" viewBox="0 0 24 24" fill="none">
 								<path fill-rule="evenodd" clip-rule="evenodd" d="M9.75 3.5C6.29822 3.5 3.5 6.29822 3.5 9.75C3.5 13.2018 6.29822 16 9.75 16C13.2018 16 16 13.2018 16 9.75C16 6.29822 13.2018 3.5 9.75 3.5ZM2 9.75C2 5.46979 5.46979 2 9.75 2C14.0302 2 17.5 5.46979 17.5 9.75C17.5 11.62 16.8377 13.3353 15.7348 14.6742L20.7803 19.7197C21.0732 20.0126 21.0732 20.4874 20.7803 20.7803C20.4874 21.0732 20.0126 21.0732 19.7197 20.7803L14.6742 15.7348C13.3353 16.8377 11.62 17.5 9.75 17.5C5.46979 17.5 2 14.0302 2 9.75Z" fill="currentColor"></path>
@@ -304,9 +308,45 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 						</div>
 					</div>
 					
-					<div className="flex-1 flex flex-col min-h-0">
+					<div className="flex-1 flex flex-col min-h-0 ">
 						{activeTab === 'participants' ? (
-							<div className="text-gray-500 italic p-2">No other participants...</div>
+							<div className="flex flex-col gap-2 p-2 overflow-y-auto custom-scrollbar" style={{ maxHeight: "calc(100vh - 34vh)"}}>
+								{(!participants || participants.length === 0) ? (
+									<div className="text-gray-500 italic p-2">No other participants...</div>
+								) : (
+									participants.map((p) => (
+										<div
+											key={p.user_id}
+											className="group flex items-center justify-between p-3 bg-[#1e1e1e] hover:bg-[#262626] border border-transparent hover:border-gray-700 rounded-2xl transition-all duration-200 shadow-sm flex-shrink-0"
+										>
+											<div className="flex items-center gap-3">
+												<div className="relative w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-900/20 ring-2 ring-[#1e1e1e]">
+													{p.user_id.charAt(0).toUpperCase()}
+													<span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#1e1e1e] rounded-full shadow-sm animate-pulse"></span>
+												</div>
+												
+												<div className="flex flex-col">
+													<span className="text-gray-100 font-semibold text-sm tracking-wide">
+														{p.user_id}
+														{p.user_id === userId && (
+															<span className="ml-2 text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full uppercase tracking-tighter">
+																You
+															</span>
+														)}
+													</span>
+													<span className="text-[11px] text-gray-500 group-hover:text-green-500/80 transition-colors">
+														Active now
+													</span>
+												</div>
+											</div>
+											
+											<div className="opacity-0 group-hover:opacity-100 transition-opacity pr-2">
+												<div className="w-1.5 h-1.5 rounded-full bg-gray-600"></div>
+											</div>
+										</div>
+									))
+								)}
+							</div>
 						) : (
 							<div className="flex flex-col flex-1 min-h-0">
 								<div className="flex-1 overflow-y-auto mb-4 space-y-3 pr-2 custom-scrollbar" style={{ maxHeight: 'calc(100vh - 34vh)' }}>
