@@ -93,7 +93,8 @@ async def update_user_admin(
 
     for key, value in data.items():
         if key == "password":
-            setattr(db_user, "hashed_password", pwd_context.hash(value))
+            if value is not None:
+                setattr(db_user, "hashed_password", pwd_context.hash(value))
         else:
             setattr(db_user, key, value)
 
