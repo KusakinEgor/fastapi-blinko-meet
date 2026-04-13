@@ -27,6 +27,7 @@ async fn main() {
     let app = Router::new()
         .route("/offer", post(handle_offer))
         .route("/ws/:room_id/:user_id", get(ws_handler))
+        .route("/rooms/:room_id/participants", get(handlers::offer::get_participants))
         .layer(CorsLayer::permissive())
         .with_state(shared_state);
 
