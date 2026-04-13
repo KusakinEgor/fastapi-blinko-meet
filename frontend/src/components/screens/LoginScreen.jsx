@@ -1,11 +1,27 @@
 import React, { useState } from "react";
+import { loginEmployee } from "../../api/auth";
 
 const LoginScreen = ({ onLogin, onBack }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    onLogin({ username, password });
+  const handleLogin = async () => {
+	  if (!username || !password) {
+		  alert("Please enter both username and password");
+		  return;
+	  }
+
+	  setLoading(true);
+
+	  try {
+		  const data = await loginEmployee(username, password);
+		  onLogin(data);
+	  } catch (err) {
+		  alert(err.message);
+	  } finally {
+		  setLoading(false);
+	  }
   };
 
   return (
@@ -69,9 +85,11 @@ const LoginScreen = ({ onLogin, onBack }) => {
 
         <div
           onClick={handleLogin}
-          className="bg-[#3f81fd] text-white py-3 rounded-lg text-center cursor-pointer"
+          className={`bg-[#3f81fd] text-white py-4 rounded-xl text-center font-bold transition-all active:scale-95 ${
+			  loading ? "opacity-50 cursor-not-allowed" : "hover:bg-[#3570e2] cursor-pointer"
+		  }`}
         >
-          Log In
+			{loading ? "Authenticating..." : "Log In"}
         </div>
       </div>
     </div>
