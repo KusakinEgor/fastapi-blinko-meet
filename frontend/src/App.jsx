@@ -58,7 +58,7 @@ function AppContent() {
 
 	  <Route
 		path="/login"
-		element={<LoginScreen onBack={() => navigate("/")} />}
+		element={<LoginScreen onBack={() => navigate("/")} onLogin={(data) => {navigate("/admin")}} />}
 	  />
 
 	  <Route
