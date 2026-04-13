@@ -1,3 +1,4 @@
+use serde::{Serialize};
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::{Mutex, broadcast};
 use webrtc::peer_connection::RTCPeerConnection;
@@ -13,4 +14,9 @@ pub struct Participant {
 pub struct AppState {
     pub api: webrtc::api::API,
     pub rooms: Mutex<HashMap<String, Vec<Arc<Participant>>>>,
+}
+
+#[derive(Serialize)]
+pub struct ParticipantInfo {
+    pub user_id: String,
 }
