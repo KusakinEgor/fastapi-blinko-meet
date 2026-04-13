@@ -61,9 +61,13 @@ export function useWebRTC({ localStream, roomId, userId }) {
 					await peer.addIceCandidate(new RTCIceCandidate(data.candidate));
 				}
 
+				if (data.type === "participants_update") {
+					console.log("Participants updated:", data.users);
+					window.dispatchEvent(new CustomEvent("webrtc_event", { detail: data }));
+				}
+
 				if (data.type === "chat_message") {
 					setRemoteStreams(prev => prev);
-
 					window.dispatchEvent(new CustomEvent("chat_message", { detail: data }));
 				}
 			},
