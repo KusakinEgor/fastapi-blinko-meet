@@ -1,20 +1,32 @@
 import { useState } from "react";
+import { roomsApi } from "../../api/rooms.js";
 
 export default function SidePanel({ isOpen, onClose, children }) {
   const [meetingTitle, setMeetingTitle] = useState("");
   const [isScheduled, setIsScheduled] = useState(false);
   const [showToast, setShowToast] = useState(false);
-
-  const meetingUrl = "https://salutejazz.ru/calls/71k3cu?psw=OB1QXUceD0EeDVdLGAOYUHeHSg";
+  const [inviteLink, setInviteLink] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   
-  const handleSchedule = () => {
-	  if (meetingTitle.trim()) {
+  const handleSchedule = async () => {
+	  if (!meetingTitle.trim()) return;
+
+	  setIsLoading(true);
+
+	  try {
+		  const data = await roomsApi.createRoom(meetingTitle);
+		  setInviteLink(data.invite_link);
 		  setIsScheduled(true);
+	  } catch (err) {
+		  console.error("Error create room:", err);
+		  alert("Не удалось запланировать встречу");
+	  } finally {
+		  setIsLoading(false);
 	  }
   };
 
   const handleCopy = () => {
-	  navigator.clipboard.writeText(meetingUrl);
+	  navigator.clipboard.writeText(inviteLink);
 	  setShowToast(true);
 	  setTimeout(() => setShowToast(false), 3000);
   };
@@ -24,6 +36,7 @@ export default function SidePanel({ isOpen, onClose, children }) {
 	  setTimeout(() => {
 		  setIsScheduled(false);
 		  setMeetingTitle("");
+		  setInviteLink("");
 	  }, 500);
   };
 
@@ -87,8 +100,8 @@ export default function SidePanel({ isOpen, onClose, children }) {
 				  </div>
 
 				  <div className="flex gap-4">
-					<button onClick={handleSchedule} className="bg-[#5d95fd] rounded-xl w-[93px] font-bold text-white">
-					  Schedule
+					<button onClick={handleSchedule} disabled={isLoading} className="bg-[#5d95fd] rounded-xl w-[93px] font-bold text-white">
+						{isLoading ? "Wait..." : "Schedule"}
 					</button>
 					<button
 					  onClick={handleClose}
@@ -109,7 +122,7 @@ export default function SidePanel({ isOpen, onClose, children }) {
 					<div className="w-full bg-[#171717] p-4 rounded-xl flex justify-between items-center border border-white/5">
 						<div className="overflow-hidden">
 							<span className="text-[#999999] text-xs block mb-1">Адрес видеовстречи</span>
-							<p className="text-white truncate text-sm">{meetingUrl}</p>
+							<p className="text-white truncate text-sm">{inviteLink}</p>
 						</div>
 						<button onClick={handleCopy} className="ml-4 text-[#999999] hover:text-white transition-colors">
 							<svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
