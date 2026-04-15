@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from datetime import datetime
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/ai", tags=["AI"])
         response_model=SummaryOut,
         status_code=status.HTTP_200_OK,
         summary="Generate meeting summary",
-        description="Send transcript to GigaChat to get a structured summary of the meeting."
+        description="Send transcript to GigaChat to get a structured summary of the meeting.",
         responses={
             200: {"description": "Summary successfully generated"},
             401: {"description": "Authentication required"},
@@ -24,22 +24,41 @@ router = APIRouter(prefix="/ai", tags=["AI"])
         }
 )
 async def generate_summary(
+        request: Request,
         data: SummaryCreate,
         db: AsyncSession = Depends(get_db_session),
         current_user: User = Depends(get_current_user)
 ):
-    return {
-            "id": 1,
-            "room_id": data.room_id,
-            "summary_text": "Here will be result GigaChat after integration.",
-            "created_at": datetime.now()
-    }
+    giga_service = request.app.state.giga_service
+
+    instruction = "Сделай краткое резюме"
+    if data.detail_level == "long":
+        instruction = "Сделай максимально подробный разбор встречи с пунктами и деталями"
+    elif data.detail_level == "short":
+        instruction = "Опиши итог встречи одной-двумя фразами"
+
+    prompt = f"{instruction} на основе этого текста:\n\n{data.transcript}"
+
+    try:
+        summary_text = await giga_service.send_message(prompt)
+
+        return {
+                "id": 1,
+                "room_id": data.room_id,
+                "summary_text": summary_text,
+                "created_at": datetime.now()
+        }
+    except Exception as e:
+        raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"GigaChat Error: {str(e)}"
+        )
 
 @router.get(
         "/summary/{room_id}",
         response_model=SummaryOut,
         summary="Get existing summary",
-        description="Retrieve a previosly generated summary from the database."
+        description="Retrieve a previosly generated summary from the database.",
         responses={
             200: {"description": "Summary retrieved successfully"},
             404: {"description": "Summary for this room not found"},
