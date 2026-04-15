@@ -17,6 +17,11 @@ class SummaryOut(BaseModel):
 
 class SummaryCreate(BaseModel):
     room_id: str = Field(..., examples=["71k3cu-psw-OB1QX"])
+    transcript: str = Field(
+            ...,
+            description="Full text of the meeting to be summarized",
+            examples=["User1: Hello. User2: Let's discuss the project..."]
+    )
     detail_level: Optional[str] = Field("medium", examples=["short", "medium", "long"], description="Lvl details")
 
 class SummaryTaskResponse(BaseModel):
