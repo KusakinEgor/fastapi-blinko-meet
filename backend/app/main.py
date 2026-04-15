@@ -3,16 +3,20 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database.db import engine
+from app.services.gigachat import GigaChatService
 
 from app.routing.auth import router as auth_router
 from app.routing.rooms import router as rooms_router
 from app.routing.media import router as media_router
 from app.routing.admin import router as admin_router
 from app.routing.chat import router as chat_router
+from app.routing.ai import router as ai_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    app.state.giga_service = GigaChatService()
     yield
+    await app.state.giga_service.close()
     await engine.dispose()
 
 app = FastAPI(
@@ -43,6 +47,7 @@ app.include_router(rooms_router)
 app.include_router(media_router)
 app.include_router(admin_router)
 app.include_router(chat_router)
+app.include_router(ai_router)
 
 @app.get("/", summary="root endpoint")
 async def get_hello():
