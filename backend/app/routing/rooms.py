@@ -37,6 +37,17 @@ async def create_room(
     )
 
     db.add(new_room)
+    await db.flush()
+
+    host_participant = Participants(
+            room_id=new_room.id,
+            user_id=current_user.id,
+            session_token=secrets.token_urlsafe(32),
+            role="host"
+    )
+    
+    db.add(host_participant)
+
     await db.commit()
     await db.refresh(new_room)
 
@@ -60,7 +71,12 @@ async def create_room(
         description="Enter a room using its unique slug to receive a session token.",
         responses={404: {"description": "Room not found"}}
 )
-async def join_room(slug: str, data: RoomJoinRequest, db: AsyncSession = Depends(get_db_session)):
+async def join_room(
+        slug: str,
+        data: RoomJoinRequest,
+        db: AsyncSession = Depends(get_db_session),
+        current_user: User = Depends(get_current_user)
+):
     result = await db.execute(select(Rooms).where(Rooms.slug == slug))
     room = result.scalar_one_or_none()
 
@@ -75,7 +91,7 @@ async def join_room(slug: str, data: RoomJoinRequest, db: AsyncSession = Depends
 
     participant = Participants(
             room_id=room.id,
-            user_id=None,
+            user_id=current_user.id,
             session_token=session_token
     )
 
