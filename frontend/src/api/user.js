@@ -52,4 +52,22 @@ export const getAvatarUrl = (path) => {
 	if (!path) return null;
 	if (path.startsWith("http")) return path;
 	return `${API_URL}${path}`;
-}
+};
+
+export const getUserHistory = async () => {
+	const token = localStorage.getItem("access_token");
+
+	const response = await fetch(`${API_URL}/user/history`, {
+		method: "GET",
+		headers: {
+			"Content-Type": "application/json",
+			"Authorization": `Bearer ${token}`
+		}
+	});
+
+	if (!response.ok) {
+		throw new Error("Failed to fetch history");
+	}
+
+	return response.json();
+};
