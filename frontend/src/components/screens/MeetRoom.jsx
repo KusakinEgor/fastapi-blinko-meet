@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import InviteModal from "../ui/InviteModal";
 import FloatingEmoji from "../ui/FloatingEmoji.jsx";
+import SummaryScreen from "./SummaryScreen.jsx";
 import { useScreenRecorder } from "../../hooks/useScreenRecorder.js";
 import { useParams } from "react-router-dom";
 import { useWebRTC } from "../../webrtc/useWebRTC";
@@ -12,6 +13,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   const { slug } = useParams();
   const { isScreenRecording, startRecording, stopRecording } = useScreenRecorder();
   const [activeEmojis, setActiveEmojis] = useState([]);
+  const [showSummary, setShowSummary] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
@@ -25,6 +27,29 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   const [inputValue, setInputValue] = useState('');
   const [micMuted, setMicMuted] = useState(false);
   const [camMuted, setCamMuted] = useState(false);
+
+  const handleLeaveAndGenerate = async () => {
+	  const token = localStorage.getItem("access_token");
+
+	  setShowSummary(true);
+
+	  try {
+		  await fetch("http://localhost:8000/ai/summary/generate", {
+			  method: "POST",
+			  headers: {
+				  "Content-Type": "application/json",
+				  "Authorization": `Bearer ${token}`
+			  },
+			  body: JSON.stringify({
+				  room_id: slug,
+				  transcript: "User1: hello go to push this code in github. User2: Okay i will do that",
+				  detail_level: "long"
+			  })
+		  });
+	  } catch (err) {
+		  console.error("Error generate", err);
+	  }
+  }
 
   const handleToogleRecord = () => {
 	  if (isScreenRecording) {
@@ -260,377 +285,383 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   const secs = seconds % 60;
   const formattedTime = `${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 
-  return (
-    <div className="min-h-screen flex flex-col bg-[#080808] text-white">
-        <header className="h-16 bg-[#080808] flex flex-col p-3">
-            <h1 className="text-xl font-semibold">{meetingTitle}</h1>
-            <div className="flex justify-between items-center h-6 mt-1">
-                <span className="mt-1 font-semibold text-[#8b8b8b]">{formattedTime}</span>
-                <div className="flex items-center h-full gap-2">
-                    <svg width="24px" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 self-center">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5.27506 3.625C5.27506 2.17525 6.37196 1 7.72506 1C9.07816 1 10.1751 2.17525 10.1751 3.625V6.61783L6.62288 10.17C5.82338 9.73779 5.27506 8.85 5.27506 7.825V3.625ZM5.79152 11.0014C5.60046 10.8872 5.41895 10.7554 5.24955 10.6068C4.57466 10.015 4.13795 9.19795 4.02078 8.30798C3.98474 8.0342 3.73358 7.84148 3.4598 7.87752C3.18602 7.91357 2.99329 8.16473 3.02934 8.43851C3.17817 9.56901 3.73291 10.6069 4.5902 11.3587C4.74192 11.4917 4.90129 11.6142 5.06716 11.7257L5.79152 11.0014ZM5.99718 12.2099L6.79238 11.4147C7.08357 11.4875 7.38459 11.525 7.68913 11.525C8.58678 11.525 9.45382 11.1987 10.1287 10.6068C10.8036 10.015 11.2403 9.19795 11.3575 8.30798C11.3935 8.0342 11.6447 7.84148 11.9185 7.87752C12.1922 7.91357 12.385 8.16473 12.3489 8.43851C12.2001 9.56901 11.6453 10.6069 10.7881 11.3587C10.0569 11.9999 9.14812 12.3958 8.18913 12.4984V14.125C8.18913 14.4011 7.96527 14.625 7.68913 14.625C7.41299 14.625 7.18913 14.4011 7.18913 14.125V12.4984C6.77932 12.4545 6.3787 12.3571 5.99718 12.2099ZM10.1669 8.04016L7.75733 10.4498C9.02815 10.4322 10.0657 9.37796 10.1669 8.04016Z" fill="red"></path>
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M14.4453 1.64645C14.6406 1.84171 14.6406 2.15829 14.4453 2.35355L2.56596 14.2329C2.37069 14.4282 2.05411 14.4282 1.85885 14.2329C1.66359 14.0377 1.66359 13.7211 1.85885 13.5258L13.7382 1.64645C13.9335 1.45118 14.2501 1.45118 14.4453 1.64645Z" fill="red"></path>
-                    </svg>
-                    <span className="font-semibold">Руководитель отдела Python-разработки</span>
-                    <div className="flex gap-2">
-                        <div className="bg-black rounded-full">
-                            <svg width="35px" viewBox="0 0 24 24" fill="none">
-                                <path d="M19 7.8V16.2C19 16.48 19 16.62 18.9455 16.727C18.8976 16.8211 18.8211 16.8976 18.727 16.9455C18.62 17 18.48 17 18.2 17H16.8C16.52 17 16.38 17 16.273 16.9455C16.1789 16.8976 16.1024 16.8211 16.0545 16.727C16 16.62 16 16.48 16 16.2V7.8C16 7.51998 16 7.37996 16.0545 7.27301C16.1024 7.17893 16.1789 7.10243 16.273 7.0545C16.38 7 16.52 7 16.8 7H18.2C18.48 7 18.62 7 18.727 7.0545C18.8211 7.10243 18.8976 7.17893 18.9455 7.27301C19 7.37996 19 7.51998 19 7.8Z" fill="currentColor"></path>
-                                <path d="M11.375 10.125C11.375 11.2986 10.4236 12.25 9.25 12.25C8.0764 12.25 7.125 11.2986 7.125 10.125C7.125 8.9514 8.0764 8 9.25 8C10.4236 8 11.375 8.9514 11.375 10.125Z" fill="currentColor"></path>
-                                <path d="M13.1001 14.3646C13.3709 14.5607 13.5313 14.9034 13.4949 15.2566C13.4752 15.4471 13.4406 15.5955 13.3796 15.7265C13.2556 15.993 13.0576 16.2098 12.8141 16.3456C12.5372 16.5 12.1748 16.5 11.45 16.5H7.04994C6.32515 16.5 5.96276 16.5 5.68592 16.3456C5.44241 16.2098 5.24443 15.993 5.12036 15.7265C5.05941 15.5955 5.02479 15.4471 5.00514 15.2567C4.96867 14.9035 5.12907 14.5608 5.3999 14.3647C6.50392 13.5654 7.82734 13.1 9.25006 13.1C10.6727 13.1 11.9961 13.5654 13.1001 14.3646Z" fill="currentColor"></path>
-                                <path fill-rule="evenodd" clip-rule="evenodd" d="M18.0804 4H5.91957C5.38542 3.99999 4.93956 3.99998 4.57533 4.02974C4.19544 4.06078 3.83879 4.12789 3.50153 4.29973C2.98408 4.56339 2.56338 4.98408 2.29973 5.50153C2.12789 5.83879 2.06078 6.19545 2.02974 6.57533C1.99998 6.93956 1.99999 7.3854 2 7.91955V16.0805C1.99999 16.6146 1.99998 17.0604 2.02974 17.4247C2.06078 17.8046 2.12789 18.1612 2.29973 18.4985C2.56338 19.0159 2.98408 19.4366 3.50153 19.7003C3.83879 19.8721 4.19545 19.9392 4.57533 19.9703C4.93956 20 5.3854 20 5.91955 20H18.0805C18.6146 20 19.0604 20 19.4247 19.9703C19.8046 19.9392 20.1612 19.8721 20.4985 19.7003C21.0159 19.4366 21.4366 19.0159 21.7003 18.4985C21.8721 18.1612 21.9392 17.8046 21.9703 17.4247C22 17.0604 22 16.6146 22 16.0805V7.91957C22 7.38542 22 6.93956 21.9703 6.57533C21.9392 6.19545 21.8721 5.83879 21.7003 5.50153C21.4366 4.98408 21.0159 4.56339 20.4985 4.29973C20.1612 4.12789 19.8046 4.06078 19.4247 4.02974C19.0604 3.99998 18.6146 3.99999 18.0804 4ZM19.3025 5.52476C19.5896 5.54822 19.7269 5.5901 19.8175 5.63624C20.0527 5.75608 20.2439 5.94731 20.3638 6.18251C20.4099 6.27307 20.4518 6.41036 20.4752 6.69748C20.4994 6.99336 20.5 7.37757 20.5 7.95V16.05C20.5 16.6224 20.4994 17.0066 20.4752 17.3025C20.4518 17.5896 20.4099 17.7269 20.3638 17.8175C20.2439 18.0527 20.0527 18.2439 19.8175 18.3638C19.7269 18.4099 19.5896 18.4518 19.3025 18.4752C19.0066 18.4994 18.6224 18.5 18.05 18.5H5.95C5.37757 18.5 4.99336 18.4994 4.69748 18.4752C4.41036 18.4518 4.27307 18.4099 4.18251 18.3638C3.94731 18.2439 3.75608 18.0527 3.63624 17.8175C3.5901 17.7269 3.54822 17.5896 3.52476 17.3025C3.50058 17.0066 3.5 16.6224 3.5 16.05V7.95C3.5 7.37757 3.50058 6.99336 3.52476 6.69748C3.54822 6.41036 3.5901 6.27307 3.63624 6.18251C3.75608 5.94731 3.94731 5.75608 4.18251 5.63624C4.27307 5.5901 4.41036 5.54822 4.69748 5.52476C4.99336 5.50058 5.37757 5.5 5.95 5.5H18.05C18.6224 5.5 19.0066 5.50058 19.3025 5.52476Z" fill="currentColor"></path>
-                            </svg>
-                        </div>
-                        <div className="bg-black rounded-full">
-                            <svg width="35px" viewBox="0 0 24 24" fill="none">
-                                <path fill-rule="evenodd" clip-rule="evenodd" d="M18.99 9.894c.45.207 1.585.886 1.73.977.175.11.282.303.28.51v1.238a.598.598 0 01-.288.515c-.19.12-1.298.781-1.73.977l-.558 1.35c.18.476.502 1.75.54 1.916a.598.598 0 01-.162.558l-.875.874a.602.602 0 01-.558.162l-.022-.005c-.27-.07-1.46-.374-1.893-.535l-1.35.558c-.207.45-.885 1.586-.977 1.73a.603.603 0 01-.51.281h-1.236a.598.598 0 01-.515-.288c-.12-.19-.781-1.298-.977-1.73l-1.35-.558c-.476.18-1.75.502-1.916.54a.598.598 0 01-.558-.162l-.874-.875a.601.601 0 01-.162-.558l.005-.022c.07-.27.374-1.46.535-1.893l-.558-1.35c-.45-.207-1.586-.885-1.73-.977a.603.603 0 01-.281-.51v-1.236c0-.208.109-.401.286-.51.191-.12 1.298-.78 1.73-.977l.558-1.35c-.18-.475-.502-1.75-.54-1.915a.598.598 0 01.162-.558l.875-.88a.601.601 0 01.558-.162l.023.005c.27.07 1.46.374 1.892.535l1.35-.558c.207-.45.886-1.586.977-1.73a.603.603 0 01.51-.281h1.238c.208 0 .401.109.51.286.12.191.78 1.298.977 1.73l1.35.558c.475-.18 1.75-.502 1.915-.54a.598.598 0 01.558.162l.88.875a.601.601 0 01.162.558l-.005.022c-.07.271-.374 1.46-.535 1.893l.558 1.35zM8.08 11.993a3.922 3.922 0 107.845.007 3.922 3.922 0 00-7.845-.007z" fill="currentColor"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </header>
+  if (showSummary) {
+	  return <SummaryScreen roomSlug={slug} onClose={onBack} />
+  }
 
-        <main className={`flex-1 grid ${activeTab ? 'grid-cols-[1fr_3fr_1fr]' : 'grid-cols-[3fr_1fr]'} grid-rows-[minmax(0,1fr)] gap-4 p-4 h-screen box-border items-stretch overflow-hidden transition-all duration-300`}>
-			{activeTab && (
-				<div className="bg-[#171717] w-full h-full min-h-0 rounded-xl flex flex-col overflow-hidden p-4">
-					<div className="flex w-full justify-between flex-none">
-						<span className="font-bold text-[25px] p-2">
-							{count} {count === 1 ? "participant" : "participants"}
-						</span>
-						<div className="flex gap-1 p-2">
-							<svg width="30px" viewBox="0 0 24 24" fill="none">
-								<path fill-rule="evenodd" clip-rule="evenodd" d="M9.75 3.5C6.29822 3.5 3.5 6.29822 3.5 9.75C3.5 13.2018 6.29822 16 9.75 16C13.2018 16 16 13.2018 16 9.75C16 6.29822 13.2018 3.5 9.75 3.5ZM2 9.75C2 5.46979 5.46979 2 9.75 2C14.0302 2 17.5 5.46979 17.5 9.75C17.5 11.62 16.8377 13.3353 15.7348 14.6742L20.7803 19.7197C21.0732 20.0126 21.0732 20.4874 20.7803 20.7803C20.4874 21.0732 20.0126 21.0732 19.7197 20.7803L14.6742 15.7348C13.3353 16.8377 11.62 17.5 9.75 17.5C5.46979 17.5 2 14.0302 2 9.75Z" fill="currentColor"></path>
-							</svg>
-							<svg width="30px" viewBox="0 0 24 24" fill="none">
-								<path fill-rule="evenodd" clip-rule="evenodd" d="M5.46967 5.46967C5.76256 5.17678 6.23744 5.17678 6.53033 5.46967L12 10.9393L17.4697 5.46967C17.7626 5.17678 18.2374 5.17678 18.5303 5.46967C18.8232 5.76256 18.8232 6.23744 18.5303 6.53033L13.0607 12L18.5303 17.4697C18.8232 17.7626 18.8232 18.2374 18.5303 18.5303C18.2374 18.8232 17.7626 18.8232 17.4697 18.5303L12 13.0607L6.53033 18.5303C6.23744 18.8232 5.76256 18.8232 5.46967 18.5303C5.17678 18.2374 5.17678 17.7626 5.46967 17.4697L10.9393 12L5.46967 6.53033C5.17678 6.23744 5.17678 5.76256 5.46967 5.46967Z" fill="currentColor"></path>
-							</svg>
+  return (
+	  <>
+		<div className="min-h-screen flex flex-col bg-[#080808] text-white">
+			<header className="h-16 bg-[#080808] flex flex-col p-3">
+				<h1 className="text-xl font-semibold">{meetingTitle}</h1>
+				<div className="flex justify-between items-center h-6 mt-1">
+					<span className="mt-1 font-semibold text-[#8b8b8b]">{formattedTime}</span>
+					<div className="flex items-center h-full gap-2">
+						<svg width="24px" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 self-center">
+							<path fill-rule="evenodd" clip-rule="evenodd" d="M5.27506 3.625C5.27506 2.17525 6.37196 1 7.72506 1C9.07816 1 10.1751 2.17525 10.1751 3.625V6.61783L6.62288 10.17C5.82338 9.73779 5.27506 8.85 5.27506 7.825V3.625ZM5.79152 11.0014C5.60046 10.8872 5.41895 10.7554 5.24955 10.6068C4.57466 10.015 4.13795 9.19795 4.02078 8.30798C3.98474 8.0342 3.73358 7.84148 3.4598 7.87752C3.18602 7.91357 2.99329 8.16473 3.02934 8.43851C3.17817 9.56901 3.73291 10.6069 4.5902 11.3587C4.74192 11.4917 4.90129 11.6142 5.06716 11.7257L5.79152 11.0014ZM5.99718 12.2099L6.79238 11.4147C7.08357 11.4875 7.38459 11.525 7.68913 11.525C8.58678 11.525 9.45382 11.1987 10.1287 10.6068C10.8036 10.015 11.2403 9.19795 11.3575 8.30798C11.3935 8.0342 11.6447 7.84148 11.9185 7.87752C12.1922 7.91357 12.385 8.16473 12.3489 8.43851C12.2001 9.56901 11.6453 10.6069 10.7881 11.3587C10.0569 11.9999 9.14812 12.3958 8.18913 12.4984V14.125C8.18913 14.4011 7.96527 14.625 7.68913 14.625C7.41299 14.625 7.18913 14.4011 7.18913 14.125V12.4984C6.77932 12.4545 6.3787 12.3571 5.99718 12.2099ZM10.1669 8.04016L7.75733 10.4498C9.02815 10.4322 10.0657 9.37796 10.1669 8.04016Z" fill="red"></path>
+							<path fill-rule="evenodd" clip-rule="evenodd" d="M14.4453 1.64645C14.6406 1.84171 14.6406 2.15829 14.4453 2.35355L2.56596 14.2329C2.37069 14.4282 2.05411 14.4282 1.85885 14.2329C1.66359 14.0377 1.66359 13.7211 1.85885 13.5258L13.7382 1.64645C13.9335 1.45118 14.2501 1.45118 14.4453 1.64645Z" fill="red"></path>
+						</svg>
+						<span className="font-semibold">Руководитель отдела Python-разработки</span>
+						<div className="flex gap-2">
+							<div className="bg-black rounded-full">
+								<svg width="35px" viewBox="0 0 24 24" fill="none">
+									<path d="M19 7.8V16.2C19 16.48 19 16.62 18.9455 16.727C18.8976 16.8211 18.8211 16.8976 18.727 16.9455C18.62 17 18.48 17 18.2 17H16.8C16.52 17 16.38 17 16.273 16.9455C16.1789 16.8976 16.1024 16.8211 16.0545 16.727C16 16.62 16 16.48 16 16.2V7.8C16 7.51998 16 7.37996 16.0545 7.27301C16.1024 7.17893 16.1789 7.10243 16.273 7.0545C16.38 7 16.52 7 16.8 7H18.2C18.48 7 18.62 7 18.727 7.0545C18.8211 7.10243 18.8976 7.17893 18.9455 7.27301C19 7.37996 19 7.51998 19 7.8Z" fill="currentColor"></path>
+									<path d="M11.375 10.125C11.375 11.2986 10.4236 12.25 9.25 12.25C8.0764 12.25 7.125 11.2986 7.125 10.125C7.125 8.9514 8.0764 8 9.25 8C10.4236 8 11.375 8.9514 11.375 10.125Z" fill="currentColor"></path>
+									<path d="M13.1001 14.3646C13.3709 14.5607 13.5313 14.9034 13.4949 15.2566C13.4752 15.4471 13.4406 15.5955 13.3796 15.7265C13.2556 15.993 13.0576 16.2098 12.8141 16.3456C12.5372 16.5 12.1748 16.5 11.45 16.5H7.04994C6.32515 16.5 5.96276 16.5 5.68592 16.3456C5.44241 16.2098 5.24443 15.993 5.12036 15.7265C5.05941 15.5955 5.02479 15.4471 5.00514 15.2567C4.96867 14.9035 5.12907 14.5608 5.3999 14.3647C6.50392 13.5654 7.82734 13.1 9.25006 13.1C10.6727 13.1 11.9961 13.5654 13.1001 14.3646Z" fill="currentColor"></path>
+									<path fill-rule="evenodd" clip-rule="evenodd" d="M18.0804 4H5.91957C5.38542 3.99999 4.93956 3.99998 4.57533 4.02974C4.19544 4.06078 3.83879 4.12789 3.50153 4.29973C2.98408 4.56339 2.56338 4.98408 2.29973 5.50153C2.12789 5.83879 2.06078 6.19545 2.02974 6.57533C1.99998 6.93956 1.99999 7.3854 2 7.91955V16.0805C1.99999 16.6146 1.99998 17.0604 2.02974 17.4247C2.06078 17.8046 2.12789 18.1612 2.29973 18.4985C2.56338 19.0159 2.98408 19.4366 3.50153 19.7003C3.83879 19.8721 4.19545 19.9392 4.57533 19.9703C4.93956 20 5.3854 20 5.91955 20H18.0805C18.6146 20 19.0604 20 19.4247 19.9703C19.8046 19.9392 20.1612 19.8721 20.4985 19.7003C21.0159 19.4366 21.4366 19.0159 21.7003 18.4985C21.8721 18.1612 21.9392 17.8046 21.9703 17.4247C22 17.0604 22 16.6146 22 16.0805V7.91957C22 7.38542 22 6.93956 21.9703 6.57533C21.9392 6.19545 21.8721 5.83879 21.7003 5.50153C21.4366 4.98408 21.0159 4.56339 20.4985 4.29973C20.1612 4.12789 19.8046 4.06078 19.4247 4.02974C19.0604 3.99998 18.6146 3.99999 18.0804 4ZM19.3025 5.52476C19.5896 5.54822 19.7269 5.5901 19.8175 5.63624C20.0527 5.75608 20.2439 5.94731 20.3638 6.18251C20.4099 6.27307 20.4518 6.41036 20.4752 6.69748C20.4994 6.99336 20.5 7.37757 20.5 7.95V16.05C20.5 16.6224 20.4994 17.0066 20.4752 17.3025C20.4518 17.5896 20.4099 17.7269 20.3638 17.8175C20.2439 18.0527 20.0527 18.2439 19.8175 18.3638C19.7269 18.4099 19.5896 18.4518 19.3025 18.4752C19.0066 18.4994 18.6224 18.5 18.05 18.5H5.95C5.37757 18.5 4.99336 18.4994 4.69748 18.4752C4.41036 18.4518 4.27307 18.4099 4.18251 18.3638C3.94731 18.2439 3.75608 18.0527 3.63624 17.8175C3.5901 17.7269 3.54822 17.5896 3.52476 17.3025C3.50058 17.0066 3.5 16.6224 3.5 16.05V7.95C3.5 7.37757 3.50058 6.99336 3.52476 6.69748C3.54822 6.41036 3.5901 6.27307 3.63624 6.18251C3.75608 5.94731 3.94731 5.75608 4.18251 5.63624C4.27307 5.5901 4.41036 5.54822 4.69748 5.52476C4.99336 5.50058 5.37757 5.5 5.95 5.5H18.05C18.6224 5.5 19.0066 5.50058 19.3025 5.52476Z" fill="currentColor"></path>
+								</svg>
+							</div>
+							<div className="bg-black rounded-full">
+								<svg width="35px" viewBox="0 0 24 24" fill="none">
+									<path fill-rule="evenodd" clip-rule="evenodd" d="M18.99 9.894c.45.207 1.585.886 1.73.977.175.11.282.303.28.51v1.238a.598.598 0 01-.288.515c-.19.12-1.298.781-1.73.977l-.558 1.35c.18.476.502 1.75.54 1.916a.598.598 0 01-.162.558l-.875.874a.602.602 0 01-.558.162l-.022-.005c-.27-.07-1.46-.374-1.893-.535l-1.35.558c-.207.45-.885 1.586-.977 1.73a.603.603 0 01-.51.281h-1.236a.598.598 0 01-.515-.288c-.12-.19-.781-1.298-.977-1.73l-1.35-.558c-.476.18-1.75.502-1.916.54a.598.598 0 01-.558-.162l-.874-.875a.601.601 0 01-.162-.558l.005-.022c.07-.27.374-1.46.535-1.893l-.558-1.35c-.45-.207-1.586-.885-1.73-.977a.603.603 0 01-.281-.51v-1.236c0-.208.109-.401.286-.51.191-.12 1.298-.78 1.73-.977l.558-1.35c-.18-.475-.502-1.75-.54-1.915a.598.598 0 01.162-.558l.875-.88a.601.601 0 01.558-.162l.023.005c.27.07 1.46.374 1.892.535l1.35-.558c.207-.45.886-1.586.977-1.73a.603.603 0 01.51-.281h1.238c.208 0 .401.109.51.286.12.191.78 1.298.977 1.73l1.35.558c.475-.18 1.75-.502 1.915-.54a.598.598 0 01.558.162l.88.875a.601.601 0 01.162.558l-.005.022c-.07.271-.374 1.46-.535 1.893l.558 1.35zM8.08 11.993a3.922 3.922 0 107.845.007 3.922 3.922 0 00-7.845-.007z" fill="currentColor"></path>
+								</svg>
+							</div>
 						</div>
 					</div>
-					
-					<div className="flex-1 flex flex-col min-h-0 ">
-						{activeTab === 'participants' ? (
-							<div className="flex flex-col gap-2 p-2 overflow-y-auto custom-scrollbar" style={{ maxHeight: "calc(100vh - 34vh)"}}>
-								{(!participants || participants.length === 0) ? (
-									<div className="text-gray-500 italic p-2">No other participants...</div>
-								) : (
-									participants.map((p) => (
-										<div
-											key={p.user_id}
-											className="group flex items-center justify-between p-3 bg-[#1e1e1e] hover:bg-[#262626] border border-transparent hover:border-gray-700 rounded-2xl transition-all duration-200 shadow-sm flex-shrink-0"
-										>
-											<div className="flex items-center gap-3">
-												<div className="relative w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-900/20 ring-2 ring-[#1e1e1e]">
-													{p.user_id.charAt(0).toUpperCase()}
-													<span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#1e1e1e] rounded-full shadow-sm animate-pulse"></span>
+				</div>
+			</header>
+
+			<main className={`flex-1 grid ${activeTab ? 'grid-cols-[1fr_3fr_1fr]' : 'grid-cols-[3fr_1fr]'} grid-rows-[minmax(0,1fr)] gap-4 p-4 h-screen box-border items-stretch overflow-hidden transition-all duration-300`}>
+				{activeTab && (
+					<div className="bg-[#171717] w-full h-full min-h-0 rounded-xl flex flex-col overflow-hidden p-4">
+						<div className="flex w-full justify-between flex-none">
+							<span className="font-bold text-[25px] p-2">
+								{count} {count === 1 ? "participant" : "participants"}
+							</span>
+							<div className="flex gap-1 p-2">
+								<svg width="30px" viewBox="0 0 24 24" fill="none">
+									<path fill-rule="evenodd" clip-rule="evenodd" d="M9.75 3.5C6.29822 3.5 3.5 6.29822 3.5 9.75C3.5 13.2018 6.29822 16 9.75 16C13.2018 16 16 13.2018 16 9.75C16 6.29822 13.2018 3.5 9.75 3.5ZM2 9.75C2 5.46979 5.46979 2 9.75 2C14.0302 2 17.5 5.46979 17.5 9.75C17.5 11.62 16.8377 13.3353 15.7348 14.6742L20.7803 19.7197C21.0732 20.0126 21.0732 20.4874 20.7803 20.7803C20.4874 21.0732 20.0126 21.0732 19.7197 20.7803L14.6742 15.7348C13.3353 16.8377 11.62 17.5 9.75 17.5C5.46979 17.5 2 14.0302 2 9.75Z" fill="currentColor"></path>
+								</svg>
+								<svg width="30px" viewBox="0 0 24 24" fill="none">
+									<path fill-rule="evenodd" clip-rule="evenodd" d="M5.46967 5.46967C5.76256 5.17678 6.23744 5.17678 6.53033 5.46967L12 10.9393L17.4697 5.46967C17.7626 5.17678 18.2374 5.17678 18.5303 5.46967C18.8232 5.76256 18.8232 6.23744 18.5303 6.53033L13.0607 12L18.5303 17.4697C18.8232 17.7626 18.8232 18.2374 18.5303 18.5303C18.2374 18.8232 17.7626 18.8232 17.4697 18.5303L12 13.0607L6.53033 18.5303C6.23744 18.8232 5.76256 18.8232 5.46967 18.5303C5.17678 18.2374 5.17678 17.7626 5.46967 17.4697L10.9393 12L5.46967 6.53033C5.17678 6.23744 5.17678 5.76256 5.46967 5.46967Z" fill="currentColor"></path>
+								</svg>
+							</div>
+						</div>
+						
+						<div className="flex-1 flex flex-col min-h-0 ">
+							{activeTab === 'participants' ? (
+								<div className="flex flex-col gap-2 p-2 overflow-y-auto custom-scrollbar" style={{ maxHeight: "calc(100vh - 34vh)"}}>
+									{(!participants || participants.length === 0) ? (
+										<div className="text-gray-500 italic p-2">No other participants...</div>
+									) : (
+										participants.map((p) => (
+											<div
+												key={p.user_id}
+												className="group flex items-center justify-between p-3 bg-[#1e1e1e] hover:bg-[#262626] border border-transparent hover:border-gray-700 rounded-2xl transition-all duration-200 shadow-sm flex-shrink-0"
+											>
+												<div className="flex items-center gap-3">
+													<div className="relative w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-900/20 ring-2 ring-[#1e1e1e]">
+														{p.user_id.charAt(0).toUpperCase()}
+														<span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#1e1e1e] rounded-full shadow-sm animate-pulse"></span>
+													</div>
+													
+													<div className="flex flex-col">
+														<span className="text-gray-100 font-semibold text-sm tracking-wide">
+															{p.user_id}
+															{p.user_id === userId && (
+																<span className="ml-2 text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full uppercase tracking-tighter">
+																	You
+																</span>
+															)}
+														</span>
+														<span className="text-[11px] text-gray-500 group-hover:text-green-500/80 transition-colors">
+															Active now
+														</span>
+													</div>
 												</div>
 												
-												<div className="flex flex-col">
-													<span className="text-gray-100 font-semibold text-sm tracking-wide">
-														{p.user_id}
-														{p.user_id === userId && (
-															<span className="ml-2 text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full uppercase tracking-tighter">
-																You
-															</span>
-														)}
-													</span>
-													<span className="text-[11px] text-gray-500 group-hover:text-green-500/80 transition-colors">
-														Active now
-													</span>
+												<div className="opacity-0 group-hover:opacity-100 transition-opacity pr-2">
+													<div className="w-1.5 h-1.5 rounded-full bg-gray-600"></div>
 												</div>
-											</div>
-											
-											<div className="opacity-0 group-hover:opacity-100 transition-opacity pr-2">
-												<div className="w-1.5 h-1.5 rounded-full bg-gray-600"></div>
-											</div>
-										</div>
-									))
-								)}
-							</div>
-						) : (
-							<div className="flex flex-col flex-1 min-h-0">
-								<div className="flex-1 overflow-y-auto mb-4 space-y-3 pr-2 custom-scrollbar" style={{ maxHeight: 'calc(100vh - 34vh)' }}>
-									{messages.length === 0 ? (
-										<div className="text-gray-500 text-sm italic">No messages yet...</div>
-									) : (
-										messages.map((msg) => (
-											<div key={msg.id} className="self-end bg-[#262626] text-white p-3 rounded-2xl rounded-tr-none max-w-[80%] ml-auto shadow-sm">
-												<p className="text-sm leading-relaxed break-words">{parseMessage(msg.text)}</p>
-												<span className="block text-[10px] text-gray-500 text-right mt-1">
-													{msg.time}
-												</span>
 											</div>
 										))
 									)}
 								</div>
-								
-								<div className="flex-none pt-2 mt-auto">
-									<input
-										type="text"
-										placeholder="Enter message"
-										value={inputValue}
-										onChange={(e) => setInputValue(e.target.value)}
-										onKeyDown={handleKeyDown}
-										className="w-full bg-[#262626] rounded-lg p-3 outline-none border border-transparent focus:border-blue-500 transition-all"
-									/>
+							) : (
+								<div className="flex flex-col flex-1 min-h-0">
+									<div className="flex-1 overflow-y-auto mb-4 space-y-3 pr-2 custom-scrollbar" style={{ maxHeight: 'calc(100vh - 34vh)' }}>
+										{messages.length === 0 ? (
+											<div className="text-gray-500 text-sm italic">No messages yet...</div>
+										) : (
+											messages.map((msg) => (
+												<div key={msg.id} className="self-end bg-[#262626] text-white p-3 rounded-2xl rounded-tr-none max-w-[80%] ml-auto shadow-sm">
+													<p className="text-sm leading-relaxed break-words">{parseMessage(msg.text)}</p>
+													<span className="block text-[10px] text-gray-500 text-right mt-1">
+														{msg.time}
+													</span>
+												</div>
+											))
+										)}
+									</div>
+									
+									<div className="flex-none pt-2 mt-auto">
+										<input
+											type="text"
+											placeholder="Enter message"
+											value={inputValue}
+											onChange={(e) => setInputValue(e.target.value)}
+											onKeyDown={handleKeyDown}
+											className="w-full bg-[#262626] rounded-lg p-3 outline-none border border-transparent focus:border-blue-500 transition-all"
+										/>
+									</div>
 								</div>
-							</div>
+							)}
+						</div>
+						
+						{activeTab === 'participants' && (
+							<button onClick={() => setIsInviteOpen(true)} className="bg-[#333333] w-full h-[50px] rounded-md px-4 py-2 cursor-pointer">
+								<div className="flex justify-center gap-2">
+									<svg width="24px" viewBox="0 0 24 24" fill="none">
+										<path fill-rule="evenodd" clip-rule="evenodd" d="M16.2504 7.49999C16.2504 9.84719 14.3476 11.75 12.0004 11.75C9.65318 11.75 7.75039 9.84719 7.75039 7.49999C7.75039 5.15278 9.65318 3.25 12.0004 3.25C14.3476 3.25 16.2504 5.15278 16.2504 7.49999ZM11.8696 20.75C11.3165 19.7939 11 18.6839 11 17.5C11 16.1039 11.4401 14.8107 12.1892 13.7514C12.1265 13.7505 12.0638 13.75 12.001 13.75C9.10759 13.75 6.4203 14.7482 4.19361 16.4568C3.73539 16.8084 3.48305 17.3648 3.50089 17.9421C3.52124 18.6009 3.58196 19.0294 3.76311 19.385C4.00279 19.8554 4.38524 20.2378 4.85565 20.4775C5.39043 20.75 6.09049 20.75 7.49063 20.75H11.8696Z" fill="currentColor"></path>
+										<path fill-rule="evenodd" clip-rule="evenodd" d="M17.5 23C20.5376 23 23 20.5376 23 17.5C23 14.4624 20.5376 12 17.5 12C14.4624 12 12 14.4624 12 17.5C12 20.5376 14.4624 23 17.5 23ZM18 14.5C18 14.2239 17.7761 14 17.5 14C17.2239 14 17 14.2239 17 14.5V17H14.5C14.2239 17 14 17.2239 14 17.5C14 17.7761 14.2239 18 14.5 18H17V20.5C17 20.7761 17.2239 21 17.5 21C17.7761 21 18 20.7761 18 20.5V18H20.5C20.7761 18 21 17.7761 21 17.5C21 17.2239 20.7761 17 20.5 17H18V14.5Z" fill="currentColor"></path>
+									</svg>
+									<span className="font-bold">Invite to meeting</span>
+								</div>
+							</button>
 						)}
+						
+						<InviteModal
+							isOpen={isInviteOpen}
+							onClose={() => setIsInviteOpen(false)}
+							meetingData={meetingInfo}
+						/>
 					</div>
-					
-					{activeTab === 'participants' && (
-						<button onClick={() => setIsInviteOpen(true)} className="bg-[#333333] w-full h-[50px] rounded-md px-4 py-2 cursor-pointer">
-							<div className="flex justify-center gap-2">
-								<svg width="24px" viewBox="0 0 24 24" fill="none">
-									<path fill-rule="evenodd" clip-rule="evenodd" d="M16.2504 7.49999C16.2504 9.84719 14.3476 11.75 12.0004 11.75C9.65318 11.75 7.75039 9.84719 7.75039 7.49999C7.75039 5.15278 9.65318 3.25 12.0004 3.25C14.3476 3.25 16.2504 5.15278 16.2504 7.49999ZM11.8696 20.75C11.3165 19.7939 11 18.6839 11 17.5C11 16.1039 11.4401 14.8107 12.1892 13.7514C12.1265 13.7505 12.0638 13.75 12.001 13.75C9.10759 13.75 6.4203 14.7482 4.19361 16.4568C3.73539 16.8084 3.48305 17.3648 3.50089 17.9421C3.52124 18.6009 3.58196 19.0294 3.76311 19.385C4.00279 19.8554 4.38524 20.2378 4.85565 20.4775C5.39043 20.75 6.09049 20.75 7.49063 20.75H11.8696Z" fill="currentColor"></path>
-									<path fill-rule="evenodd" clip-rule="evenodd" d="M17.5 23C20.5376 23 23 20.5376 23 17.5C23 14.4624 20.5376 12 17.5 12C14.4624 12 12 14.4624 12 17.5C12 20.5376 14.4624 23 17.5 23ZM18 14.5C18 14.2239 17.7761 14 17.5 14C17.2239 14 17 14.2239 17 14.5V17H14.5C14.2239 17 14 17.2239 14 17.5C14 17.7761 14.2239 18 14.5 18H17V20.5C17 20.7761 17.2239 21 17.5 21C17.7761 21 18 20.7761 18 20.5V18H20.5C20.7761 18 21 17.7761 21 17.5C21 17.2239 20.7761 17 20.5 17H18V14.5Z" fill="currentColor"></path>
-								</svg>
-								<span className="font-bold">Invite to meeting</span>
-							</div>
-						</button>
-					)}
-					
-					<InviteModal
-						isOpen={isInviteOpen}
-						onClose={() => setIsInviteOpen(false)}
-						meetingData={meetingInfo}
-					/>
-				</div>
-			)}
+				)}
 
-            <div className="bg-[#171717] w-full h-full rounded-xl flex items-center justify-center relative overflow-hidden">
-				{screenStream ? (
-					<video
-						autoPlay
-						playsInline
-						ref={videoRef}
-						className="w-full h-full object-contain rounded-xl"
-					/>
-				) : Array.isArray(remoteStreams) && remoteStreams.length > 0 ? (
-					remoteStreams.map((stream, index) => (
+				<div className="bg-[#171717] w-full h-full rounded-xl flex items-center justify-center relative overflow-hidden">
+					{screenStream ? (
 						<video
-							key={stream.id}
+							autoPlay
+							playsInline
+							ref={videoRef}
+							className="w-full h-full object-contain rounded-xl"
+						/>
+					) : Array.isArray(remoteStreams) && remoteStreams.length > 0 ? (
+						remoteStreams.map((stream, index) => (
+							<video
+								key={stream.id}
+								autoPlay
+								playsInline
+								muted
+								ref={(el) => {
+									if (el && stream) {
+										videoRefs.current[index] = el;
+									}
+								}}
+								className="absolute inset-0 w-full h-full object-cover rounded-xl"
+								style={{ maxWidth: '100%', maxHeight: '100%' }}
+							/>
+						))
+					) : (
+						<div>
+							<span className="font-bold text-[30px] text-[#999595]">Руководитель отдела Python-разработки</span>
+						</div>
+					)}
+				</div>
+				<div className="bg-[#171717] w-full h-[200px] min-h-0 rounded-xl flex items-center relative">
+					{localStream ? (
+						<video
+							ref={localVideoRef}
 							autoPlay
 							playsInline
 							muted
-							ref={(el) => {
-								if (el && stream) {
-									videoRefs.current[index] = el;
-								}
-							}}
-							className="absolute inset-0 w-full h-full object-cover rounded-xl"
-							style={{ maxWidth: '100%', maxHeight: '100%' }}
+							className="w-full h-full object-cover rounded-xl"
 						/>
-					))
-				) : (
-					<div>
-						<span className="font-bold text-[30px] text-[#999595]">Руководитель отдела Python-разработки</span>
-					</div>
-				)}
-            </div>
-            <div className="bg-[#171717] w-full h-[200px] min-h-0 rounded-xl flex items-center relative">
-				{localStream ? (
-					<video
-						ref={localVideoRef}
-						autoPlay
-						playsInline
-						muted
-						className="w-full h-full object-cover rounded-xl"
-					/>
-				) : (
-					<div className="flex flex-col items-center justify-center h-full w-full">
-						<svg width="24px" viewBox="0 0 24 24" fill="none" className="absolute bottom-2 left-2">
-							<path d="M11.9999 2C10.0669 2 8.49994 3.67893 8.49994 5.75V11.75C8.49994 12.2471 8.59022 12.7216 8.75416 13.1557L7.45127 14.4586C7.08164 13.8449 6.83854 13.157 6.74353 12.4353C6.68946 12.0246 6.31272 11.7356 5.90205 11.7896C5.49138 11.8437 5.2023 12.2204 5.25636 12.6311C5.39487 13.6832 5.77814 14.6793 6.3658 15.5441L2.46967 19.4402C2.17678 19.7331 2.17678 20.208 2.46967 20.5009C2.76256 20.7938 3.23744 20.7938 3.53033 20.5009L7.34482 16.6864C7.34477 16.6864 7.34487 16.6864 7.34482 16.6864L8.40645 15.625C8.4064 15.625 8.40649 15.6251 8.40645 15.625L9.57605 14.4552C9.57601 14.4551 9.57609 14.4552 9.57605 14.4552L20.5009 3.53033C20.7938 3.23744 20.7938 2.76256 20.5009 2.46967C20.208 2.17678 19.7331 2.17678 19.4402 2.46967L15.4999 6.40996V5.75C15.4999 3.67893 13.9329 2 11.9999 2Z" fill="red"></path>
-							<path d="M9.67204 16.4808L8.56313 17.5897C9.3702 18.0576 10.2676 18.3542 11.1986 18.4583V20.75C11.1986 21.1642 11.5344 21.5 11.9486 21.5C12.3628 21.5 12.6986 21.1642 12.6986 20.75V18.4583C14.0641 18.3056 15.3572 17.7388 16.3992 16.825C17.6304 15.7452 18.4271 14.2547 18.6409 12.6311C18.6949 12.2204 18.4058 11.8437 17.9952 11.7896C17.5845 11.7356 17.2078 12.0246 17.1537 12.4353C16.9875 13.6981 16.3678 14.8574 15.4102 15.6972C14.4526 16.537 13.2223 17 11.9486 17C11.1543 17 10.3769 16.82 9.67204 16.4808Z" fill="red"></path>
-							<path d="M15.4999 10.6529L10.8572 15.2956C11.2153 15.4281 11.5998 15.5 11.9999 15.5C13.9329 15.5 15.4999 13.8211 15.4999 11.75V10.6529Z" fill="red"></path>
-						</svg>
-						<span className="text-[#999595] text-[20px] font-bold text-center">Руководитель отдела Python-разработки</span>
-					</div>
-				)}
-            </div> 
-        </main>
-
-        <footer className="h-16 bg-[#080808] flex items-center justify-center px-4">
-            <div className="flex w-full justify-between items-center">
-                <div className="flex gap-2">
-                    <div onClick={() => setMicMuted(!micMuted)} className="flex bg-[#262626] w-[72px] h-[40px] rounded-xl justify-center items-center">
-                        <svg width="33px" viewBox="0 0 24 24" fill="none">
-							{micMuted ? (
-								<>
-									<path d="M11.9999 2C10.0669 2 8.49994 3.67893 8.49994 5.75V11.75C8.49994 12.2471 8.59022 12.7216 8.75416 13.1557L7.45127 14.4586C7.08164 13.8449 6.83854 13.157 6.74353 12.4353C6.68946 12.0246 6.31272 11.7356 5.90205 11.7896C5.49138 11.8437 5.2023 12.2204 5.25636 12.6311C5.39487 13.6832 5.77814 14.6793 6.3658 15.5441L2.46967 19.4402C2.17678 19.7331 2.17678 20.208 2.46967 20.5009C2.76256 20.7938 3.23744 20.7938 3.53033 20.5009L7.34482 16.6864C7.34487 16.6864 7.34477 16.6864 7.34482 16.6864L8.40645 15.625C8.40649 15.6251 8.4064 15.625 8.40645 15.625L9.57605 14.4552C9.57609 14.4552 9.57601 14.4551 9.57605 14.4552L20.5009 3.53033C20.7938 3.23744 20.7938 2.76256 20.5009 2.46967C20.208 2.17678 19.7331 2.17678 19.4402 2.46967L15.4999 6.40996V5.75C15.4999 3.67893 13.9329 2 11.9999 2Z" fill="red"></path>
-									<path d="M9.67204 16.4808L8.56313 17.5897C9.3702 18.0576 10.2676 18.3542 11.1986 18.4583V20.75C11.1986 21.1642 11.5344 21.5 11.9486 21.5C12.3628 21.5 12.6986 21.1642 12.6986 20.75V18.4583C14.0641 18.3056 15.3572 17.7388 16.3992 16.825C17.6304 15.7452 18.4271 14.2547 18.6409 12.6311C18.6949 12.2204 18.4058 11.8437 17.9952 11.7896C17.5845 11.7356 17.2078 12.0246 17.1537 12.4353C16.9875 13.6981 16.3678 14.8574 15.4102 15.6972C14.4526 16.537 13.2223 17 11.9486 17C11.1543 17 10.3769 16.82 9.67204 16.4808Z" fill="red"></path>
-									<path d="M15.4999 10.6529L10.8572 15.2956C11.2153 15.4281 11.5998 15.5 11.9999 15.5C13.9329 15.5 15.4999 13.8211 15.4999 11.75V10.6529Z" fill="red"></path>
-								</>
-							) : (
-
-				<path fill-rule="evenodd" clip-rule="evenodd" d="M12.0001 2C10.0671 2 8.50009 3.67893 8.50009 5.75V11.75C8.50009 13.8211 10.0671 15.5 12.0001 15.5C13.9331 15.5 15.5001 13.8211 15.5001 11.75V5.75C15.5001 3.67893 13.9331 2 12.0001 2ZM6.74367 12.4353C6.6896 12.0246 6.31286 11.7356 5.90219 11.7896C5.49152 11.8437 5.20244 12.2204 5.2565 12.6311C5.47025 14.2547 6.26695 15.7452 7.49817 16.825C8.54017 17.7388 9.83324 18.3056 11.1988 18.4583V20.75C11.1988 21.1642 11.5345 21.5 11.9488 21.5C12.363 21.5 12.6988 21.1642 12.6988 20.75V18.4583C14.0643 18.3056 15.3573 17.7388 16.3993 16.825C17.6306 15.7452 18.4273 14.2547 18.641 12.6311C18.6951 12.2204 18.406 11.8437 17.9953 11.7896C17.5847 11.7356 17.2079 12.0246 17.1538 12.4353C16.9876 13.6981 16.3679 14.8574 15.4103 15.6972C14.4527 16.537 13.2224 17 11.9488 17C10.6751 17 9.4448 16.537 8.48719 15.6972C7.52958 14.8574 6.90992 13.6981 6.74367 12.4353Z" fill="currentColor"></path>
-							)}
-                        </svg>
-                        <svg width="25px" viewBox="0 0 24 24" fill="none">
-                            <path fillRule="evenodd" clipRule="evenodd" d="M6.96967 9.9676C7.26256 9.67471 7.73744 9.67471 8.03033 9.9676L12 13.9373L15.9697 9.9676C16.2626 9.67471 16.7374 9.67471 17.0303 9.9676C17.3232 10.2605 17.3232 10.7354 17.0303 11.0283L12 16.0586L6.96967 11.0283C6.67678 10.7354 6.67678 10.2605 6.96967 9.9676Z" fill="currentColor"></path>
-                        </svg>
-                    </div>
-          
-                    <div onClick={() => setCamMuted(!camMuted)} className="flex bg-[#262626] w-[72px] h-[40px] rounded-xl justify-center items-center">
-                        <svg width="33px" viewBox="0 0 24 24" fill="none">
-							{camMuted ? (
-								<>
-									<path d="M19.5297 4.53082C19.8229 4.23819 19.8233 3.76332 19.5307 3.47016C19.238 3.17699 18.7632 3.17656 18.47 3.46918L15.1294 6.80365C14.6153 6.30615 13.9148 6 13.1429 6H4.85714C3.27919 6 2 7.27919 2 8.85714V15.1429C2 16.4344 2.85697 17.5258 4.03331 17.8794L2.47014 19.4397C2.17698 19.7324 2.17655 20.2072 2.46917 20.5004C2.7618 20.7936 3.23667 20.794 3.52983 20.5014L19.5297 4.53082Z" fill="red"></path>
-									<path d="M13.1429 18H8.15357L16 10.1536V15.1429C16 16.7208 14.7208 18 13.1429 18Z" fill="red"></path>
-									<path d="M22.0003 8.79931C22.0003 7.95084 20.9745 7.52592 20.3745 8.12587L17.1488 11.3515C16.7867 11.7136 16.7758 12.2972 17.1241 12.6726L20.3497 16.1496C20.9386 16.7843 22.0003 16.3676 22.0003 15.5018V8.79931Z" fill="red"></path>
-								</>
-							) : (
-								<>
-									<path d="M4.85714 6C3.27919 6 2 7.27919 2 8.85714V15.1429C2 16.7208 3.27919 18 4.85714 18H13.1429C14.7208 18 16 16.7208 16 15.1429V8.85714C16 7.27919 14.7208 6 13.1429 6H4.85714Z" fill="currentColor"></path>
-									<path d="M22.0003 8.79931C22.0003 7.95084 20.9745 7.52592 20.3745 8.12587L17.1488 11.3515C16.7867 11.7136 16.7758 12.2972 17.1241 12.6726L20.3497 16.1496C20.9386 16.7843 22.0003 16.3676 22.0003 15.5018V8.79931Z" fill="currentColor"></path>
-								</>
-							)}
-                        </svg>
-                        <svg width="25px" viewBox="0 0 24 24" fill="none">
-                            <path fillRule="evenodd" clipRule="evenodd" d="M6.96967 9.9676C7.26256 9.67471 7.73744 9.67471 8.03033 9.9676L12 13.9373L15.9697 9.9676C16.2626 9.67471 16.7374 9.67471 17.0303 9.9676C17.3232 10.2605 17.3232 10.7354 17.0303 11.0283L12 16.0586L6.96967 11.0283C6.67678 10.7354 6.67678 10.2605 6.96967 9.9676Z" fill="currentColor"></path>
-                        </svg>
-                    </div>
-                </div>
-
-                <div className="flex">
-                    <div className="flex gap-7 items-end">
-                        <div onClick={() => toggleTab('participants')} className="flex flex-col items-center cursor-pointer">
-                            <div className="bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center">
-                                <svg width="24px" viewBox="0 0 24 24" fill="none">
-                                    <path d="M5 8C5 5.79086 6.79087 4 9.00001 4C11.2092 4 13 5.79086 13 8C13 10.2091 11.2092 12 9.00001 12C6.79087 12 5 10.2091 5 8Z" fill="currentColor"></path>
-                                    <path d="M3.07093 15.2816C4.77084 14.1557 6.80998 13.5 8.99999 13.5C11.19 13.5 13.2292 14.1557 14.9291 15.2816C15.6489 15.7584 16 16.5654 16 17.3536C16 18.8152 14.8152 20 13.3536 20H4.64641C3.18484 20 2 18.8152 2 17.3536C2 16.5653 2.35107 15.7584 3.07093 15.2816Z" fill="currentColor"></path>
-                                    <path d="M17.0834 7.41675C15.4726 7.41675 14.1667 8.72258 14.1667 10.3334C14.1667 11.9442 15.4726 13.2501 17.0834 13.2501C18.6943 13.2501 20.0001 11.9442 20.0001 10.3334C20.0001 8.72258 18.6943 7.41675 17.0834 7.41675Z" fill="currentColor"></path>
-                                    <path d="M17.0834 13.75C16.3654 13.75 15.6707 13.8522 15.0134 14.0429C16.2016 14.7364 17 16.025 17 17.5C17 17.8754 16.9483 18.2388 16.8516 18.5833H19.9858C21.0983 18.5833 22.0001 17.6815 22.0001 16.5691C22.0001 15.9726 21.7341 15.3502 21.1742 14.9793C20.0012 14.2024 18.594 13.75 17.0834 13.75Z" fill="currentColor"></path>
-                                </svg>
-                            </div>
-                            <span className="text-center font-semibold">Participants</span> 
-                        </div>
-                        <div onClick={() => toggleTab('chat')} className="flex flex-col items-center cursor-pointer">
-                            <div className="bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center">
-                                <svg width="24px" viewBox="0 0 24 24" fill="none">
-                                    <path d="M9.74901 3C5.74494 3 2.49901 6.24594 2.49901 10.25C2.49901 10.9221 2.59066 11.574 2.76258 12.1933C2.93471 12.8133 2.99207 13.3793 2.86123 13.8765L2.35091 15.8157C2.05856 16.9267 3.07234 17.9404 4.18326 17.6481L6.12251 17.1378C6.61969 17.0069 7.18572 17.0643 7.80575 17.2364C8.42505 17.4084 9.07693 17.5 9.74901 17.5C13.7531 17.5 16.999 14.2541 16.999 10.25C16.999 6.24594 13.7531 3 9.74901 3Z" fill="currentColor"></path>
-                                    <path d="M9.83203 18.9996C10.6685 18.9918 11.4769 18.8666 12.2416 18.6398C12.8665 18.8727 13.5429 18.9999 14.249 18.9999C14.7842 18.9999 15.3011 18.927 15.791 18.791C16.5279 18.5865 17.3926 18.4596 18.2572 18.6871L20.1965 19.1974L19.6862 17.2582C19.4586 16.3935 19.5855 15.5289 19.7901 14.792C19.9261 14.3021 19.999 13.7851 19.999 13.2499C19.999 11.7324 19.4111 10.3521 18.4507 9.32452C18.3637 8.49719 18.1614 7.7042 17.8602 6.96191C20.0349 8.2135 21.499 10.5607 21.499 13.2499C21.499 13.922 21.4074 14.5739 21.2354 15.1932C21.0633 15.8132 21.0059 16.3793 21.1368 16.8764L21.6471 18.8157C21.9395 19.9266 20.9257 20.9404 19.8148 20.648L17.8755 20.1377C17.3783 20.0069 16.8123 20.0642 16.1923 20.2364C15.573 20.4083 14.9211 20.4999 14.249 20.4999C12.5867 20.4999 11.055 19.9405 9.83203 18.9996Z" fill="currentColor"></path>
-                                </svg>
-                            </div>
-                            <span className="text-center font-semibold">Chat</span>
-                        </div>
-                        <div onClick={startScreenShare} className="flex flex-col items-center cursor-pointer">
-                            <div className="bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center">
-                                <svg width="24px" viewBox="0 0 24 24" fill="none">
-                                    <path d="M5.91957 4C5.38542 3.99999 4.93956 3.99998 4.57533 4.02974C4.19545 4.06078 3.83879 4.12789 3.50153 4.29973C2.98408 4.56339 2.56339 4.98408 2.29973 5.50153C2.12789 5.83879 2.06078 6.19545 2.02974 6.57533C1.99998 6.93956 1.99999 7.3854 2 7.91955V16.0804C1.99999 16.6146 1.99998 17.0604 2.02974 17.4247C2.06078 17.8046 2.12789 18.1612 2.29973 18.4985C2.56339 19.0159 2.98408 19.4366 3.50153 19.7003C3.83879 19.8721 4.19545 19.9392 4.57533 19.9703C4.93956 20 5.3854 20 5.91955 20H9.75V18.5H5.95C5.37757 18.5 4.99336 18.4994 4.69748 18.4752C4.41036 18.4518 4.27307 18.4099 4.18251 18.3638C3.94731 18.2439 3.75608 18.0527 3.63624 17.8175C3.5901 17.7269 3.54822 17.5896 3.52476 17.3025C3.50058 17.0066 3.5 16.6224 3.5 16.05V7.95C3.5 7.37757 3.50058 6.99336 3.52476 6.69748C3.54822 6.41036 3.5901 6.27307 3.63624 6.18251C3.75608 5.94731 3.94731 5.75608 4.18251 5.63624C4.27307 5.5901 4.41036 5.54822 4.69748 5.52476C4.99336 5.50058 5.37757 5.5 5.95 5.5H18.05C18.6224 5.5 19.0066 5.50058 19.3025 5.52476C19.5896 5.54822 19.7269 5.5901 19.8175 5.63624C20.0527 5.75608 20.2439 5.94731 20.3638 6.18251C20.4099 6.27307 20.4518 6.41036 20.4752 6.69748C20.4994 6.99336 20.5 7.37757 20.5 7.95V16.05C20.5 16.6224 20.4994 17.0066 20.4752 17.3025C20.4518 17.5896 20.4099 17.7269 20.3638 17.8175C20.2439 18.0527 20.0527 18.2439 19.8175 18.3638C19.7269 18.4099 19.5896 18.4518 19.3025 18.4752C19.0066 18.4994 18.6224 18.5 18.05 18.5H14.25V20H18.0805C18.6146 20 19.0604 20 19.4247 19.9703C19.8046 19.9392 20.1612 19.8721 20.4985 19.7003C21.0159 19.4366 21.4366 19.0159 21.7003 18.4985C21.8721 18.1612 21.9392 17.8046 21.9703 17.4247C22 17.0604 22 16.6146 22 16.0805V7.91955C22 7.3854 22 6.93956 21.9703 6.57533C21.9392 6.19545 21.8721 5.83879 21.7003 5.50153C21.4366 4.98408 21.0159 4.56339 20.4985 4.29973C20.1612 4.12789 19.8046 4.06078 19.4247 4.02974C19.0604 3.99998 18.6146 3.99999 18.0805 4H5.91957Z" fill="currentColor"></path>
-                                    <path d="M12.5303 10.2197C12.2374 9.92678 11.7626 9.92678 11.4697 10.2197L8.46967 13.2197C8.17678 13.5126 8.17678 13.9874 8.46967 14.2803C8.76256 14.5732 9.23744 14.5732 9.53033 14.2803L11.25 12.5607V21.25C11.25 21.6642 11.5858 22 12 22C12.4142 22 12.75 21.6642 12.75 21.25V12.5607L14.4697 14.2803C14.7626 14.5732 15.2374 14.5732 15.5303 14.2803C15.8232 13.9874 15.8232 13.5126 15.5303 13.2197L12.5303 10.2197Z" fill="currentColor"></path>
-                                </svg>
-                            </div>
-                            <span className="text-center font-semibold">Screen</span>
-                        </div>
-						<div className="relative">
-							{showReactions && (
-								<div
-									onClick={(e) => e.stopPropagation()}
-									className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 w-[280px] bg-[#1c1c1c] border border-white/10 rounded-[24px] p-4 shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-200"
-								>
-									<div className="grid grid-cols-6 gap-y-4 gap-x-2 mb-4 justify-items-center">
-										{EMOJIS.map((emoji) => (
-											<button
-												key={emoji}
-												onClick={() => handleEmojiClick(emoji)}
-												className="text-2xl hover:scale-125 transition-transform active:scale-90"
-											>
-												{emoji}
-											</button>
-										))}
-									</div>
-									
-									<button className="w-full flex items-center justify-center gap-2 bg-[#2b2b2b] hover:bg-[#323232] border border-blue-500/50 py-3 rounded-xl transition-all active:scalse-[0.98]"
-									>
-										<span className="text-lg">✋</span>
-										<span className="font-semibold text-sm">Raise hand</span>
-									</button>
-								</div>
-							)}
-
-							<div onClick={(e) => {
-									e.stopPropagation();
-									setShowReactions(!showReactions);
-								}}
-								className="flex flex-col items-center cursor-pointer"
-							>
-								<div className="bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center">
-									<svg width="24px" viewBox="0 0 24 24" fill="none">
-										<path d="M8.75 11C9.44036 11 10 10.4404 10 9.75C10 9.05964 9.44036 8.5 8.75 8.5C8.05964 8.5 7.5 9.05964 7.5 9.75C7.5 10.4404 8.05964 11 8.75 11Z" fill="currentColor"></path>
-										<path d="M16.5 9.75C16.5 10.4404 15.9404 11 15.25 11C14.5596 11 14 10.4404 14 9.75C14 9.05964 14.5596 8.5 15.25 8.5C15.9404 8.5 16.5 9.05964 16.5 9.75Z" fill="currentColor"></path>
-										<path d="M8.31939 14.125C8.11229 13.7663 7.65359 13.6434 7.29487 13.8505C6.93615 14.0576 6.81325 14.5163 7.02035 14.875C7.52502 15.7491 8.25089 16.475 9.125 16.9796C9.99911 17.4843 10.9907 17.75 12 17.75C13.0093 17.75 14.0009 17.4843 14.875 16.9796C15.7491 16.475 16.475 15.7491 16.9796 14.875C17.1868 14.5163 17.0638 14.0576 16.7051 13.8505C16.3464 13.6434 15.8877 13.7663 15.6806 14.125C15.3076 14.7711 14.7711 15.3076 14.125 15.6806C13.4789 16.0536 12.746 16.25 12 16.25C11.254 16.25 10.5211 16.0536 9.875 15.6806C9.22892 15.3076 8.69241 14.7711 8.31939 14.125Z" fill="currentColor"></path>
-										<path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM3.5 12C3.5 7.30558 7.30558 3.5 12 3.5C16.6944 3.5 20.5 7.30558 20.5 12C20.5 16.6944 16.6944 20.5 12 20.5C7.30558 20.5 3.5 16.6944 3.5 12Z" fill="currentColor"></path>
-									</svg>
-								</div>
-								<span className="text-center font-semibold">Reactions</span>
-							</div>
-						</div>
-						
-						{activeEmojis.map(({ id, emoji }) => (
-							<FloatingEmoji
-								key={id}
-								emoji={emoji}
-								onComplete={() => removeEmoji(id)}
-							/>
-						))}
-                        <div className="relative flex flex-col items-center cursor-pointer">
-							{showMore && (
-								<div
-									onClick={(e) => {
-										e.stopPropagation();
-										handleToogleRecord();
-										setShowMore(false);
-									}}
-									className="absolute bottom-full mb-4 bg-[#1c1c1c] border border-[#333] px-4 py-3 rounded-2xl flex items-center gap-3 whitespace-nowrap shadow-2xl z-50 hover:bg-[#262626] transition-colors"
-								>
-									<div className="w-5 h-5 border-2 border-white rounded-full flex items-center justify-center">
-										<div className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-white'}`}></div>
-									</div>
-
-									<span className="font-medium text-[15px]">
-										{isRecording ? 'Stop recording' : 'Record meeting'}
-									</span>
-								</div>
-							)}
-                            <div onClick={toggleMore} className={`bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center transition-colors ${showMore ? 'bg-[#333]' : 'bg-[#262626] hover:bg-[#333]'}`}>
-                                <svg width="24px" viewBox="0 0 24 24" fill="none">
-                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" fill="currentColor"></path>
-                                </svg>
-                            </div>
-                            <span className="text-center font-semibold">More</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="relative">
-					{!showConfirm ? (
-						<button
-							onClick={() => setShowConfirm(true)}
-							className="bg-[#262626] w-[80px] h-[40px] rounded-xl"
-						>
-							<span className="text-red-600 font-semibold">Leave</span>
-						</button>
 					) : (
-						<div className="absolute bottom-0 right-0 flex flex-col items-end gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
-							<button
-								onClick={onBack}
-								className="bg-[#262626] hover:bg-[#323232] px-6 py-3 rounded-2xl transition-colors shadow-2xl border border-white/5"
-							>
-								<span className="text-red-500 font-semibold">Leave meeting</span>
-							</button>
-
-							<button
-								onClick={() => setShowConfirm(false)}
-								className="bg-[#121212] hover:bg-[#1a1a1a] border-[2px] border-blue-600/80 px-8 py-2 rounded-2xl transition-all shadow-xl"
-							>
-								<span className="text-white font-bold text-sm">Stay</span>
-							</button>
+						<div className="flex flex-col items-center justify-center h-full w-full">
+							<svg width="24px" viewBox="0 0 24 24" fill="none" className="absolute bottom-2 left-2">
+								<path d="M11.9999 2C10.0669 2 8.49994 3.67893 8.49994 5.75V11.75C8.49994 12.2471 8.59022 12.7216 8.75416 13.1557L7.45127 14.4586C7.08164 13.8449 6.83854 13.157 6.74353 12.4353C6.68946 12.0246 6.31272 11.7356 5.90205 11.7896C5.49138 11.8437 5.2023 12.2204 5.25636 12.6311C5.39487 13.6832 5.77814 14.6793 6.3658 15.5441L2.46967 19.4402C2.17678 19.7331 2.17678 20.208 2.46967 20.5009C2.76256 20.7938 3.23744 20.7938 3.53033 20.5009L7.34482 16.6864C7.34477 16.6864 7.34487 16.6864 7.34482 16.6864L8.40645 15.625C8.4064 15.625 8.40649 15.6251 8.40645 15.625L9.57605 14.4552C9.57601 14.4551 9.57609 14.4552 9.57605 14.4552L20.5009 3.53033C20.7938 3.23744 20.7938 2.76256 20.5009 2.46967C20.208 2.17678 19.7331 2.17678 19.4402 2.46967L15.4999 6.40996V5.75C15.4999 3.67893 13.9329 2 11.9999 2Z" fill="red"></path>
+								<path d="M9.67204 16.4808L8.56313 17.5897C9.3702 18.0576 10.2676 18.3542 11.1986 18.4583V20.75C11.1986 21.1642 11.5344 21.5 11.9486 21.5C12.3628 21.5 12.6986 21.1642 12.6986 20.75V18.4583C14.0641 18.3056 15.3572 17.7388 16.3992 16.825C17.6304 15.7452 18.4271 14.2547 18.6409 12.6311C18.6949 12.2204 18.4058 11.8437 17.9952 11.7896C17.5845 11.7356 17.2078 12.0246 17.1537 12.4353C16.9875 13.6981 16.3678 14.8574 15.4102 15.6972C14.4526 16.537 13.2223 17 11.9486 17C11.1543 17 10.3769 16.82 9.67204 16.4808Z" fill="red"></path>
+								<path d="M15.4999 10.6529L10.8572 15.2956C11.2153 15.4281 11.5998 15.5 11.9999 15.5C13.9329 15.5 15.4999 13.8211 15.4999 11.75V10.6529Z" fill="red"></path>
+							</svg>
+							<span className="text-[#999595] text-[20px] font-bold text-center">Руководитель отдела Python-разработки</span>
 						</div>
 					)}
-                </div>
-            </div>
-        </footer>
-    </div>
+				</div> 
+			</main>
+
+			<footer className="h-16 bg-[#080808] flex items-center justify-center px-4">
+				<div className="flex w-full justify-between items-center">
+					<div className="flex gap-2">
+						<div onClick={() => setMicMuted(!micMuted)} className="flex bg-[#262626] w-[72px] h-[40px] rounded-xl justify-center items-center">
+							<svg width="33px" viewBox="0 0 24 24" fill="none">
+								{micMuted ? (
+									<>
+										<path d="M11.9999 2C10.0669 2 8.49994 3.67893 8.49994 5.75V11.75C8.49994 12.2471 8.59022 12.7216 8.75416 13.1557L7.45127 14.4586C7.08164 13.8449 6.83854 13.157 6.74353 12.4353C6.68946 12.0246 6.31272 11.7356 5.90205 11.7896C5.49138 11.8437 5.2023 12.2204 5.25636 12.6311C5.39487 13.6832 5.77814 14.6793 6.3658 15.5441L2.46967 19.4402C2.17678 19.7331 2.17678 20.208 2.46967 20.5009C2.76256 20.7938 3.23744 20.7938 3.53033 20.5009L7.34482 16.6864C7.34487 16.6864 7.34477 16.6864 7.34482 16.6864L8.40645 15.625C8.40649 15.6251 8.4064 15.625 8.40645 15.625L9.57605 14.4552C9.57609 14.4552 9.57601 14.4551 9.57605 14.4552L20.5009 3.53033C20.7938 3.23744 20.7938 2.76256 20.5009 2.46967C20.208 2.17678 19.7331 2.17678 19.4402 2.46967L15.4999 6.40996V5.75C15.4999 3.67893 13.9329 2 11.9999 2Z" fill="red"></path>
+										<path d="M9.67204 16.4808L8.56313 17.5897C9.3702 18.0576 10.2676 18.3542 11.1986 18.4583V20.75C11.1986 21.1642 11.5344 21.5 11.9486 21.5C12.3628 21.5 12.6986 21.1642 12.6986 20.75V18.4583C14.0641 18.3056 15.3572 17.7388 16.3992 16.825C17.6304 15.7452 18.4271 14.2547 18.6409 12.6311C18.6949 12.2204 18.4058 11.8437 17.9952 11.7896C17.5845 11.7356 17.2078 12.0246 17.1537 12.4353C16.9875 13.6981 16.3678 14.8574 15.4102 15.6972C14.4526 16.537 13.2223 17 11.9486 17C11.1543 17 10.3769 16.82 9.67204 16.4808Z" fill="red"></path>
+										<path d="M15.4999 10.6529L10.8572 15.2956C11.2153 15.4281 11.5998 15.5 11.9999 15.5C13.9329 15.5 15.4999 13.8211 15.4999 11.75V10.6529Z" fill="red"></path>
+									</>
+								) : (
+
+					<path fill-rule="evenodd" clip-rule="evenodd" d="M12.0001 2C10.0671 2 8.50009 3.67893 8.50009 5.75V11.75C8.50009 13.8211 10.0671 15.5 12.0001 15.5C13.9331 15.5 15.5001 13.8211 15.5001 11.75V5.75C15.5001 3.67893 13.9331 2 12.0001 2ZM6.74367 12.4353C6.6896 12.0246 6.31286 11.7356 5.90219 11.7896C5.49152 11.8437 5.20244 12.2204 5.2565 12.6311C5.47025 14.2547 6.26695 15.7452 7.49817 16.825C8.54017 17.7388 9.83324 18.3056 11.1988 18.4583V20.75C11.1988 21.1642 11.5345 21.5 11.9488 21.5C12.363 21.5 12.6988 21.1642 12.6988 20.75V18.4583C14.0643 18.3056 15.3573 17.7388 16.3993 16.825C17.6306 15.7452 18.4273 14.2547 18.641 12.6311C18.6951 12.2204 18.406 11.8437 17.9953 11.7896C17.5847 11.7356 17.2079 12.0246 17.1538 12.4353C16.9876 13.6981 16.3679 14.8574 15.4103 15.6972C14.4527 16.537 13.2224 17 11.9488 17C10.6751 17 9.4448 16.537 8.48719 15.6972C7.52958 14.8574 6.90992 13.6981 6.74367 12.4353Z" fill="currentColor"></path>
+								)}
+							</svg>
+							<svg width="25px" viewBox="0 0 24 24" fill="none">
+								<path fillRule="evenodd" clipRule="evenodd" d="M6.96967 9.9676C7.26256 9.67471 7.73744 9.67471 8.03033 9.9676L12 13.9373L15.9697 9.9676C16.2626 9.67471 16.7374 9.67471 17.0303 9.9676C17.3232 10.2605 17.3232 10.7354 17.0303 11.0283L12 16.0586L6.96967 11.0283C6.67678 10.7354 6.67678 10.2605 6.96967 9.9676Z" fill="currentColor"></path>
+							</svg>
+						</div>
+			  
+						<div onClick={() => setCamMuted(!camMuted)} className="flex bg-[#262626] w-[72px] h-[40px] rounded-xl justify-center items-center">
+							<svg width="33px" viewBox="0 0 24 24" fill="none">
+								{camMuted ? (
+									<>
+										<path d="M19.5297 4.53082C19.8229 4.23819 19.8233 3.76332 19.5307 3.47016C19.238 3.17699 18.7632 3.17656 18.47 3.46918L15.1294 6.80365C14.6153 6.30615 13.9148 6 13.1429 6H4.85714C3.27919 6 2 7.27919 2 8.85714V15.1429C2 16.4344 2.85697 17.5258 4.03331 17.8794L2.47014 19.4397C2.17698 19.7324 2.17655 20.2072 2.46917 20.5004C2.7618 20.7936 3.23667 20.794 3.52983 20.5014L19.5297 4.53082Z" fill="red"></path>
+										<path d="M13.1429 18H8.15357L16 10.1536V15.1429C16 16.7208 14.7208 18 13.1429 18Z" fill="red"></path>
+										<path d="M22.0003 8.79931C22.0003 7.95084 20.9745 7.52592 20.3745 8.12587L17.1488 11.3515C16.7867 11.7136 16.7758 12.2972 17.1241 12.6726L20.3497 16.1496C20.9386 16.7843 22.0003 16.3676 22.0003 15.5018V8.79931Z" fill="red"></path>
+									</>
+								) : (
+									<>
+										<path d="M4.85714 6C3.27919 6 2 7.27919 2 8.85714V15.1429C2 16.7208 3.27919 18 4.85714 18H13.1429C14.7208 18 16 16.7208 16 15.1429V8.85714C16 7.27919 14.7208 6 13.1429 6H4.85714Z" fill="currentColor"></path>
+										<path d="M22.0003 8.79931C22.0003 7.95084 20.9745 7.52592 20.3745 8.12587L17.1488 11.3515C16.7867 11.7136 16.7758 12.2972 17.1241 12.6726L20.3497 16.1496C20.9386 16.7843 22.0003 16.3676 22.0003 15.5018V8.79931Z" fill="currentColor"></path>
+									</>
+								)}
+							</svg>
+							<svg width="25px" viewBox="0 0 24 24" fill="none">
+								<path fillRule="evenodd" clipRule="evenodd" d="M6.96967 9.9676C7.26256 9.67471 7.73744 9.67471 8.03033 9.9676L12 13.9373L15.9697 9.9676C16.2626 9.67471 16.7374 9.67471 17.0303 9.9676C17.3232 10.2605 17.3232 10.7354 17.0303 11.0283L12 16.0586L6.96967 11.0283C6.67678 10.7354 6.67678 10.2605 6.96967 9.9676Z" fill="currentColor"></path>
+							</svg>
+						</div>
+					</div>
+
+					<div className="flex">
+						<div className="flex gap-7 items-end">
+							<div onClick={() => toggleTab('participants')} className="flex flex-col items-center cursor-pointer">
+								<div className="bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center">
+									<svg width="24px" viewBox="0 0 24 24" fill="none">
+										<path d="M5 8C5 5.79086 6.79087 4 9.00001 4C11.2092 4 13 5.79086 13 8C13 10.2091 11.2092 12 9.00001 12C6.79087 12 5 10.2091 5 8Z" fill="currentColor"></path>
+										<path d="M3.07093 15.2816C4.77084 14.1557 6.80998 13.5 8.99999 13.5C11.19 13.5 13.2292 14.1557 14.9291 15.2816C15.6489 15.7584 16 16.5654 16 17.3536C16 18.8152 14.8152 20 13.3536 20H4.64641C3.18484 20 2 18.8152 2 17.3536C2 16.5653 2.35107 15.7584 3.07093 15.2816Z" fill="currentColor"></path>
+										<path d="M17.0834 7.41675C15.4726 7.41675 14.1667 8.72258 14.1667 10.3334C14.1667 11.9442 15.4726 13.2501 17.0834 13.2501C18.6943 13.2501 20.0001 11.9442 20.0001 10.3334C20.0001 8.72258 18.6943 7.41675 17.0834 7.41675Z" fill="currentColor"></path>
+										<path d="M17.0834 13.75C16.3654 13.75 15.6707 13.8522 15.0134 14.0429C16.2016 14.7364 17 16.025 17 17.5C17 17.8754 16.9483 18.2388 16.8516 18.5833H19.9858C21.0983 18.5833 22.0001 17.6815 22.0001 16.5691C22.0001 15.9726 21.7341 15.3502 21.1742 14.9793C20.0012 14.2024 18.594 13.75 17.0834 13.75Z" fill="currentColor"></path>
+									</svg>
+								</div>
+								<span className="text-center font-semibold">Participants</span> 
+							</div>
+							<div onClick={() => toggleTab('chat')} className="flex flex-col items-center cursor-pointer">
+								<div className="bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center">
+									<svg width="24px" viewBox="0 0 24 24" fill="none">
+										<path d="M9.74901 3C5.74494 3 2.49901 6.24594 2.49901 10.25C2.49901 10.9221 2.59066 11.574 2.76258 12.1933C2.93471 12.8133 2.99207 13.3793 2.86123 13.8765L2.35091 15.8157C2.05856 16.9267 3.07234 17.9404 4.18326 17.6481L6.12251 17.1378C6.61969 17.0069 7.18572 17.0643 7.80575 17.2364C8.42505 17.4084 9.07693 17.5 9.74901 17.5C13.7531 17.5 16.999 14.2541 16.999 10.25C16.999 6.24594 13.7531 3 9.74901 3Z" fill="currentColor"></path>
+										<path d="M9.83203 18.9996C10.6685 18.9918 11.4769 18.8666 12.2416 18.6398C12.8665 18.8727 13.5429 18.9999 14.249 18.9999C14.7842 18.9999 15.3011 18.927 15.791 18.791C16.5279 18.5865 17.3926 18.4596 18.2572 18.6871L20.1965 19.1974L19.6862 17.2582C19.4586 16.3935 19.5855 15.5289 19.7901 14.792C19.9261 14.3021 19.999 13.7851 19.999 13.2499C19.999 11.7324 19.4111 10.3521 18.4507 9.32452C18.3637 8.49719 18.1614 7.7042 17.8602 6.96191C20.0349 8.2135 21.499 10.5607 21.499 13.2499C21.499 13.922 21.4074 14.5739 21.2354 15.1932C21.0633 15.8132 21.0059 16.3793 21.1368 16.8764L21.6471 18.8157C21.9395 19.9266 20.9257 20.9404 19.8148 20.648L17.8755 20.1377C17.3783 20.0069 16.8123 20.0642 16.1923 20.2364C15.573 20.4083 14.9211 20.4999 14.249 20.4999C12.5867 20.4999 11.055 19.9405 9.83203 18.9996Z" fill="currentColor"></path>
+									</svg>
+								</div>
+								<span className="text-center font-semibold">Chat</span>
+							</div>
+							<div onClick={startScreenShare} className="flex flex-col items-center cursor-pointer">
+								<div className="bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center">
+									<svg width="24px" viewBox="0 0 24 24" fill="none">
+										<path d="M5.91957 4C5.38542 3.99999 4.93956 3.99998 4.57533 4.02974C4.19545 4.06078 3.83879 4.12789 3.50153 4.29973C2.98408 4.56339 2.56339 4.98408 2.29973 5.50153C2.12789 5.83879 2.06078 6.19545 2.02974 6.57533C1.99998 6.93956 1.99999 7.3854 2 7.91955V16.0804C1.99999 16.6146 1.99998 17.0604 2.02974 17.4247C2.06078 17.8046 2.12789 18.1612 2.29973 18.4985C2.56339 19.0159 2.98408 19.4366 3.50153 19.7003C3.83879 19.8721 4.19545 19.9392 4.57533 19.9703C4.93956 20 5.3854 20 5.91955 20H9.75V18.5H5.95C5.37757 18.5 4.99336 18.4994 4.69748 18.4752C4.41036 18.4518 4.27307 18.4099 4.18251 18.3638C3.94731 18.2439 3.75608 18.0527 3.63624 17.8175C3.5901 17.7269 3.54822 17.5896 3.52476 17.3025C3.50058 17.0066 3.5 16.6224 3.5 16.05V7.95C3.5 7.37757 3.50058 6.99336 3.52476 6.69748C3.54822 6.41036 3.5901 6.27307 3.63624 6.18251C3.75608 5.94731 3.94731 5.75608 4.18251 5.63624C4.27307 5.5901 4.41036 5.54822 4.69748 5.52476C4.99336 5.50058 5.37757 5.5 5.95 5.5H18.05C18.6224 5.5 19.0066 5.50058 19.3025 5.52476C19.5896 5.54822 19.7269 5.5901 19.8175 5.63624C20.0527 5.75608 20.2439 5.94731 20.3638 6.18251C20.4099 6.27307 20.4518 6.41036 20.4752 6.69748C20.4994 6.99336 20.5 7.37757 20.5 7.95V16.05C20.5 16.6224 20.4994 17.0066 20.4752 17.3025C20.4518 17.5896 20.4099 17.7269 20.3638 17.8175C20.2439 18.0527 20.0527 18.2439 19.8175 18.3638C19.7269 18.4099 19.5896 18.4518 19.3025 18.4752C19.0066 18.4994 18.6224 18.5 18.05 18.5H14.25V20H18.0805C18.6146 20 19.0604 20 19.4247 19.9703C19.8046 19.9392 20.1612 19.8721 20.4985 19.7003C21.0159 19.4366 21.4366 19.0159 21.7003 18.4985C21.8721 18.1612 21.9392 17.8046 21.9703 17.4247C22 17.0604 22 16.6146 22 16.0805V7.91955C22 7.3854 22 6.93956 21.9703 6.57533C21.9392 6.19545 21.8721 5.83879 21.7003 5.50153C21.4366 4.98408 21.0159 4.56339 20.4985 4.29973C20.1612 4.12789 19.8046 4.06078 19.4247 4.02974C19.0604 3.99998 18.6146 3.99999 18.0805 4H5.91957Z" fill="currentColor"></path>
+										<path d="M12.5303 10.2197C12.2374 9.92678 11.7626 9.92678 11.4697 10.2197L8.46967 13.2197C8.17678 13.5126 8.17678 13.9874 8.46967 14.2803C8.76256 14.5732 9.23744 14.5732 9.53033 14.2803L11.25 12.5607V21.25C11.25 21.6642 11.5858 22 12 22C12.4142 22 12.75 21.6642 12.75 21.25V12.5607L14.4697 14.2803C14.7626 14.5732 15.2374 14.5732 15.5303 14.2803C15.8232 13.9874 15.8232 13.5126 15.5303 13.2197L12.5303 10.2197Z" fill="currentColor"></path>
+									</svg>
+								</div>
+								<span className="text-center font-semibold">Screen</span>
+							</div>
+							<div className="relative">
+								{showReactions && (
+									<div
+										onClick={(e) => e.stopPropagation()}
+										className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 w-[280px] bg-[#1c1c1c] border border-white/10 rounded-[24px] p-4 shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-200"
+									>
+										<div className="grid grid-cols-6 gap-y-4 gap-x-2 mb-4 justify-items-center">
+											{EMOJIS.map((emoji) => (
+												<button
+													key={emoji}
+													onClick={() => handleEmojiClick(emoji)}
+													className="text-2xl hover:scale-125 transition-transform active:scale-90"
+												>
+													{emoji}
+												</button>
+											))}
+										</div>
+										
+										<button className="w-full flex items-center justify-center gap-2 bg-[#2b2b2b] hover:bg-[#323232] border border-blue-500/50 py-3 rounded-xl transition-all active:scalse-[0.98]"
+										>
+											<span className="text-lg">✋</span>
+											<span className="font-semibold text-sm">Raise hand</span>
+										</button>
+									</div>
+								)}
+
+								<div onClick={(e) => {
+										e.stopPropagation();
+										setShowReactions(!showReactions);
+									}}
+									className="flex flex-col items-center cursor-pointer"
+								>
+									<div className="bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center">
+										<svg width="24px" viewBox="0 0 24 24" fill="none">
+											<path d="M8.75 11C9.44036 11 10 10.4404 10 9.75C10 9.05964 9.44036 8.5 8.75 8.5C8.05964 8.5 7.5 9.05964 7.5 9.75C7.5 10.4404 8.05964 11 8.75 11Z" fill="currentColor"></path>
+											<path d="M16.5 9.75C16.5 10.4404 15.9404 11 15.25 11C14.5596 11 14 10.4404 14 9.75C14 9.05964 14.5596 8.5 15.25 8.5C15.9404 8.5 16.5 9.05964 16.5 9.75Z" fill="currentColor"></path>
+											<path d="M8.31939 14.125C8.11229 13.7663 7.65359 13.6434 7.29487 13.8505C6.93615 14.0576 6.81325 14.5163 7.02035 14.875C7.52502 15.7491 8.25089 16.475 9.125 16.9796C9.99911 17.4843 10.9907 17.75 12 17.75C13.0093 17.75 14.0009 17.4843 14.875 16.9796C15.7491 16.475 16.475 15.7491 16.9796 14.875C17.1868 14.5163 17.0638 14.0576 16.7051 13.8505C16.3464 13.6434 15.8877 13.7663 15.6806 14.125C15.3076 14.7711 14.7711 15.3076 14.125 15.6806C13.4789 16.0536 12.746 16.25 12 16.25C11.254 16.25 10.5211 16.0536 9.875 15.6806C9.22892 15.3076 8.69241 14.7711 8.31939 14.125Z" fill="currentColor"></path>
+											<path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM3.5 12C3.5 7.30558 7.30558 3.5 12 3.5C16.6944 3.5 20.5 7.30558 20.5 12C20.5 16.6944 16.6944 20.5 12 20.5C7.30558 20.5 3.5 16.6944 3.5 12Z" fill="currentColor"></path>
+										</svg>
+									</div>
+									<span className="text-center font-semibold">Reactions</span>
+								</div>
+							</div>
+							
+							{activeEmojis.map(({ id, emoji }) => (
+								<FloatingEmoji
+									key={id}
+									emoji={emoji}
+									onComplete={() => removeEmoji(id)}
+								/>
+							))}
+							<div className="relative flex flex-col items-center cursor-pointer">
+								{showMore && (
+									<div
+										onClick={(e) => {
+											e.stopPropagation();
+											handleToogleRecord();
+											setShowMore(false);
+										}}
+										className="absolute bottom-full mb-4 bg-[#1c1c1c] border border-[#333] px-4 py-3 rounded-2xl flex items-center gap-3 whitespace-nowrap shadow-2xl z-50 hover:bg-[#262626] transition-colors"
+									>
+										<div className="w-5 h-5 border-2 border-white rounded-full flex items-center justify-center">
+											<div className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-white'}`}></div>
+										</div>
+
+										<span className="font-medium text-[15px]">
+											{isRecording ? 'Stop recording' : 'Record meeting'}
+										</span>
+									</div>
+								)}
+								<div onClick={toggleMore} className={`bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center transition-colors ${showMore ? 'bg-[#333]' : 'bg-[#262626] hover:bg-[#333]'}`}>
+									<svg width="24px" viewBox="0 0 24 24" fill="none">
+										<path fill-rule="evenodd" clip-rule="evenodd" d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" fill="currentColor"></path>
+									</svg>
+								</div>
+								<span className="text-center font-semibold">More</span>
+							</div>
+						</div>
+					</div>
+
+					<div className="relative">
+						{!showConfirm ? (
+							<button
+								onClick={() => setShowConfirm(true)}
+								className="bg-[#262626] w-[80px] h-[40px] rounded-xl"
+							>
+								<span className="text-red-600 font-semibold">Leave</span>
+							</button>
+						) : (
+							<div className="absolute bottom-0 right-0 flex flex-col items-end gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
+								<button
+									onClick={handleLeaveAndGenerate}
+									className="bg-[#262626] hover:bg-[#323232] px-6 py-3 rounded-2xl transition-colors shadow-2xl border border-white/5"
+								>
+									<span className="text-red-500 font-semibold">Leave meeting</span>
+								</button>
+
+								<button
+									onClick={() => setShowConfirm(false)}
+									className="bg-[#121212] hover:bg-[#1a1a1a] border-[2px] border-blue-600/80 px-8 py-2 rounded-2xl transition-all shadow-xl"
+								>
+									<span className="text-white font-bold text-sm">Stay</span>
+								</button>
+							</div>
+						)}
+					</div>
+				</div>
+			</footer>
+		</div>
+	  </>
   );
 }
