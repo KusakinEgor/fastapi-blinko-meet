@@ -1,10 +1,13 @@
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, or_
+
 from app.database.db import get_db_session
-from app.models.user import ProfileOut, SettingsOut, ProfileUpdate, SettingsUpdate
+from app.models.user import ProfileOut, SettingsOut, ProfileUpdate, SettingsUpdate, RoomHistoryOut
 from app.schemas.user import UserProfile, UserSettings
 from app.schemas.auth import User
+from app.schemas.meeting import Participants, Rooms
 from app.services.get_user import get_current_user
 
 router = APIRouter(prefix="/user", tags=["User Settings"])
@@ -122,3 +125,43 @@ async def get_profile(
         )
 
     return profile
+
+@router.get(
+        "/history",
+        response_model=List[RoomHistoryOut],
+        summary="Get user meeting history",
+        description="Retrieve a list of rooms where the current user was a participant or owner.",
+        responses={
+            200: {"description": "History retrieved successfully"},
+            401: {"description": "Authentication required"},
+            500: {"description": "Database error"}
+        }
+)
+async def get_user_history(
+        db: AsyncSession = Depends(get_db_session),
+        current_user: User = Depends(get_current_user)
+):
+    try:
+        stmt = (
+                select(Rooms)
+                .outerjoin(Participants, Rooms.id == Participants.room_id)
+                .where(
+                    or_(
+                        Rooms.owner_id == current_user.id,
+                        Participants.user_id == current_user.id
+                    )
+                )
+                .distinct()
+                .order_by(Rooms.created_at.desc())
+        )
+
+        result = await db.execute(stmt)
+        rooms = result.scalars().all()
+
+        return rooms
+
+    except Exception as e:
+        raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Database Error: {str(e)}"
+        )
