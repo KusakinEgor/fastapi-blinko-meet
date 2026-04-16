@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel, HttpUrl, Field
 from typing import Optional
 
@@ -48,6 +49,17 @@ class SettingsUpdate(BaseModel):
             True,
             description="Automatically adjust microphone input volume"
     )
+
+    class Config:
+        from_attributes = True
+
+class RoomHistoryOut(BaseModel):
+    id: int = Field(..., examples=[1])
+    slug: str = Field(..., examples=["97658d-a36590"])
+    name: str = Field(..., examples=["Project Sync"])
+    is_active: bool = Field(..., examples=[True])
+    created_at: datetime = Field(..., examples=["2026-10-24T14:20:00"])
+    closed_at: Optional[datetime] = Field(None, examples=["2026-10-24T15:20:00"])
 
     class Config:
         from_attributes = True
