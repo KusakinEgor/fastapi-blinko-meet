@@ -4,7 +4,7 @@ from datetime import datetime
 
 class SummaryOut(BaseModel):
     id: int = Field(..., examples=[1])
-    room_id: str = Field(..., examples=["71k3cu-psw-OB1QX"])
+    room_id: int = Field(..., examples=["71k3cu-psw-OB1QX"])
     summary_text: str = Field(
             ...,
             description="Generated GigaChat shortly sum meeting",
