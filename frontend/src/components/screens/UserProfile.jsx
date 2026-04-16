@@ -1,24 +1,35 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getProfile, getAvatarUrl } from "../../api/user.js";
 
 const UserProfile = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem("user");
-    if (stored) {
-      setUser(JSON.parse(stored));
-    } else {
-      setUser({
-        username: "Ivan_Zolo",
-        email: "ivan_zolo2006@gmail.com",
-        status: "PRO",
-        likes: 1337,
-        avatarPreview: null,
-        dateOfBirth: "2006-01-01"
-      });
-    }
+	  const loadProfileData = async () => {
+		  try {
+			  const data = await getProfile();
+
+			  setUser({
+				  username: data.display_name || "New User",
+				  email: "ivan_zolo2006@gmail.com",
+				  status: "PRO",
+				  likes: 1337,
+				  avatarPreview: getAvatarUrl(data.avatar_url),
+				  dateOfBirth: "2006-01-01"
+			  });
+		  } catch (err) {
+			  console.error("Backend profile load failed, using fallback", err);
+			  const stored = localStorage.getItem("user");
+
+			  if (stored) {
+				  setUser(JSON.parse(stored));
+			  }
+		  }
+	  };
+
+	  loadProfileData();
   }, []);
 
   const [trophies] = useState([
