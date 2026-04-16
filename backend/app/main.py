@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database.db import engine
@@ -11,6 +12,7 @@ from app.routing.media import router as media_router
 from app.routing.admin import router as admin_router
 from app.routing.chat import router as chat_router
 from app.routing.ai import router as ai_router
+from app.routing.users import router as users_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -48,6 +50,9 @@ app.include_router(media_router)
 app.include_router(admin_router)
 app.include_router(chat_router)
 app.include_router(ai_router)
+app.include_router(users_router)
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/", summary="root endpoint")
 async def get_hello():
