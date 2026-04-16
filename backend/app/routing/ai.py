@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, status, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from typing import List
 from datetime import datetime
 
@@ -7,6 +8,8 @@ from app.database.db import get_db_session
 from app.models.ai import SummaryOut, SummaryCreate
 from app.services.get_user import get_current_user
 from app.schemas.auth import User
+from app.schemas.meeting import Rooms
+from app.schemas.ai import MeetingSummary
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 
@@ -29,6 +32,12 @@ async def generate_summary(
         db: AsyncSession = Depends(get_db_session),
         current_user: User = Depends(get_current_user)
 ):
+    room_stmt = await db.execute(select(Rooms).where(Rooms.slug == data.room_id))
+    room = room_stmt.scalar_one_or_none()
+
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
     giga_service = request.app.state.giga_service
 
     instruction = "Сделай краткое резюме"
@@ -42,12 +51,24 @@ async def generate_summary(
     try:
         summary_text = await giga_service.send_message(prompt)
 
-        return {
-                "id": 1,
-                "room_id": data.room_id,
-                "summary_text": summary_text,
-                "created_at": datetime.now()
-        }
+        existing_stmt = await db.execute(select(MeetingSummary).where(MeetingSummary.room_id == room.id))
+        existing_summary = existing_stmt.scalar_one_or_none()
+
+        if existing_summary:
+            existing_summary.summary_text = summary_text
+            new_summary = existing_summary
+        else:
+            new_summary = MeetingSummary(
+                    room_id=room.id,
+                    summary_text=summary_text
+            )
+            db.add(new_summary)
+
+        await db.commit()
+        await db.refresh(new_summary)
+
+        return new_summary
+
     except Exception as e:
         raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -70,12 +91,11 @@ async def get_summary(
         db: AsyncSession = Depends(get_db_session),
         current_user: User = Depends(get_current_user)
 ):
-    if room_id == "not_found":
-        raise HTTPException(status_code=404, detail="Summary not found for this room")
+    stmt = select(MeetingSummary).join(Rooms).where(Rooms.slug == room_id)
+    result = await db.execute(stmt)
+    summary = result.scalar_one_or_none()
 
-    return {
-            "id": 1,
-            "room_id": room_id,
-            "summary_text": "Saved summary for room" + room_id,
-            "created_at": datetime.now()
-    }
+    if not summary:
+        raise HTTPException(status_code=404, detail="Summary not found")
+
+    return summary
