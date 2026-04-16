@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { updateProfile, uploadAvatar } from "../../api/user.js";
 
 const EditProfile = () => {
 	const navigate = useNavigate();
@@ -42,9 +43,33 @@ const EditProfile = () => {
 		}));
 	};
 
-	const handleSave = () => {
-		localStorage.setItem("user", JSON.stringify(form));
-		navigate("/profile");
+	const handleSave = async () => {
+		try {
+			let finalAvatarUrl = form.avatarPreview;
+
+			if (form.avatar) {
+				const uploadRes = await uploadAvatar(form.avatar);
+				if (uploadRes.status === "success") {
+					finalAvatarUrl = uploadRes.url;
+				}
+			}
+
+			const result = await updateProfile({
+				display_name: form.username,
+				avatar_url: finalAvatarUrl,
+			});
+
+			if (result) {
+				const updateForm = { ...form, avatar: null, avatarPreview: finalAvatarUrl };
+				setForm(updateForm);
+				localStorage.setItem("user", JSON.stringify(updateForm));
+
+				navigate("/profile")
+			}
+		} catch (err) {
+			console.error("Error save:", err);
+			alert("Не удалось сохранить профиль");
+		}
 	};
 
 	return (
@@ -96,6 +121,17 @@ const EditProfile = () => {
 							value={form.username}
 							onChange={(e) => handleChange("username", e.target.value)}
 							className="w-full mt-1 p-3 bg-zinc-900 rounded-lg outline-none"
+						/>
+					</div>
+
+					<div>
+						<label className="text-xs text-zinc-500">Email</label>
+						<input
+							type="email"
+							value={form.email}
+							onChange={(e) => handleChange("email", e.target.value)}
+							className="w-full mt-1 p-3 bg-zinc-900 rounded-lg outline-none focus:ring-1 focus:ring-blue-500 transition-all"
+							placeholder="example@mail.com"
 						/>
 					</div>
 					
