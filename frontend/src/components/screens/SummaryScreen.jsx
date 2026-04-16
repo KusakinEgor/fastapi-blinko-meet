@@ -13,7 +13,7 @@ export default function SummaryScreen({ roomSlug, onClose }) {
 	useEffect(() => {
 		let timer;
 		let attempts = 0;
-		const maxAttempts = 5;
+		const maxAttempts = 20;
 
 		const fetchSummary = async () => {
 			try {
