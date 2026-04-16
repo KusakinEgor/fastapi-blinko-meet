@@ -1,24 +1,30 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getProfile, getAvatarUrl } from "../../api/user.js";
+import { getProfile, getAvatarUrl, getUserHistory } from "../../api/user.js";
 
 const UserProfile = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [history, setHistory] = useState([]);
 
   useEffect(() => {
-	  const loadProfileData = async () => {
+	  const loadAllData = async () => {
 		  try {
-			  const data = await getProfile();
+			  const [profileData, historyData] = await Promise.all([
+				  getProfile(),
+				  getUserHistory()
+			  ]);
 
 			  setUser({
-				  username: data.display_name || "New User",
+				  username: profileData.display_name || "New User",
 				  email: "ivan_zolo2006@gmail.com",
 				  status: "PRO",
 				  likes: 1337,
-				  avatarPreview: getAvatarUrl(data.avatar_url),
+				  avatarPreview: getAvatarUrl(profileData.avatar_url),
 				  dateOfBirth: "2006-01-01"
 			  });
+
+			  setHistory(historyData);
 		  } catch (err) {
 			  console.error("Backend profile load failed, using fallback", err);
 			  const stored = localStorage.getItem("user");
@@ -29,7 +35,7 @@ const UserProfile = () => {
 		  }
 	  };
 
-	  loadProfileData();
+	  loadAllData();
   }, []);
 
   const [trophies] = useState([
@@ -37,12 +43,6 @@ const UserProfile = () => {
     { id: 2, name: "Speaker", icon: "🎙️", color: "from-purple-400 to-pink-500" },
     { id: 3, name: "Active", icon: "🔥", color: "from-orange-400 to-red-500" },
     { id: 4, name: "Detective", icon: "🔍", color: "from-green-400 to-emerald-500" },
-  ]);
-
-  const [history] = useState([
-    { id: 1, name: "Project Sync", date: "24 Oct", duration: "45 min", type: "call" },
-    { id: 2, name: "Design Review", date: "22 Oct", duration: "1h 12m", type: "meeting" },
-    { id: 3, name: "Weekly Standup", date: "20 Oct", duration: "20 min", type: "sync" },
   ]);
 
   if (!user) return null;
@@ -161,28 +161,36 @@ const UserProfile = () => {
               <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
             </div>
             <div className="space-y-4">
-              {history.map((item) => (
-                <div key={item.id} className="group relative bg-zinc-900/10 hover:bg-zinc-900/40 p-6 rounded-[24px] border border-white/5 hover:border-white/10 transition-all duration-300">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-5">
-                      <div className="w-10 h-10 rounded-2xl bg-zinc-800/50 flex items-center justify-center border border-white/5 group-hover:border-[#3f81fd]/30 group-hover:text-[#3f81fd] transition-all">
-                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                         </svg>
-                      </div>
-                      <div>
-                        <p className="text-[16px] font-black tracking-tight group-hover:text-white transition-colors">{item.name}</p>
-                        <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wider mt-0.5">{item.date}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-[10px] font-black bg-zinc-800 text-zinc-400 px-3 py-1.5 rounded-full border border-white/5 group-hover:bg-[#3f81fd] group-hover:text-white transition-all">
-                        {item.duration}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+              {history.length > 0 ? (
+					history.map((item) => (
+						<div key={item.id} onClick={() => navigate(`/call/${item.slug}`)} className="group relative bg-zinc-900/10 hover:bg-zinc-900/40 p-6 rounded-[24px] border border-white/5 hover:border-white/10 transition-all duration-300">
+						  <div className="flex items-center justify-between">
+							<div className="flex items-center gap-5">
+							  <div className="w-10 h-10 rounded-2xl bg-zinc-800/50 flex items-center justify-center border border-white/5 group-hover:border-[#3f81fd]/30 group-hover:text-[#3f81fd] transition-all">
+								 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+								 </svg>
+							  </div>
+							  <div>
+								<p className="text-[16px] font-black tracking-tight group-hover:text-white transition-colors">{item.name || "Untitled Meeting"}</p>
+								<p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wider mt-0.5">
+									{new Date(item.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+								</p>
+							  </div>
+							</div>
+							<div className="text-right">
+							  <span className="text-[10px] font-black bg-zinc-800 text-zinc-400 px-3 py-1.5 rounded-full border border-white/5 group-hover:bg-[#3f81fd] group-hover:text-white transition-all">
+								{item.is_alive ? "Live" : "View"}
+							  </span>
+							</div>
+						  </div>
+						</div>
+					))
+			  ) : (
+				  <div className="text-center py-10 border border-dashed border-white/5 rounded-[24px]">
+					<p className="text-zinc-600 text-xs uppercase tracking-widest">No meetings yet</p>
+				  </div>
+			  )}
             </div>
           </section>
         </main>
