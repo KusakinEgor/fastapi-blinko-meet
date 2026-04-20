@@ -6,6 +6,7 @@ const UserProfile = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [history, setHistory] = useState([]);
+  const [userBadges, setUserBadges] = useState([]);
 
   useEffect(() => {
 	  const loadAllData = async () => {
@@ -24,6 +25,7 @@ const UserProfile = () => {
 				  dateOfBirth: "2006-01-01"
 			  });
 
+			  setUserBadges(profileData.badges || []);
 			  setHistory(historyData);
 		  } catch (err) {
 			  console.error("Backend profile load failed, using fallback", err);
@@ -126,17 +128,36 @@ const UserProfile = () => {
               <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
             </div>
             <div className="grid grid-cols-4 gap-4">
-              {trophies.map((badge) => (
-                <div key={badge.id} className="group flex flex-col items-center gap-2">
-                  <div className="w-full aspect-square bg-zinc-900/40 border border-white/5 rounded-[22px] flex items-center justify-center hover:bg-zinc-800/60 hover:border-[#3f81fd]/50 hover:-translate-y-2 transition-all duration-500 cursor-pointer shadow-lg overflow-hidden relative">
-                     <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                     <span className="text-3xl filter drop-shadow-md group-hover:scale-125 transition-transform duration-500">{badge.icon}</span>
-                  </div>
-                  <span className="text-[8px] font-black uppercase text-zinc-700 group-hover:text-zinc-400 transition-colors tracking-widest">
-                    {badge.name}
-                  </span>
-                </div>
-              ))}
+              {trophies.map((badge) => {
+				  const isUnlocked = userBadges.some(ub => ub.name === badge.name);
+
+				  return (
+					  <div key={badge.id} className="group flex flex-col items-center gap-2">
+						<div
+							className={`w-full aspect-square border rounded-[22px] flex items-center justify-center transition-all duration-500 cursor-pointer shadow-lg overflow-hidden relative ${isUnlocked
+							? `bg-gradient-to-br ${badge.color} border-white/20 hover:-translate-y-2`
+							: 'bg-zinc-900/40 border-white/5 opacity-20 grayscale'}`}
+						>
+							{isUnlocked && (
+								<div className="absolute inset-0 bg-white/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+							)}
+							
+							<span className={`text-3xl filter drop-shadow-md transition-transform duration-500 ${isUnlocked ? 'group-hover:scale-125' : ''}`}>
+								{badge.icon}
+							</span>
+
+							{!isUnlocked && (
+								<div className="absolute inset-0 flex items-center justify-center bg-black/20">
+									<span className="text-[10px]">🔒</span>
+								</div>
+							)}
+						</div>
+						<span className={`text-[8px] font-black uppercase tracking-widest transition-colors ${isUnlocked} ? 'text-zinc-400' : 'text-zinc-800'`}>
+							{badge.name}
+						</span>
+					  </div>
+				  );
+			  })}
             </div>
           </section>
 
