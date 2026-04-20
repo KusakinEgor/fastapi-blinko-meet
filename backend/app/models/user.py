@@ -53,6 +53,12 @@ class SettingsUpdate(BaseModel):
     class Config:
         from_attributes = True
 
+class BadgeOut(BaseModel):
+    name: str
+
+    class Config:
+        from_attributes = True
+
 class RoomHistoryOut(BaseModel):
     id: int = Field(..., examples=[1])
     slug: str = Field(..., examples=["97658d-a36590"])
@@ -67,6 +73,7 @@ class RoomHistoryOut(BaseModel):
 class ProfileOut(ProfileUpdate):
     id: int = Field(..., description="Owner user ID", examples=[1])
     user_id: int = Field(..., description="Owner user ID", examples=[123])
+    badges: list[BadgeOut] = Field(default=[], description="User trophies/badges")
 
 class SettingsOut(SettingsUpdate):
     user_id: int = Field(..., description="Owner user ID", examples=[321])
