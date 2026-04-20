@@ -27,11 +27,50 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   const [inputValue, setInputValue] = useState('');
   const [micMuted, setMicMuted] = useState(false);
   const [camMuted, setCamMuted] = useState(false);
+  
+  const transcriptRef = useRef("");
+  const recognitionRef = useRef(null);
+
+  useEffect(() => {
+	  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+	  if (!SpeechRecognition) {
+		  console.error("Browser not support Speech Recognition");
+		  return;
+	  }
+	  
+	  const recognition = new SpeechRecognition();
+	  recognition.continuous = true;
+	  recognition.interimResults = false;
+	  recognition.lang = 'ru-RU';
+
+	  recognition.onresult = (event) => {
+		  let interimTranscript = '';
+		  for (let i = event.resultIndex; i < event.results.length; ++i) {
+			  const userName = name || "Участник";
+			  const text = event.results[i][0].transcript;
+			  transcriptRef.current += `${userName}: ${text}. `;
+			  console.log("Обновленный транскрипт:", transcriptRef.current);
+		  }
+	  };
+
+	  recognition.onerror = (event) => console.error("Speech Recognition Error:", event.error);
+	  recognition.start();
+	  recognitionRef.current = recognition;
+
+	  return () => {
+		  if (recognitionRef.current) recognitionRef.current.stop();
+	  };
+  }, []);
 
   const handleLeaveAndGenerate = async () => {
 	  const token = localStorage.getItem("access_token");
 
 	  setShowSummary(true);
+
+	  if (recognitionRef.current) {
+		  recognitionRef.current.stop();
+	  }
 
 	  try {
 		  await fetch("http://localhost:8000/ai/summary/generate", {
@@ -42,7 +81,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 			  },
 			  body: JSON.stringify({
 				  room_id: slug,
-				  transcript: "User1: hello go to push this code in github. User2: Okay i will do that",
+				  transcript: transcriptRef.current || "Переговор не записан",
 				  detail_level: "long"
 			  })
 		  });
