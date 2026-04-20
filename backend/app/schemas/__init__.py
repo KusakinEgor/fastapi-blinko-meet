@@ -4,3 +4,4 @@ from .meeting import Rooms, Participants
 from .common import ParticipantRole, TimestampMixin
 from .chat import Message
 from .ai import MeetingSummary
+from .badge import user_badges
