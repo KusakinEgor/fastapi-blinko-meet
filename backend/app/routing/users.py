@@ -1,7 +1,8 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_
+from sqlalchemy.orm import selectinload
+from sqlalchemy import CursorResult, select, or_
 
 from app.database.db import get_db_session
 from app.models.user import ProfileOut, SettingsOut, ProfileUpdate, SettingsUpdate, RoomHistoryOut
@@ -9,6 +10,7 @@ from app.schemas.user import UserProfile, UserSettings
 from app.schemas.auth import User
 from app.schemas.meeting import Participants, Rooms
 from app.services.get_user import get_current_user
+from app.services.achievements import award_badge_if_not_exists
 
 router = APIRouter(prefix="/user", tags=["User Settings"])
 
@@ -107,24 +109,34 @@ async def get_profile(
         db:AsyncSession = Depends(get_db_session),
         current_user: User = Depends(get_current_user)
 ):
+    user_result = await db.execute(
+            select(User)
+            .options(selectinload(User.badges))
+            .where(User.id == current_user.id)
+    )
+    user_obj = user_result.scalar_one()
+
     result = await db.execute(
             select(UserProfile).where(UserProfile.user_id == current_user.id)
     )
-
     profile = result.scalar_one_or_none()
 
-    if not profile:
+    if profile:
         return ProfileOut(
-                id=0,
-                user_id=current_user.id,
-                display_name=current_user.username,
-                avatar_url=None,
-                default_camera_off=True,
-                default_muted=True,
-                blur_background=False
+                **profile.__dict__,
+                badges=user_obj.badges
         )
 
-    return profile
+    return ProfileOut(
+            id=0,
+            user_id=current_user.id,
+            display_name=current_user.username,
+            avatar_url=None,
+            default_camera_off=True,
+            default_muted=True,
+            blur_background=False,
+            badges=user_obj.badges
+    )
 
 @router.get(
         "/history",
