@@ -2,10 +2,7 @@ use std::sync::Arc;
 use crate::state::{AppState, Participant};
 
 use webrtc::{
-    track::track_local::track_local_static_rtp::TrackLocalStaticRTP,
-    track::track_local::TrackLocal,
-    track::track_local::TrackLocalWriter,
-    peer_connection::RTCPeerConnection,
+    peer_connection::RTCPeerConnection, rtcp::payload_feedbacks::picture_loss_indication::PictureLossIndication, rtp_transceiver::rtp_sender, track::track_local::{TrackLocal, TrackLocalWriter, track_local_static_rtp::TrackLocalStaticRTP}
 };
 
 pub fn setup_on_track(
@@ -15,6 +12,8 @@ pub fn setup_on_track(
     user_id: String,
     participant: Arc<Participant>,
 ) {
+    let pc_incoming = Arc::clone(pc);
+
     pc.on_track(Box::new(move |track, receiver, _| {
         println!("/. TRACK RECEIVED ./");
         println!("kind: {:?}", track.kind());
@@ -25,6 +24,7 @@ pub fn setup_on_track(
         let room_id = room_id.clone();
         let user_id = user_id.clone();
         let participant = participant.clone();
+        let pc_incoming = pc_incoming.clone();
 
         Box::pin(async move {
             println!("Creating local track");
@@ -45,55 +45,43 @@ pub fn setup_on_track(
 
             for other in others {
                 if other.user_id != user_id {
-
-                    let pc = other.pc.clone();
-                    let sender = other.sender.clone();
+                    let pc_outgoing = other.pc.clone();
+                    let signal_sender = other.sender.clone();
                     let track_clone = local_track.clone() as Arc<dyn TrackLocal + Send + Sync>;
+                    let pc_incoming_for_pli = pc_incoming.clone();
+                    let media_ssrc = track.ssrc();
 
                     tokio::spawn(async move {
-                        println!("Adding track to peer");
-                        if pc.add_track(track_clone).await.is_ok() {
-                            println!("Creating renegotiation offer");
+                        if let Ok(rtp_sender) = pc_outgoing.add_track(track_clone).await {
+                            if let Ok(offer) = pc_outgoing.create_offer(None).await {
+                                let _ = pc_outgoing.set_local_description(offer.clone()).await;
+                                let msg = serde_json::json!({"type": "offer", "sdp": offer.sdp}).to_string();
+                                let _ = signal_sender.send(msg);
+                            }
 
-                            let offer = pc.create_offer(None).await.unwrap();
-                            pc.set_local_description(offer.clone()).await.unwrap();
-
-                            let msg = serde_json::json!({
-                                "type": "offer",
-                                "sdp": offer.sdp
-                            }).to_string();
-
-                            let _ = sender.send(msg);
+                            tokio::spawn(async move {
+                                while let Ok((rtcp_packets, _))= rtp_sender.read_rtcp().await {
+                                    for pkt in rtcp_packets {
+                                        if pkt.as_any().is::<PictureLossIndication>() {
+                                            let pli = PictureLossIndication {
+                                                sender_ssrc: 0,
+                                                media_ssrc,
+                                            };
+                                            let _ = pc_incoming_for_pli.write_rtcp(&[Box::new(pli)]).await;
+                                        }
+                                    }
+                                }
+                            });
                         }
                     });
                 }
             }
 
-            let receiver = receiver.clone();
-
-            tokio::spawn(async move {
-                println!("Starting RTCP reader");
-
-                loop {
-                    match receiver.read_rtcp().await {
-                        Ok((pkts, _)) => {
-                            for pkt in pkts {
-                                println!("RTCP type: {}", pkt.header().packet_type);
-                                println!("RTCP packet: {:?}", pkt);
-                            }
-                        }
-                        Err(e) => {
-                            eprintln!("RTCP read error: {:?}. Stopping reader.", e);
-                            break;
-                        }
-                    }
-                }
-            });
-
-            println!("Start RTP forwarding");
-
+            println!("Start RTP forwarding for track {}", track.id());
             while let Ok((rtp, _)) = track.read_rtp().await {
-                let _ = local_track.write_rtp(&rtp).await;
+                if let Err(_) = local_track.write_rtp(&rtp).await {
+                    break;
+                }
             }
         })
     }));
