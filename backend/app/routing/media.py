@@ -1,11 +1,12 @@
 import os
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.database.db import get_db_session
 from app.schemas.user import UserProfile
+from app.services.audio_manager import audio_manager
 from app.services.get_user import get_current_user
 from app.schemas.auth import User
 
@@ -84,3 +85,14 @@ async def upload_avatar(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Upload error: {str(e)}"
         )
+
+@router.websocket("/ws/audio/{room_id}")
+async def audio_websocket(websocket: WebSocket, room_id: str):
+    await audio_manager.connect(websocket, room_id)
+
+    try:
+        while True:
+            data = await websocket.receive_bytes()
+            await audio_manager.broadcast(data, room_id, sender=websocket)
+    except WebSocketDisconnect:
+        audio_manager.disconnect(websocket, room_id)
