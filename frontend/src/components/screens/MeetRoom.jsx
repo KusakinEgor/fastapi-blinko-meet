@@ -8,6 +8,7 @@ import { useWebRTC } from "../../webrtc/useWebRTC";
 import { parseMessage } from "../../lib/chat/parseMessage.jsx";
 import { sendMessage } from "../../api/chat.js";
 import { useParticipants } from "../../hooks/useParticipants.js";
+import { AudioSocket } from "../../api/audioSocket.js";
 
 export default function MeetRoom({ name, meetingTitle, onBack }) {
   const { slug } = useParams();
@@ -30,6 +31,89 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   
   const transcriptRef = useRef("");
   const recognitionRef = useRef(null);
+  const audioSocketRef = useRef(null);
+  const sourceBufferRef = useRef(null);
+  const mediaSourceRef = useRef(null);
+  const queueRef = useRef([]);
+
+  const playReceivedAudio = useCallback((arrayBuffer) => {
+	  if (!arrayBuffer) return;
+
+	  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+	  const float32Data = new Float32Array(arrayBuffer.byteLength / 2);
+	  const int16Data = new Int16Array(arrayBuffer);
+
+	  for (let i = 0; i < int16Data.length; i++) {
+		  float32Data[i] = int16Data[i] / 32768.0;
+	  }
+
+	  const buffer = audioCtx.createBuffer(1, float32Data.length, 16000);
+	  buffer.getChannelData(0).set(float32Data);
+
+	  const source = audioCtx.createBufferSource();
+	  source.buffer = buffer;
+	  source.connect(audioCtx.destination);
+	  source.start();
+  }, []);
+
+  useEffect(() => {
+	  audioSocketRef.current = new AudioSocket(slug, (audioData) => {
+		  playReceivedAudio(audioData);
+	  });
+
+	  audioSocketRef.current.connect();
+
+	  return () => {
+		  if (audioSocketRef.current) audioSocketRef.current.close();
+	  };
+  }, [slug, playReceivedAudio]);
+
+  useEffect(() => {
+	  let audioContext;
+	  let processor;
+	  let source;
+
+	  const startAudioCapture = async () => {
+		  if (!localStream || localStream.getAudioTracks().length === 0) return;
+		  if (audioSocketRef.current?.socket?.readyState !== WebSocket.OPEN) return;
+
+		  try {
+			  const audioTrack = localStream.getAudioTracks()[0].clone();
+			  const clonedStream = new MediaStream([audioTrack]);
+
+			  audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+
+			  source = audioContext.createMediaStreamSource(clonedStream);
+
+			  processor = audioContext.createScriptProcessor(4096, 1, 1);
+			  source.connect(processor);
+			  processor.connect(audioContext.destination);
+
+			  processor.onaudioprocess = (e) => {
+				  if (audioSocketRef.current?.socket?.readyState === WebSocket.OPEN) {
+					  const inputData = e.inputBuffer.getChannelData(0);
+					  const pcmData = new Int16Array(inputData.length);
+					  for (let i = 0; i < inputData.length; i++) {
+						  pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
+					  }
+					  audioSocketRef.current.sendAudio(pcmData.buffer);
+				  }
+			  };
+			  console.log("Web Audio Capture (cloned) запущен");
+		  } catch (e) {
+			  console.error("Audio API error:", e);
+		  }
+	  };
+
+	  const timer = setTimeout(startAudioCapture, 1000);
+
+	  return () => {
+		  clearTimeout(timer);
+		  if (processor) processor.disconnect();
+		  if (source) source.disconnect();
+		  if (audioContext) audioContext.close();
+	  }
+  }, [localStream, micMuted]);
 
   useEffect(() => {
 	  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -45,23 +129,40 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  recognition.lang = 'ru-RU';
 
 	  recognition.onresult = (event) => {
-		  let interimTranscript = '';
 		  for (let i = event.resultIndex; i < event.results.length; ++i) {
-			  const userName = name || "Участник";
 			  const text = event.results[i][0].transcript;
-			  transcriptRef.current += `${userName}: ${text}. `;
-			  console.log("Обновленный транскрипт:", transcriptRef.current);
+			  if (event.results[i].isFinal) {
+				  const userName = name || "Участник";
+				  transcriptRef.current += `${userName}: ${text}. `;
+				  console.log("Записано в транскрипт:", transcriptRef.current);
+			  }
 		  }
 	  };
 
-	  recognition.onerror = (event) => console.error("Speech Recognition Error:", event.error);
+	  recognition.onended = () => {
+		  if (recognitionRef.current && !micMuted) {
+			  setTimeout(() => {
+				  try { recognition.start(); } catch (e) {}
+			  }, 300);
+		  }
+	  }
+
+	  recognition.onerror = (event) => {
+		  if (event.error === 'aborted' || event.error === 'no-speech') {
+			  console.log(`Recognition ${event.error}, waiting for restart...`);
+			  return;
+		  }
+		  console.error("Speech Recognition Error:", event.error);
+	  };
+
 	  recognition.start();
 	  recognitionRef.current = recognition;
 
 	  return () => {
-		  if (recognitionRef.current) recognitionRef.current.stop();
+		  recognitionRef.current = null;
+		  recognition.stop();
 	  };
-  }, []);
+  }, [name, slug]);
 
   const handleLeaveAndGenerate = async () => {
 	  const token = localStorage.getItem("access_token");
