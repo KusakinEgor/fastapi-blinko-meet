@@ -60,25 +60,5 @@
 
 ## Скриншоты
 
-### Основной интерфейс
-![Основной экран](pictures/inter.PNG)
-
-### Экран логина
-![Экран логина](pictures/login.PNG)
-
-### Сайдбар Schedule
-![Сайдбар schedule](pictures/sidepanel.PNG)
-
-### Экран подключения
-![Экран подключения](pictures/joinScreen.PNG)
-
-### Экран создания
-![Экран создания](pictures/createScreen.PNG)
-
-### Сайдбар Login
-![Сайдбар login](pictures/loginPanel.PNG)
-
-### Экран конференции
-![Экран конференции](pictures/meetRoom.PNG)
 
 ---
