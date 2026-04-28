@@ -95,9 +95,9 @@ npm install
 ## Использование
 
 1. Запустить сервера:
-- 1. Запустите FastAPI: uvicorn app.main:app --reload
-- 2. Запустить сигнальный сервер Rust: cargo run
-- 3. Запустить фронтенд: npm run dev
+- Запустите FastAPI: uvicorn app.main:app --reload
+- Запустить сигнальный сервер Rust: cargo run
+- Запустить фронтенд: npm run dev
 
 ---
 
