@@ -53,16 +53,53 @@
 
 ## Технологии
 
+- Frontend: React, Tailwind CSS, WebRTC API, Lucide Icons.
+- Backend (API): FastAPI, PostgreSQL (SQLAlchemy).
+- Signaling/Media Server: Rust - для управления потоками и состоянием комнат.
+
 ---
 
 ## Установка
+
+1. Клонирование репозитория
+
+```bash
+git clone https://github.com/KusakinEgor/fastapi-blinko-meet.github
+cd fastapi-blinko-meet
+```
+
+2. Настройка бэкенда:
+
+```bash
+# Настройка Python окружения через Poetry
+cd backend
+poetry install
+poetry shell
+
+# Запуск Rust-компонента (сигнальный сервер)
+cd media-core
+cargo run
+```
+
+- ОБНОВИТЬ .env ПО ПРИМЕРУ .env.example
+
+3. Настройка фронтенда:
+
+```bash
+cd frontend
+npm install
+```
 
 ---
 
 ## Использование
 
+1. Запустить сервера:
+- 1. Запустите FastAPI: uvicorn app.main:app --reload
+- 2. Запустить сигнальный сервер Rust: cargo run
+- 3. Запустить фронтенд: npm run dev
+
 ---
 
 ## Скриншоты
-тут скрины
 
