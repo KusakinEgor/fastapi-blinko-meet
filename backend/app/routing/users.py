@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -130,7 +131,8 @@ async def get_profile(
     if profile:
         return ProfileOut(
                 **profile.__dict__,
-                badges=user_obj.badges
+                badges=user_obj.badges,
+                likes=user_obj.likes
         )
 
     return ProfileOut(
@@ -141,7 +143,8 @@ async def get_profile(
             default_camera_off=True,
             default_muted=True,
             blur_background=False,
-            badges=user_obj.badges
+            badges=user_obj.badges,
+            likes=user_obj.likes
     )
 
 @router.get(
@@ -196,15 +199,57 @@ async def search_profiles(
         current_user: User = Depends(get_current_user)
 ):
     stmt = (
-            select(UserProfile)
-            .where(UserProfile.display_name.ilike(f"%{query}%"))
+            select(UserProfile, User.likes)
+            .join(User, UserProfile.user_id == User.id)
+            .where(
+                UserProfile.display_name.ilike(f"%{query}%"),
+                UserProfile.user_id != current_user.id
+            )
             .limit(10)
     )
 
     result = await db.execute(stmt)
-    profiles = result.scalars().all()
+    rows = result.all()
 
     return [
-            ProfileOut(**p.__dict__, badges=[]) for p in profiles
+            ProfileOut(**p.__dict__, badges=[], likes=l or 0) for p, l in rows
     ]
 
+@router.post("/profile/{user_id}/like", summary="Like a user profile")
+async def like_profile(
+        user_id: int,
+        db: AsyncSession = Depends(get_db_session),
+        current_user: User = Depends(get_current_user)
+):
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="You cannot like yourself")
+
+    if current_user.last_like_time:
+        now = datetime.utcnow()
+        last_like = current_user.last_like_time.replace(tzinfo=None)
+
+        delta = now - last_like
+
+        if delta < timedelta(hours=1):
+            remaining_minutes = 60 - int(delta.total_seconds() / 60)
+            raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Slow down! You can like again in {remaining_minutes} minutes."
+            )
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    target_user = result.scalar_one_or_none()
+
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    target_user.likes = (target_user.likes or 0) + 1
+    current_user.last_like_time = datetime.utcnow()
+
+    try:
+        await db.commit()
+        await db.refresh(target_user)
+        return { "likes": target_user.likes }
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
