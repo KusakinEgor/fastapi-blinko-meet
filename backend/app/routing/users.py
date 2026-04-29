@@ -106,18 +106,24 @@ async def update_settings(
         description="Retrieve profile details for the current authenticated user."
 )
 async def get_profile(
+        user_id: int = None,
         db:AsyncSession = Depends(get_db_session),
         current_user: User = Depends(get_current_user)
 ):
+    target_user_id = user_id if user_id is not None else current_user.id
+
     user_result = await db.execute(
             select(User)
             .options(selectinload(User.badges))
-            .where(User.id == current_user.id)
+            .where(User.id == target_user_id)
     )
-    user_obj = user_result.scalar_one()
+    user_obj = user_result.scalar_one_or_none()
+
+    if not user_obj:
+        raise HTTPException(status_code=404, detail="User not found")
 
     result = await db.execute(
-            select(UserProfile).where(UserProfile.user_id == current_user.id)
+            select(UserProfile).where(UserProfile.user_id == target_user_id)
     )
     profile = result.scalar_one_or_none()
 
@@ -177,3 +183,28 @@ async def get_user_history(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Database Error: {str(e)}"
         )
+
+@router.get(
+        "/search",
+        response_model=List[ProfileOut],
+        summary="Search user profile",
+        description="Search for users by display_name or username."
+)
+async def search_profiles(
+        query: str,
+        db: AsyncSession = Depends(get_db_session),
+        current_user: User = Depends(get_current_user)
+):
+    stmt = (
+            select(UserProfile)
+            .where(UserProfile.display_name.ilike(f"%{query}%"))
+            .limit(10)
+    )
+
+    result = await db.execute(stmt)
+    profiles = result.scalars().all()
+
+    return [
+            ProfileOut(**p.__dict__, badges=[]) for p in profiles
+    ]
+
