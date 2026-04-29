@@ -74,6 +74,7 @@ class ProfileOut(ProfileUpdate):
     id: int = Field(..., description="Owner user ID", examples=[1])
     user_id: int = Field(..., description="Owner user ID", examples=[123])
     badges: list[BadgeOut] = Field(default=[], description="User trophies/badges")
+    likes: int = Field(default=0, description="Total likes count")
 
 class SettingsOut(SettingsUpdate):
     user_id: int = Field(..., description="Owner user ID", examples=[321])
