@@ -9,6 +9,15 @@ const UserSearch = ({ onClose }) => {
 	const [isSearching, setIsSearching] = useState(false);
 
 	useEffect(() => {
+		const handleEsc = (e) => {
+			if (e.key === "Escape") onClose();
+		};
+
+		window.addEventListener("keydown", handleEsc);
+		return () => window.removeEventListener("keydown", handleEsc);
+	}, [onClose]);
+
+	useEffect(() => {
 		const delayDebounceFn = setTimeout(async () => {
 			if (query.length > 2) {
 				setIsSearching(true);
