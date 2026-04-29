@@ -16,6 +16,7 @@ class User(TimestampMixin, Base):
     status: Mapped[str] = mapped_column(String(20), server_default=text("'FREE'"), nullable=False)
     likes: Mapped[int] = mapped_column(Integer, server_default=text("0"), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, server_default=text("true"), nullable=False)
+    last_like_time: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     display_name: Mapped[str] = mapped_column(String(100), nullable=True)
     badges: Mapped[List["Badge"]] = relationship("Badge", secondary=user_badges, backref="users", lazy="selectin")
