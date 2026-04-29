@@ -1,44 +1,49 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { getProfile, getAvatarUrl, getUserHistory } from "../../api/user.js";
+import UserSearch from "./UserSearch.jsx";
 
 const UserProfile = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [history, setHistory] = useState([]);
   const [userBadges, setUserBadges] = useState([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   useEffect(() => {
 	  const loadAllData = async () => {
 		  try {
-			  const [profileData, historyData] = await Promise.all([
-				  getProfile(),
-				  getUserHistory()
-			  ]);
+			  const profileData = await getProfile(id);
+
+			  let historyData = [];
+			  if (!id) {
+				  historyData = await getUserHistory();
+			  }
 
 			  setUser({
 				  username: profileData.display_name || "New User",
-				  email: "ivan_zolo2006@gmail.com",
-				  status: "PRO",
-				  likes: 1337,
+				  email: profileData.email || "hidden",
+				  status: profileData.status || "USER",
+				  likes: profileData.likes || 0,
 				  avatarPreview: getAvatarUrl(profileData.avatar_url),
-				  dateOfBirth: "2006-01-01"
+				  dateOfBirth: profileData.date_of_birth || "—"
 			  });
 
 			  setUserBadges(profileData.badges || []);
 			  setHistory(historyData);
 		  } catch (err) {
-			  console.error("Backend profile load failed, using fallback", err);
-			  const stored = localStorage.getItem("user");
+			  console.error("Profile load failed", err);
 
-			  if (stored) {
-				  setUser(JSON.parse(stored));
+			  if (!id) {
+				  const stored = localStorage.getItem("user");
+				  if (stored) setUser(JSON.parse(stored));
 			  }
 		  }
 	  };
 
 	  loadAllData();
-  }, []);
+  }, [id]);
 
   const [trophies] = useState([
     { id: 1, name: "Pioneer", icon: "💎", color: "from-blue-400 to-cyan-500" },
@@ -68,14 +73,27 @@ const UserProfile = () => {
             </div>
             <span className="text-[10px] uppercase tracking-[0.3em] font-black">Back</span>
           </button>
-
-          <button 
-            onClick={() => navigate("/profile/edit")}
-            className="px-6 py-2.5 bg-gradient-to-tr from-zinc-800 to-zinc-900 hover:from-white hover:to-white hover:text-black rounded-full text-[10px] uppercase tracking-[0.2em] font-black transition-all duration-500 border border-white/5 shadow-xl"
-          >
-            Settings
-          </button>
+		  
+	      <button 
+		    onClick={() => setIsSearchOpen(true)}
+			className="p-2.5 rounded-full bg-zinc-900/30 border border-white/5 hover:scale-110 transition-all ml-auto mr-4"
+		  >
+		    <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+	        </svg>
+		  </button>
+			
+		  {!id && (
+			  <button 
+				onClick={() => navigate("/profile/edit")}
+				className="px-6 py-2.5 bg-gradient-to-tr from-zinc-800 to-zinc-900 hover:from-white hover:to-white hover:text-black rounded-full text-[10px] uppercase tracking-[0.2em] font-black transition-all duration-500 border border-white/5 shadow-xl"
+			  >
+				Settings
+			  </button>
+		  )}
         </nav>
+		
+		{isSearchOpen && <UserSearch onClose={() => setIsSearchOpen(false)} />}
 
         <header className="flex flex-col items-center py-8 shrink-0">
           <div className="relative mb-6">
