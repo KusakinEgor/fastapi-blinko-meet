@@ -1,15 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getProfile, getAvatarUrl, getUserHistory } from "../../api/user.js";
+import { getProfile, getAvatarUrl, getUserHistory, likeProfile, inviteToCall } from "../../api/user.js";
 import UserSearch from "./UserSearch.jsx";
+import Toast from "../ui/Toast.jsx";
 
 const UserProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [toast, setToast] = useState(null);
   const [user, setUser] = useState(null);
   const [history, setHistory] = useState([]);
   const [userBadges, setUserBadges] = useState([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const showToast = (message, type = "success") => {
+	  setToast({ message, type });
+  };
 
   useEffect(() => {
 	  const loadAllData = async () => {
@@ -44,6 +50,29 @@ const UserProfile = () => {
 
 	  loadAllData();
   }, [id]);
+
+  const handleLike = async () => {
+	  try {
+		  const data = await likeProfile(id);
+		  setUser(prev => ({ ...prev, likes: data.likes }));
+		  showToast("Profile Liked!");
+	  } catch (err) {
+		  if (err.message.includes("403")) {
+			  showToast("Wait an hour to like again", "error");
+		  } else {
+			  console.error("Like error:", err);
+		  }
+	  }
+  };
+
+  const handleInvite = async () => {
+	  try {
+		  await inviteToCall(user.username);
+		  showToast("Link copied to clipboard");
+	  } catch (err) {
+		  showToast("Failed to copy link", "error");
+	  }
+  }
 
   const [trophies] = useState([
     { id: 1, name: "Pioneer", icon: "💎", color: "from-blue-400 to-cyan-500" },
@@ -135,6 +164,42 @@ const UserProfile = () => {
                 </div>
               )}
             </div>
+			
+			{id && (
+				<div className="flex justify-center gap-4 mt-8 animate-in slide-in-from-bottom-4 duration-500">
+					<button
+						onClick={handleLike}
+						className="flex items-center gap-3 px-6 py-3 bg-zinc-900/50 hover:bg-red-500/10 border border-white/5 hover:border-red-500/40 rounded-2xl transition-all duration-500 group"
+					>
+						<div className="relative">
+							<div className="absolute inset-0 bg-red-500/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
+							
+							<svg
+								className="w-5 h-5 text-zinc-500 group-hover:text-red-500 group-hover:scale-110 transition-all duration-300 transform"
+								fill="currentColor"
+								viewBox="0 0 24 24"
+								xmlns="http://w3.org"
+							>
+								<path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3c1.71 0 3.144.757 4.312 1.838C13.174 3.757 14.608 3 16.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+							</svg>
+						</div>
+						
+						<span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 group-hover:text-white transition-colors">
+							{user.likes} Likes
+						</span>
+					</button>
+					
+					<button
+						onClick={handleInvite}
+						className="flex items-center gap-3 px-6 py-3 bg-[#3f81fd] hover:bg-[#3f81fd]/80 shadow-[0_0_20px_rgba(63,129,253,0.2)] hover:shadow-[0_0_25px_rgba(63,129,253,0.4)] rounded-2xl transition-all duration-500 group"
+					>
+						<svg className="w-4 h-4 text-white group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+						</svg>
+						<span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Invite to Call</span>
+					</button>
+				</div>
+			)}
           </div>
         </header>
 
@@ -249,6 +314,13 @@ const UserProfile = () => {
           </button>
         </footer>
       </div>
+	  {toast && (
+		  <Toast
+			message={toast.message}
+			type={toast.type}
+			onClose={() => setToast(null)}
+		  />
+	  )}
     </div>
   );
 };
