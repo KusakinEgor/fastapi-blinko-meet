@@ -72,6 +72,11 @@ function AppContent() {
 	  />
 
 	  <Route
+		path="/profile/:id"
+		element={<UserProfile />}
+	  />
+
+	  <Route
 		path="/profile/edit"
 		element={<EditProfile />}
 	  />
