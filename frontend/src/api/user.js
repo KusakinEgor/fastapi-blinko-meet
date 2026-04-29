@@ -30,10 +30,11 @@ export const uploadAvatar = async (file) => {
 	return response.json();
 };
 
-export const getProfile = async () => {
+export const getProfile = async (userId = null) => {
 	const token = localStorage.getItem("access_token");
+	const url = userId ? `${API_URL}/user/profile?user_id=${userId}` : `${API_URL}/user/profile`;
 
-	const response = await fetch(`${API_URL}/user/profile`, {
+	const response = await fetch(url, {
 		method: "GET",
 		headers: {
 			"Content-Type": "application/json",
@@ -70,4 +71,14 @@ export const getUserHistory = async () => {
 	}
 
 	return response.json();
+};
+
+export const searchUser = async (query) => {
+	const response = await fetch(`${API_URL}/user/search?query=${encodeURIComponent(query)}`, {
+		headers: {
+			"Authorization": `Bearer ${localStorage.getItem('access_token')}`
+		}
+	});
+	if (!response.ok) throw new Error("Search failed");
+	return await response.json();
 };
