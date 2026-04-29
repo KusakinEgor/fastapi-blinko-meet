@@ -82,3 +82,18 @@ export const searchUser = async (query) => {
 	if (!response.ok) throw new Error("Search failed");
 	return await response.json();
 };
+
+export const likeProfile = async (userId) => {
+	const response = await fetch(`${API_URL}/user/profile/${userId}/like`, {
+		method: "POST",
+		headers: { "Authorization": `Bearer ${localStorage.getItem('access_token')}`}
+	});
+
+	if (!response.ok) throw new Error("Like failed");
+	return await response.json();
+};
+
+export const inviteToCall = (username) => {
+	const inviteUrl = `${window.location.origin}/join?ref=${username}`;
+	return navigator.clipboard.writeText(inviteUrl);
+};
