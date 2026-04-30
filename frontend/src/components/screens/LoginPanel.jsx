@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getAvatarUrl } from "../../api/user.js";
 
 export default function LoginPanel({ visible, onClose }) {
     const [animate, setAnimate] = useState(false);
@@ -62,8 +63,9 @@ export default function LoginPanel({ visible, onClose }) {
 						<div className="flex items-center gap-4 mb-8 p-2">
 							{user?.avatarPreview ? (
 								<img
-									src={user.avatarPreview}
+									src={getAvatarUrl(user.avatarPreview)}
 									className="w-12 h-12 rounded-full object-cover border border-white/10"
+									alt="avatar"
 								/>
 							) : (
 								<div className="w-12 h-12 bg-zinc-800 rounded-full border border-white/10 flex items-center justify-center text-xl">
