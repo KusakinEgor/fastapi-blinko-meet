@@ -51,7 +51,13 @@ const EditProfile = () => {
 				const uploadRes = await uploadAvatar(form.avatar);
 				if (uploadRes.status === "success") {
 					finalAvatarUrl = uploadRes.url;
+				} else {
+					throw new Error("Error with download file on server");
 				}
+			}
+
+			if (finalAvatarUrl && finalAvatarUrl.startsWith("blob:")) {
+				finalAvatarUrl = undefined;
 			}
 
 			const result = await updateProfile({
