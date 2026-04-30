@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import InviteModal from "../ui/InviteModal";
 import FloatingEmoji from "../ui/FloatingEmoji.jsx";
 import SummaryScreen from "./SummaryScreen.jsx";
@@ -9,9 +9,11 @@ import { parseMessage } from "../../lib/chat/parseMessage.jsx";
 import { sendMessage } from "../../api/chat.js";
 import { useParticipants } from "../../hooks/useParticipants.js";
 import { AudioSocket } from "../../api/audioSocket.js";
+import { AudioPlayer } from "../../utils/AudioPlayer.js";
 
 export default function MeetRoom({ name, meetingTitle, onBack }) {
   const { slug } = useParams();
+  const audioPlayer = useMemo(() => new AudioPlayer(), []);
   const { isScreenRecording, startRecording, stopRecording } = useScreenRecorder();
   const [activeEmojis, setActiveEmojis] = useState([]);
   const [showSummary, setShowSummary] = useState(false);
@@ -37,24 +39,9 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   const queueRef = useRef([]);
 
   const playReceivedAudio = useCallback((arrayBuffer) => {
-	  if (!arrayBuffer) return;
-
-	  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-	  const float32Data = new Float32Array(arrayBuffer.byteLength / 2);
-	  const int16Data = new Int16Array(arrayBuffer);
-
-	  for (let i = 0; i < int16Data.length; i++) {
-		  float32Data[i] = int16Data[i] / 32768.0;
-	  }
-
-	  const buffer = audioCtx.createBuffer(1, float32Data.length, 16000);
-	  buffer.getChannelData(0).set(float32Data);
-
-	  const source = audioCtx.createBufferSource();
-	  source.buffer = buffer;
-	  source.connect(audioCtx.destination);
-	  source.start();
-  }, []);
+	  if (!arrayBuffer || !audioPlayer) return;
+	  audioPlayer.playChunk(arrayBuffer);
+  }, [audioPlayer]);
 
   useEffect(() => {
 	  audioSocketRef.current = new AudioSocket(slug, (audioData) => {
@@ -74,29 +61,28 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  let source;
 
 	  const startAudioCapture = async () => {
-		  if (!localStream || localStream.getAudioTracks().length === 0) return;
+		  if (!localStream || micMuted || localStream.getAudioTracks().length === 0) return;
 		  if (audioSocketRef.current?.socket?.readyState !== WebSocket.OPEN) return;
 
 		  try {
-			  const audioTrack = localStream.getAudioTracks()[0].clone();
-			  const clonedStream = new MediaStream([audioTrack]);
-
 			  audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-
-			  source = audioContext.createMediaStreamSource(clonedStream);
+			  source = audioContext.createMediaStreamSource(localStream);
 
 			  processor = audioContext.createScriptProcessor(4096, 1, 1);
 			  source.connect(processor);
 			  processor.connect(audioContext.destination);
 
 			  processor.onaudioprocess = (e) => {
+				  if (micMuted) return;
+
 				  if (audioSocketRef.current?.socket?.readyState === WebSocket.OPEN) {
 					  const inputData = e.inputBuffer.getChannelData(0);
 					  const pcmData = new Int16Array(inputData.length);
+
 					  for (let i = 0; i < inputData.length; i++) {
 						  pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
 					  }
-					  audioSocketRef.current.sendAudio(pcmData.buffer);
+					  audioSocketRef.current.sendAudio(pcmData.buffer)
 				  }
 			  };
 			  console.log("Web Audio Capture (cloned) запущен");
@@ -109,7 +95,10 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 
 	  return () => {
 		  clearTimeout(timer);
-		  if (processor) processor.disconnect();
+		  if (processor) {
+			  processor.disconnect();
+			  processor.onaudioprocess = null;
+		  }
 		  if (source) source.disconnect();
 		  if (audioContext) audioContext.close();
 	  }
@@ -303,14 +292,28 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 
   const setupMedia = useCallback(async () => {
 	  try {
-		  const userStream = await navigator.mediaDevices.getUserMedia({
-			  video: true,
-			  audio: true
+		  const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true});
+
+		  const devices = await navigator.mediaDevices.enumerateDevices();
+		  const audioInputDevices = devices.filter(d => d.kind === 'audioinput');
+
+		  const preferredMic = audioInputDevices.find(d =>
+			  /headset|bluetooth|airpods|external|usb/i.test(d.label)
+		  ) || audioInputDevices[0];
+
+		  tempStream.getTracks().forEach(track => track.stop());
+
+		  const stream = await navigator.mediaDevices.getUserMedia({
+			  video: { width: 640, height: 360, frameRate: 24 },
+			  audio: {
+				  deviceId: preferredMic ? { exact: preferredMic.deviceId } : undefined,
+				  echoCancellation: true,
+				  noiseSuppression: true,
+				  autoGainControl: true
+			  }
 		  });
 
-		  console.log(userStream.getVideoTracks());
-
-		  setLocalStream(userStream);
+		  setLocalStream(stream);
 	  } catch (err) {
 		  console.error("Error accessing camera:", err);
 		  setLocalStream(null);
@@ -491,7 +494,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 											>
 												<div className="flex items-center gap-3">
 													<div className="relative w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-900/20 ring-2 ring-[#1e1e1e]">
-														{p.user_id.charAt(0).toUpperCase()}
+														{(p.username || p.user_id).charAt(0).toUpperCase()}
 														<span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#1e1e1e] rounded-full shadow-sm animate-pulse"></span>
 													</div>
 													
@@ -573,6 +576,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 						<video
 							autoPlay
 							playsInline
+							muted
 							ref={videoRef}
 							className="w-full h-full object-contain rounded-xl"
 						/>

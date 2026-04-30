@@ -43,22 +43,42 @@ export function useWebRTC({ localStream, roomId, userId }) {
 
 			onMessage: async (data) => {
 				if (data.type === "offer") {
-					await peer.setRemoteDescription({
-						type: "offer",
-						sdp: data.sdp
-					});
+					try {
+						if (peer.signalingState !== "stable") {
+							console.warn("Соединение занято (состояние:", peer.signalingState, "), ждем стабилизации...");
 
-					const answer = await peer.createAnswer();
-					await peer.setLocalDescription(answer);
+							return;
+						}
 
-					ws.send(JSON.stringify({
-						type: "answer",
-						sdp: answer.sdp
-					}));
+						console.log("Принимаем входящий оффер...");
+
+						await peer.setRemoteDescription(new RTCSessionDescription({
+							type: "offer",
+							sdp: data.sdp
+						}));
+
+						const answer = await peer.createAnswer();
+						await peer.setLocalDescription(answer);
+
+						ws.send(JSON.stringify({
+							type: "answer",
+							sdp: answer.sdp
+						}));
+					} catch (err) {
+						console.error("Ошибка при установке оффера:", err);
+					}
 				}
 
 				if (data.type === "candidate") {
-					await peer.addIceCandidate(new RTCIceCandidate(data.candidate));
+					try {
+						if (peer.remoteDescription) {
+							await peer.addIceCandidate(new RTCIceCandidate(data.candidate));
+						} else {
+							console.warn("Кандидат получен раньше описания, игнорируем");
+						}
+					} catch (err) {
+						console.error("Ошибка добавления ICE-кандидата:", err);
+					}
 				}
 
 				if (data.type === "participants_update") {

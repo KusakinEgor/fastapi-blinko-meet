@@ -12,7 +12,6 @@ export class AudioSocket {
 		this.socket.binaryType = "arraybuffer";
 
 		this.socket.onmessage = (event) => {
-			console.log("📥 Получены аудио-данные:", event.data.byteLength, "байт");
 			if (this.onDataReceived) {
 				this.onDataReceived(event.data);
 			}
