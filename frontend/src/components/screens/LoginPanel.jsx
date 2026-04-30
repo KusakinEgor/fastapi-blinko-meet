@@ -19,6 +19,11 @@ export default function LoginPanel({ visible, onClose }) {
 
     useEffect(() => {
         if (visible) {
+			const stored = localStorage.getItem("user");
+			if (stored) {
+				setUser(JSON.parse(stored));
+			}
+
             setTimeout(() => setAnimate(true), 10);
         } else {
             setAnimate(false);
@@ -93,6 +98,8 @@ export default function LoginPanel({ visible, onClose }) {
 						<button
 							onClick={() => {
 								localStorage.removeItem("access_token");
+								localStorage.removeItem("user");
+								setUser(null);
 								onClose();
 								navigate("/");
 							}}
