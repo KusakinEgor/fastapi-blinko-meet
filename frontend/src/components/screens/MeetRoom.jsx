@@ -497,7 +497,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 													
 													<div className="flex flex-col">
 														<span className="text-gray-100 font-semibold text-sm tracking-wide">
-															{p.user_id}
+															{p.username || p.user_id}
 															{p.user_id === userId && (
 																<span className="ml-2 text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full uppercase tracking-tighter">
 																	You
