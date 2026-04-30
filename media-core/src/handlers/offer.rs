@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::{broadcast, Mutex};
 
-use crate::state::{AppState, Participant};
+use crate::state::{AppState, Participant, ParticipantInfo};
 use crate::rtc::peer::create_peer;
 use crate::rtc::track::setup_on_track;
 
@@ -20,6 +20,7 @@ pub struct Sdp {
     pub sdp: String,
     pub room_id: String,
     pub user_id: String,
+    pub username: Option<String>,
 }
 
 pub async fn handle_offer(
@@ -28,9 +29,9 @@ pub async fn handle_offer(
 ) -> Json<Sdp> {
     let room_id = offer.room_id.clone();
     let user_id = offer.user_id.clone();
+    let username = offer.username.clone().unwrap_or_else(|| user_id.clone());
 
-    println!("/. NEW OFFER ./");
-    println!("room: {}, user: {}", room_id, user_id);
+    println!("/. NEW OFFER ./ room: {}, user: {}", room_id, user_id);
     println!("SPD len: {}", offer.sdp.len());
 
     let mut rooms = state.rooms.lock().await;
@@ -56,6 +57,7 @@ pub async fn handle_offer(
 
         let new_p = Arc::new(Participant {
             user_id: user_id.clone(),
+            username: username.clone(),
             pc: pc.clone(),
             sender: tx,
             published_tracks: Mutex::new(Vec::new()),
@@ -89,10 +91,16 @@ pub async fn handle_offer(
 
         participants.push(new_p.clone());
 
-        let user_ids: Vec<String> = participants.iter().map(|p| p.user_id.clone()).collect();
+        let users_data: Vec<serde_json::Value> = participants.iter().map(|p| {
+            serde_json::json!({
+                "user_id": p.user_id.clone(),
+                "username": p.username.clone()
+            })
+        }).collect();
+
         let update_msg = serde_json::json!({
             "type": "participants_update",
-            "users": user_ids
+            "users": users_data
         }).to_string();
 
         for p in participants.iter() {
@@ -121,16 +129,22 @@ pub async fn handle_offer(
         sdp: answer.sdp,
         room_id,
         user_id,
+        username: Some(participant.username.clone()),
     })
 }
 
 pub async fn get_participants(
     State(state): State<Arc<AppState>>,
     Path(room_id): Path<String>,
-) -> Json<Vec<String>> {
+) -> Json<Vec<ParticipantInfo>> {
     let rooms = state.rooms.lock().await;
     let users = rooms.get(&room_id)
-        .map(|list| list.iter().map(|p| p.user_id.clone()).collect())
+        .map(|list| {
+            list.iter().map(|p| ParticipantInfo {
+                user_id: p.user_id.clone(),
+                username: p.username.clone(),
+            }).collect()
+        })
         .unwrap_or_default();
     Json(users)
 }
