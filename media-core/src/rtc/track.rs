@@ -78,11 +78,18 @@ pub fn setup_on_track(
             }
 
             println!("Start RTP forwarding for track {}", track.id());
-            while let Ok((rtp, _)) = track.read_rtp().await {
-                if let Err(_) = local_track.write_rtp(&rtp).await {
-                    break;
+
+            let track_for_spawn = track.clone();
+            let local_track_for_spawn = local_track.clone();
+
+            tokio::spawn(async move {
+                while let Ok((rtp, _)) = track_for_spawn.read_rtp().await {
+                    if let Err(_) = local_track_for_spawn.write_rtp(&rtp).await {
+                        println!("Forwarding stopped for track");
+                        break;
+                    }
                 }
-            }
+            });
         })
     }));
 }

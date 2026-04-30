@@ -14,6 +14,7 @@ use webrtc::rtp_transceiver::{
     rtp_transceiver_direction::RTCRtpTransceiverDirection,
     RTCRtpTransceiverInit,
 };
+use webrtc::track::track_local::TrackLocal;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Sdp {
@@ -88,6 +89,14 @@ pub async fn handle_offer(
             user_id.clone(),
             new_p.clone(),
         );
+
+        for other in participants.iter() {
+            let tracks = other.published_tracks.lock().await;
+            for track in tracks.iter() {
+                let track_clone = Arc::clone(track) as Arc<dyn TrackLocal + Send + Sync>;
+                let _ = pc.add_track(track_clone).await;
+            }
+        }
 
         participants.push(new_p.clone());
 
