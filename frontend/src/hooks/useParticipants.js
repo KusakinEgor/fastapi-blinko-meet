@@ -8,7 +8,7 @@ export function useParticipants(slug, userId) {
 			const response = await fetch(`http://127.0.0.1:3000/rooms/${slug}/participants`);
 			const data = await response.json();
 
-			setParticipants(data.map(id => typeof id === "string" ? { user_id: id } : id));
+			setParticipants(data);
 		} catch (err) {
 			console.error("Failed to fetch participants:", err);
 		}
@@ -23,7 +23,7 @@ export function useParticipants(slug, userId) {
 			const data = e.detail;
 
 			if (data.type === "participants_update") {
-				setParticipants(data.users.map(id => ({ user_id: id })));
+				setParticipants(data.users);
 			}
 		};
 
