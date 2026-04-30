@@ -1,5 +1,6 @@
 import os
 import uuid
+import asyncio
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -93,6 +94,10 @@ async def audio_websocket(websocket: WebSocket, room_id: str):
     try:
         while True:
             data = await websocket.receive_bytes()
-            await audio_manager.broadcast(data, room_id, sender=websocket)
+            asyncio.create_task(audio_manager.broadcast(data, room_id, sender=websocket))
+
     except WebSocketDisconnect:
+        audio_manager.disconnect(websocket, room_id)
+    except Exception as e:
+        print(f"WS Error: {e}")
         audio_manager.disconnect(websocket, room_id)
