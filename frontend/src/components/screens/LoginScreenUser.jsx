@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { getProfile } from "../../api/user";
 
 const LoginScreenUser = ({ onLogin, onBack }) => {
   const [isRegister, setIsRegister] = useState(false);
@@ -38,6 +39,21 @@ const LoginScreenUser = ({ onLogin, onBack }) => {
 		  if (!isRegister) {
 			  localStorage.setItem("access_token", data.access_token);
 			  localStorage.setItem("refresh_token", data.refresh_token);
+
+			  try {
+				  const profileData = await getProfile();
+
+				  const userToStore = {
+					  username: profileData.display_name || profileData.username || "User",
+					  avatarPreview: profileData.avatar_url,
+					  email: profileData.email
+				  };
+
+				  localStorage.setItem("user", JSON.stringify(userToStore));
+			  } catch (profileErr) {
+				  console.error("Not success load data profile after login", profileErr);
+			  }
+
 			  onLogin();
 		  } else {
 			  alert("Registration success!");
