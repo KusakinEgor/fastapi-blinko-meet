@@ -13,7 +13,16 @@ export class AudioSocket {
 
 		this.socket.onmessage = (event) => {
 			if (this.onDataReceived) {
-				this.onDataReceived(event.data);
+				if (typeof event.data === "string") {
+					try {
+						const jsonData = JSON.parse(event.data);
+						this.onDataReceived(jsonData);
+					} catch (e) {
+						console.error("Ошибка парсинга JSON:", e);
+					}
+				} else {
+					this.onDataReceived(event.data);
+				}
 			}
 		};
 
