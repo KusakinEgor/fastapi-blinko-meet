@@ -90,13 +90,15 @@ async def upload_avatar(
 @router.websocket("/ws/audio/{room_id}")
 async def audio_websocket(websocket: WebSocket, room_id: str):
     await audio_manager.connect(websocket, room_id)
+    print(f"connection open for room {room_id}")
 
     try:
         while True:
             data = await websocket.receive_bytes()
-            asyncio.create_task(audio_manager.broadcast(data, room_id, sender=websocket))
-
+            await audio_manager.broadcast(data, room_id, sender=websocket)
+    
     except WebSocketDisconnect:
+        print("connection closed")
         audio_manager.disconnect(websocket, room_id)
     except Exception as e:
         print(f"WS Error: {e}")
