@@ -67,20 +67,27 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  let audioContext;
 	  let processor;
 	  let source;
-	  let streamClone;
+	  let audioClone;
 
 	  const startAudioCapture = async () => {
 		  if (!localStream || micMuted || localStream.getAudioTracks().length === 0) return;
 		  if (audioSocketRef.current?.socket?.readyState !== WebSocket.OPEN) return;
 
 		  try {
-			  streamClone = localStream.clone();
+			  audioClone = localStream.getAudioTracks()[0].clone();
+			  const isolatedStream = new MediaStream([audioClone]);
 
 			  audioContext = new (window.AudioContext || window.webkitAudioContext)({  sampleRate: 16000 });
-			  source = audioContext.createMediaStreamSource(localStream);
 
-			  processor = audioContext.createScriptProcessor(4096, 1, 1);
+			  if (audioContext.state === "suspended") {
+				  await audioContext.resume();
+			  }
+
+			  source = audioContext.createMediaStreamSource(isolatedStream);
+			  processor = audioContext.createScriptProcessor(16384, 1, 1);
+
 			  source.connect(processor);
+			  processor.connect(audioContext.destination);
 
 			  processor.onaudioprocess = (e) => {
 				  if (micMuted) return;
@@ -90,9 +97,11 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 					  const pcmData = new Int16Array(inputData.length);
 
 					  for (let i = 0; i < inputData.length; i++) {
-						  pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
+						  const s = Math.max(-1, Math.min(1, inputData[i]));
+						  pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
 					  }
-					  audioSocketRef.current.sendAudio(pcmData.buffer)
+
+					  audioSocketRef.current.sendAudio(pcmData.buffer);
 				  }
 			  };
 			  console.log("Web Audio Capture (cloned) запущен");
@@ -101,16 +110,16 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 		  }
 	  };
 
-	  const timer = setTimeout(startAudioCapture, 1000);
+	  startAudioCapture();
 
 	  return () => {
-		  clearTimeout(timer);
 		  if (processor) {
 			  processor.disconnect();
 			  processor.onaudioprocess = null;
 		  }
 		  if (source) source.disconnect();
 		  if (audioContext) audioContext.close();
+		  if (audioClone) audioClone.stop();
 	  }
   }, [localStream, micMuted]);
 
