@@ -21,6 +21,7 @@ dependencies = [
     "pytest-asyncio (>=1.3.0,<2.0.0)",
     "python-multipart (>=0.0.26,<0.0.27)",
     "websockets (>=16.0,<17.0)",
+    "vosk (>=0.3.45,<0.4.0)",
     
                 ]
 
