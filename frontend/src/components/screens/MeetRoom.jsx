@@ -38,14 +38,22 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   const mediaSourceRef = useRef(null);
   const queueRef = useRef([]);
 
-  const playReceivedAudio = useCallback((arrayBuffer) => {
-	  if (!arrayBuffer || !audioPlayer) return;
-	  audioPlayer.playChunk(arrayBuffer);
+  const playReceivedAudio = useCallback((data) => {
+	  if (!data || !(data instanceof ArrayBuffer) || !audioPlayer) return;
+	  audioPlayer.playChunk(data);
   }, [audioPlayer]);
 
   useEffect(() => {
-	  audioSocketRef.current = new AudioSocket(slug, (audioData) => {
-		  playReceivedAudio(audioData);
+	  audioSocketRef.current = new AudioSocket(slug, (data) => {
+		  if (data && data.type === "transcript") {
+			  console.log("ПОЛУЧЕН ТЕКСТ ОТ СЕРВЕРА:", data.text);
+			  const text = data.text;
+			  const userName = data.userName || "Участник";
+			  transcriptRef.current += `${userName}: ${text}. `;
+			  console.log("Транскрипт от бэкенда:", text);
+		  } else if (data instanceof ArrayBuffer) {
+			  playReceivedAudio(data)
+		  }
 	  });
 
 	  audioSocketRef.current.connect();
@@ -59,18 +67,20 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  let audioContext;
 	  let processor;
 	  let source;
+	  let streamClone;
 
 	  const startAudioCapture = async () => {
 		  if (!localStream || micMuted || localStream.getAudioTracks().length === 0) return;
 		  if (audioSocketRef.current?.socket?.readyState !== WebSocket.OPEN) return;
 
 		  try {
-			  audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+			  streamClone = localStream.clone();
+
+			  audioContext = new (window.AudioContext || window.webkitAudioContext)({  sampleRate: 16000 });
 			  source = audioContext.createMediaStreamSource(localStream);
 
 			  processor = audioContext.createScriptProcessor(4096, 1, 1);
 			  source.connect(processor);
-			  processor.connect(audioContext.destination);
 
 			  processor.onaudioprocess = (e) => {
 				  if (micMuted) return;
@@ -104,54 +114,22 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  }
   }, [localStream, micMuted]);
 
+  const recognitionStreamRef = useRef(null);
+  
   useEffect(() => {
-	  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-	  if (!SpeechRecognition) {
-		  console.error("Browser not support Speech Recognition");
-		  return;
+	  if (localStream && !recognitionStreamRef.current) {
+		  const audioTracks = localStream.getAudioTracks().map(track => track.clone());
+		  recognitionStreamRef.current = new MediaStream(audioTracks);
+		  console.log("Выделен отдельный поток для распознавания");
 	  }
-	  
-	  const recognition = new SpeechRecognition();
-	  recognition.continuous = true;
-	  recognition.interimResults = false;
-	  recognition.lang = 'ru-RU';
-
-	  recognition.onresult = (event) => {
-		  for (let i = event.resultIndex; i < event.results.length; ++i) {
-			  const text = event.results[i][0].transcript;
-			  if (event.results[i].isFinal) {
-				  const userName = name || "Участник";
-				  transcriptRef.current += `${userName}: ${text}. `;
-				  console.log("Записано в транскрипт:", transcriptRef.current);
-			  }
-		  }
-	  };
-
-	  recognition.onended = () => {
-		  if (recognitionRef.current && !micMuted) {
-			  setTimeout(() => {
-				  try { recognition.start(); } catch (e) {}
-			  }, 300);
-		  }
-	  }
-
-	  recognition.onerror = (event) => {
-		  if (event.error === 'aborted' || event.error === 'no-speech') {
-			  console.log(`Recognition ${event.error}, waiting for restart...`);
-			  return;
-		  }
-		  console.error("Speech Recognition Error:", event.error);
-	  };
-
-	  recognition.start();
-	  recognitionRef.current = recognition;
 
 	  return () => {
-		  recognitionRef.current = null;
-		  recognition.stop();
+		  if (recognitionStreamRef.current) {
+			  recognitionStreamRef.current.getTracks().forEach(t => t.stop());
+			  recognitionStreamRef.current = null;
+		  }
 	  };
-  }, [name, slug]);
+  }, [localStream])
 
   const handleLeaveAndGenerate = async () => {
 	  const token = localStorage.getItem("access_token");
