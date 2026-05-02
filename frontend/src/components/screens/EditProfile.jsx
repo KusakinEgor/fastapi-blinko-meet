@@ -150,6 +150,17 @@ const EditProfile = () => {
 							className="w-full mt-1 p-3 bg-zinc-900 rounded-lg outline-none"
 						/>
 					</div>
+					
+					<div className="pt-10 mt-10 border-t border-zinc-800">
+						<button 
+							className="w-full p-3 text-red-500 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors text-sm font-medium"
+						>
+							Удалить аккаунт
+						</button>
+						<p className="text-center text-[10px] text-zinc-600 mt-2">
+							Все ваши данные будут безвозвратно удалены.
+						</p>
+					</div>
 				</div>
 			</div>
 		</div>
