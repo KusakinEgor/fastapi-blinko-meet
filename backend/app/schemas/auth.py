@@ -21,7 +21,8 @@ class User(TimestampMixin, Base):
     display_name: Mapped[str] = mapped_column(String(100), nullable=True)
     badges: Mapped[List["Badge"]] = relationship("Badge", secondary=user_badges, backref="users", lazy="selectin")
 
-    profile: Mapped["UserProfile"] = relationship("UserProfile", back_populates="user", uselist=False)
-    settings: Mapped["UserSettings"] = relationship("UserSettings", back_populates="user", uselist=False)
+    profile: Mapped["UserProfile"] = relationship("UserProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    settings: Mapped["UserSettings"] = relationship("UserSettings", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
     messages: Mapped[list["Message"]] = relationship("Message", back_populates="user", cascade="all, delete-orphan")
+    owned_rooms: Mapped[list["Rooms"]] = relationship("Rooms", back_populates="owner", cascade="all, delete-orphan")
