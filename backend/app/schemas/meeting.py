@@ -21,7 +21,7 @@ class Rooms(TimestampMixin, Base):
 
     closed_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
-    owner: Mapped["User"] = relationship("User", backref="owned_rooms")
+    owner: Mapped["User"] = relationship("User", back_populates="owned_rooms")
 
 class Participants(TimestampMixin, Base):
     """Junction table for users in conference rooms with their media states and roles."""
