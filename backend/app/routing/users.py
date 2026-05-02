@@ -253,3 +253,31 @@ async def like_profile(
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete(
+        "/account",
+        status_code=status.HTTP_204_NO_CONTENT,
+        summary="Delete user account",
+        description="Permanently delete the current user's profile and settings.",
+        responses={
+            204: { "description": "Account deleted successfully" },
+            401: { "description": "Authentication required" },
+            500: { "description": "Database error" }
+        }
+)
+async def delete_account(
+        db: AsyncSession = Depends(get_db_session),
+        current_user: User = Depends(get_current_user)
+):
+    try:
+        result = await db.execute(select(User).where(User.id == current_user.id))
+        user_to_delete = result.scalar_one_or_none()
+
+        if user_to_delete:
+            await db.delete(user_to_delete)
+            await db.commit()
+        return None
+    except Exception as e:
+        await db.rollback()
+        print(f"FULL ERROR: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
