@@ -97,3 +97,20 @@ export const inviteToCall = (username) => {
 	const inviteUrl = `${window.location.origin}/join?ref=${username}`;
 	return navigator.clipboard.writeText(inviteUrl);
 };
+
+export const deleteAccount = async () => {
+	const token = localStorage.getItem("access_token");
+	const response = await fetch(`${API_URL}/user/account`, {
+		method: "DELETE",
+		headers: {
+			"Authorization": `Bearer ${token}`,
+		},
+	});
+
+	if (!response.ok) {
+		const errorData = await response.json().catch(() => ({}));
+		throw new Error(errorData.detail || "Failed to delete account");
+	}
+
+	return true;
+};
