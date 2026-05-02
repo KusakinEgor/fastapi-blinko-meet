@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { updateProfile, uploadAvatar } from "../../api/user.js";
+import { updateProfile, uploadAvatar, deleteAccount } from "../../api/user.js";
 
 const EditProfile = () => {
 	const navigate = useNavigate();
@@ -41,6 +41,26 @@ const EditProfile = () => {
 			avatar: file,
 			avatarPreview: URL.createObjectURL(file)
 		}));
+	};
+
+	const handleDeleteAccount = async () => {
+		const confirmed = window.confirm(
+			"Вы уверены, что хотите удалить аккаунт? Все данные будут стерты навсегда."
+		);
+
+		if (confirmed) {
+			try {
+				await deleteAccount();
+
+				localStorage.removeItem("user");
+				localStorage.removeItem("access_token");
+
+				navigate("/login");
+			} catch (err) {
+				console.error("Error deleting account:", err);
+				alert("Не удалось удалить аккаунт");
+			}
+		}
 	};
 
 	const handleSave = async () => {
@@ -152,7 +172,8 @@ const EditProfile = () => {
 					</div>
 					
 					<div className="pt-10 mt-10 border-t border-zinc-800">
-						<button 
+						<button
+							onClick={handleDeleteAccount}
 							className="w-full p-3 text-red-500 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors text-sm font-medium"
 						>
 							Удалить аккаунт
