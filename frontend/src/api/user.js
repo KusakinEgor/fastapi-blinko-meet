@@ -114,3 +114,21 @@ export const deleteAccount = async () => {
 
 	return true;
 };
+
+export const getMeetingSummary = async (roomId) => {
+	const token = localStorage.getItem("access_token")
+	const response = await fetch(`${API_URL}/ai/summary/${roomId}`, {
+		method: "GET",
+		headers: {
+			"Authorization": `Bearer ${token}`,
+			"Content-Type": "application/json",
+		},
+	});
+
+	if (!response.ok) {
+		if (response.status === 404) throw new Error("Summary not found");
+		throw new Error("Failed to fetch summary");
+	}
+
+	return await response.json();
+};
