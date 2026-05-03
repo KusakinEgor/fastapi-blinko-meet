@@ -13,6 +13,7 @@ import EditProfile from "./components/screens/EditProfile";
 import AdminDashboard from "./components/screens/AdminDashboard";
 import AdminAuth from "./components/screens/AdminLogin";
 import EmojiGuide from "./components/chat/EmojiGuide";
+import MeetingSummaryProfile from "./components/screens/MeetingSummaryProfile";
 
 function AppContent() {
   const navigate = useNavigate();
@@ -79,6 +80,11 @@ function AppContent() {
 	  <Route
 		path="/profile/edit"
 		element={<EditProfile />}
+	  />
+
+	  <Route
+		path="/summary/:roomId"
+		element={<MeetingSummaryProfile />}
 	  />
 
 	  <Route
