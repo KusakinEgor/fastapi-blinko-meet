@@ -72,6 +72,14 @@ const UserProfile = () => {
 	  } catch (err) {
 		  showToast("Failed to copy link", "error");
 	  }
+  };
+
+  const handleHistoryClick = (meeting) => {
+	  if (meeting) {
+		  navigate(`/summary/${meeting.slug}`);
+	  } else {
+		  showToast("Summary not available", "error");
+	  }
   }
 
   const [trophies] = useState([
@@ -267,7 +275,7 @@ const UserProfile = () => {
             <div className="space-y-4">
               {history.length > 0 ? (
 					history.map((item) => (
-						<div key={item.id} onClick={() => navigate(`/call/${item.slug}`)} className="group relative bg-zinc-900/10 hover:bg-zinc-900/40 p-6 rounded-[24px] border border-white/5 hover:border-white/10 transition-all duration-300">
+						<div key={item.id} onClick={() => handleHistoryClick(item)} className="group relative bg-zinc-900/10 hover:bg-zinc-900/40 p-6 rounded-[24px] border border-white/5 hover:border-white/10 transition-all duration-300">
 						  <div className="flex items-center justify-between">
 							<div className="flex items-center gap-5">
 							  <div className="w-10 h-10 rounded-2xl bg-zinc-800/50 flex items-center justify-center border border-white/5 group-hover:border-[#3f81fd]/30 group-hover:text-[#3f81fd] transition-all">
