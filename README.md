@@ -26,7 +26,7 @@
 ---
 
 ## О проекте
-
+write about project
 
 ---
 
@@ -94,4 +94,4 @@ npm install
 ---
 
 ## Скриншоты
-
+make screenshots
