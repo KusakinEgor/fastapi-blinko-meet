@@ -177,12 +177,6 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  setShowMore(false);
   };
 
-  const handleEmojiClick = (emoji) => {
-	  const id = Date.now();
-	  setActiveEmojis((prev) => [...prev, { id, emoji }]);
-
-	  setShowReactions(false);
-  };
 
   const removeEmoji = (id) => {
 	  setActiveEmojis((prev) => prev.filter((e) => e.id !== id));
@@ -206,6 +200,38 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   const localVideoRef = useRef(null);
   const [userId] = useState(() => Math.random().toString(36).substring(7));
   const { participants, count } = useParticipants(slug, userId);
+  
+  const handleEmojiClick = (emoji) => {
+	  const id = Date.now();
+
+	  if (ws && ws.readyState === WebSocket.OPEN) {
+		  ws.send(JSON.stringify({
+			  type: "emoji_reaction",
+			  emoji: emoji,
+			  userId: userId,
+			  id: id
+		  }));
+	  }
+
+	  setActiveEmojis((prev) => [...prev, { id, emoji }]);
+	  setShowReactions(false);
+  };
+
+  useEffect(() => {
+	  const handleRemoteReaction = (event) => {
+		  const data = event.detail;
+
+		  if (data.type === "emoji_reaction" && data.userId !== userId) {
+			  setActiveEmojis((prev) => [
+				  ...prev,
+				  { id: data.id, emoji: data.emoji }
+			  ]);
+		  }
+	  };
+
+	  window.addEventListener("emoji_reaction", handleRemoteReaction);
+	  return () => window.removeEventListener("emoji_reaction", handleRemoteReaction);
+  }, [userId]);
 
   useEffect(() => {
 	  const invite = location.state?.inviteLink || localStorage.getItem(`invite_link_${slug}`);
