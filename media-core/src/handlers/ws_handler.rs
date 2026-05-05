@@ -86,6 +86,21 @@ pub async fn ws_handler(
                             }
                         }
                     }
+
+                    if json["type"] == "emoji_reaction" {
+                        let participants = {
+                            let rooms = state.rooms.lock().await;
+                            rooms.get(&room_id).cloned()
+                        };
+
+                        if let Some(participants) = participants {
+                            let msg = text.clone();
+
+                            for participant in participants {
+                                let _ = participant.sender.send(msg.clone());
+                            }
+                        }
+                    }
                 }
             }
         });
