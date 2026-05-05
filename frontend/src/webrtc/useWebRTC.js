@@ -90,6 +90,11 @@ export function useWebRTC({ localStream, roomId, userId }) {
 					setRemoteStreams(prev => prev);
 					window.dispatchEvent(new CustomEvent("chat_message", { detail: data }));
 				}
+
+				if (data.type === "emoji_reaction") {
+					console.log("WS MESSAGE RECEIVED:", data);
+					window.dispatchEvent(new CustomEvent("emoji_reaction", { detail: data }));
+				}
 			},
 
 			onOpen: async () => {
