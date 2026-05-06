@@ -587,7 +587,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 					</div>
 				)}
 
-				<div className="bg-[#171717] w-full h-full rounded-xl flex items-center justify-center relative overflow-hidden">
+				<div className="bg-[#171717] aspect-video w-full h-full rounded-xl flex items-center justify-center relative overflow-hidden">
 					{screenStream ? (
 						<video
 							autoPlay
