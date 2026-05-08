@@ -10,6 +10,7 @@ import { sendMessage } from "../../api/chat.js";
 import { useParticipants } from "../../hooks/useParticipants.js";
 import { AudioSocket } from "../../api/audioSocket.js";
 import { AudioPlayer } from "../../utils/AudioPlayer.js";
+import { roomsApi } from "../../api/rooms.js";
 
 export default function MeetRoom({ name, meetingTitle, onBack }) {
   const { slug } = useParams();
@@ -141,31 +142,28 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   }, [localStream])
 
   const handleLeaveAndGenerate = async () => {
-	  const token = localStorage.getItem("access_token");
-
 	  setShowSummary(true);
 
 	  if (recognitionRef.current) {
 		  recognitionRef.current.stop();
 	  }
 
-	  try {
-		  await fetch("http://localhost:8000/ai/summary/generate", {
-			  method: "POST",
-			  headers: {
-				  "Content-Type": "application/json",
-				  "Authorization": `Bearer ${token}`
-			  },
-			  body: JSON.stringify({
-				  room_id: slug,
-				  transcript: transcriptRef.current || "Переговор не записан",
-				  detail_level: "long"
-			  })
-		  });
-	  } catch (err) {
-		  console.error("Error generate", err);
+	  if (localStream) {
+		  localStream.getTracks().forEach(track => track.stop());
 	  }
-  }
+
+	  try {
+		  await roomsApi.generateSummary({
+			  room_id: slug,
+			  transcript: transcriptRef.current || "Переговор не записан",
+			  detail_level: "long"
+		  });
+
+		  await roomsApi.leaveRoom(slug);
+	  } catch (err) {
+		  console.error("Error during leave and summary generation:", err);
+	  } 
+  };
 
   const handleToogleRecord = () => {
 	  if (isScreenRecording) {
