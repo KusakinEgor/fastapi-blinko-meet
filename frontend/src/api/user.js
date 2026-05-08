@@ -100,3 +100,14 @@ export const getAvatarUrl = (path) => {
 	if (path.startsWith("http")) return path;
 	return `${API_URL}${path}`;
 };
+
+export const getSettings = async () => {
+	return await apiRequest("/user/settings");
+};
+
+export const updateSettings = async (settingsData) => {
+	return await apiRequest("/user/settings", {
+		method: "PUT",
+		body: JSON.stringify(settingsData),
+	});
+};
