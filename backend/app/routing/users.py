@@ -15,6 +15,47 @@ from app.services.achievements import award_badge_if_not_exists
 
 router = APIRouter(prefix="/user", tags=["User Settings"])
 
+@router.get(
+        "/settings",
+        response_model=SettingsOut,
+        status_code=status.HTTP_200_OK,
+        summary="Get user settings",
+        description="Retrieve technical settings for the current authenticated user.",
+        responses={
+            200: {"description": "Settings retrieved successfully"},
+            401: {"description": "Authentication required"},
+            404: {"description": "Settings not found"},
+            500: {"description": "Database error"}
+        }
+)
+async def get_settings(
+        db: AsyncSession = Depends(get_db_session),
+        current_user = Depends(get_current_user)
+):
+    try:
+        result = await db.execute(
+                select(UserSettings).where(UserSettings.user_id == current_user.id)
+        )
+        settings = result.scalar_one_or_none()
+
+        if not settings:
+            return SettingsOut(
+                    user_id=current_user.id,
+                    language="ru",
+                    theme="dark",
+                    enable_noise_suppression=True,
+                    auto_gain_control=True,
+                    hide_history=False
+            )
+
+        return settings
+
+    except Exception as e:
+        raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Database Error: {str(e)}"
+        )
+
 @router.put(
         "/profile",
         response_model=ProfileOut,
@@ -86,7 +127,9 @@ async def update_settings(
             settings = UserSettings(user_id=current_user.id, **data.dict())
             db.add(settings)
         else:
-            for key, value in data.dict(exclude_unset=True).items():
+            update_data = data.model_dump(exclude_unset=True)
+            print(f"DEBUG: Data received for update: {update_data}")
+            for key, value in update_data.items():
                 setattr(settings, key, value)
 
         await db.commit()
@@ -163,9 +206,18 @@ async def get_user_history(
         db: AsyncSession = Depends(get_db_session),
         current_user: User = Depends(get_current_user)
 ):
-    try:
-        target_id = user_id if user_id is not None else current_user.id
+    target_id = user_id if user_id is not None else current_user.id
 
+    if user_id is not None and user_id != current_user.id:
+        settings_res = await db.execute(
+                select(UserSettings).where(UserSettings.user_id == target_id)
+        )
+        settings = settings_res.scalar_one_or_none()
+
+        if settings and settings.hide_history:
+            return []
+
+    try:
         stmt = (
                 select(Rooms)
                 .outerjoin(Participants, Rooms.id == Participants.room_id)
