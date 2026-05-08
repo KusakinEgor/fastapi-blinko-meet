@@ -1,96 +1,88 @@
+import { refreshAccessToken } from "./auth.js";
+
 const API_URL = "http://localhost:8000";
 
-export const updateProfile = async (profileData) => {
+async function apiRequest(endpoint, options = {}) {
 	const token = localStorage.getItem("access_token");
-	const response = await fetch(`${API_URL}/user/profile`, {
+
+	const headers = {
+		"Authorization": `Bearer ${token}`,
+		...options.headers,
+	};
+
+	if (!(options.body instanceof FormData) && !headers["Content-Type"]) {
+		headers["Content-Type"] = "application/json";
+	}
+
+	const config = {
+		...options,
+		headers
+	};
+
+	let response = await fetch(`${API_URL}${endpoint}`, config);
+
+	if (response.status === 401) {
+		try {
+			const newToken = await refreshAccessToken();
+			if (newToken) {
+				config.headers["Authorization"] = `Bearer ${newToken}`;
+				response = await fetch(`${API_URL}${endpoint}`, config);
+			}
+		} catch (err) {
+			console.error("Refresh token failed, redirecting to login...");
+			localStorage.clear();
+			window.location.href = "/login";
+			throw err;
+		}
+	}
+
+	if (!response.ok) {
+		const errorData = await response.json().catch(() => ({}));
+		const error = new Error(errorData.detail || "API Error");
+		error.status = response.status;
+		throw error;
+	}
+
+	if (response.status === 204) return true;
+
+	return response.json();
+}
+
+
+export const getProfile = async (userId = null) => {
+	return await apiRequest(userId ? `/user/profile?user_id=${userId}` : "/user/profile");
+};
+
+export const updateProfile = async (profileData) => {
+	return await apiRequest("/user/profile", {
 		method: "PUT",
-		headers: {
-			"Content-Type": "application/json",
-			"Authorization": `Bearer ${token}`,
-		},
 		body: JSON.stringify(profileData),
 	});
-	
-	return response.json()
 };
 
 export const uploadAvatar = async (file) => {
-	const token = localStorage.getItem("access_token");
 	const formData = new FormData();
 	formData.append("file", file);
-
-	const response = await fetch(`${API_URL}/media/upload-avatar`, {
+	return await apiRequest("/media/upload-avatar", {
 		method: "POST",
-		headers: {
-			"Authorization": `Bearer ${token}`,
-		},
 		body: formData,
 	});
-
-	return response.json();
 };
 
-export const getProfile = async (userId = null) => {
-	const token = localStorage.getItem("access_token");
-	const url = userId ? `${API_URL}/user/profile?user_id=${userId}` : `${API_URL}/user/profile`;
-
-	const response = await fetch(url, {
-		method: "GET",
-		headers: {
-			"Content-Type": "application/json",
-			"Authorization": `Bearer ${token}`
-		}
-	});
-
-	if (!response.ok) {
-		throw new Error("Failed to fetch profile");
-	}
-
-	return response.json();
-};
-
-export const getAvatarUrl = (path) => {
-	if (!path) return null;
-	if (path.startsWith("http")) return path;
-	return `${API_URL}${path}`;
+export const deleteAccount = async () => {
+	return await apiRequest("/user/account", { method: "DELETE" });
 };
 
 export const getUserHistory = async () => {
-	const token = localStorage.getItem("access_token");
-
-	const response = await fetch(`${API_URL}/user/history`, {
-		method: "GET",
-		headers: {
-			"Content-Type": "application/json",
-			"Authorization": `Bearer ${token}`
-		}
-	});
-
-	if (!response.ok) {
-		throw new Error("Failed to fetch history");
-	}
-
-	return response.json();
+	return await apiRequest("/user/history");
 };
 
 export const searchUser = async (query) => {
-	const response = await fetch(`${API_URL}/user/search?query=${encodeURIComponent(query)}`, {
-		headers: {
-			"Authorization": `Bearer ${localStorage.getItem('access_token')}`
-		}
-	});
-	if (!response.ok) throw new Error("Search failed");
-	return await response.json();
+	return await apiRequest(`/user/search?query=${encodeURIComponent(query)}`);
 };
 
 export const likeProfile = async (userId) => {
-	const response = await fetch(`${API_URL}/user/profile/${userId}/like`, {
-		method: "POST",
-		headers: { "Authorization": `Bearer ${localStorage.getItem('access_token')}`}
-	});
-
-	if (!response.ok) throw new Error("Like failed");
-	return await response.json();
+	return await apiRequest(`/user/profile/${userId}/like`, { method: "POST" });
 };
 
 export const inviteToCall = (username) => {
@@ -98,37 +90,12 @@ export const inviteToCall = (username) => {
 	return navigator.clipboard.writeText(inviteUrl);
 };
 
-export const deleteAccount = async () => {
-	const token = localStorage.getItem("access_token");
-	const response = await fetch(`${API_URL}/user/account`, {
-		method: "DELETE",
-		headers: {
-			"Authorization": `Bearer ${token}`,
-		},
-	});
-
-	if (!response.ok) {
-		const errorData = await response.json().catch(() => ({}));
-		throw new Error(errorData.detail || "Failed to delete account");
-	}
-
-	return true;
+export const getMeetingSummary = async (roomId) => {
+	return await apiRequest(`/ai/summary/${roomId}`);
 };
 
-export const getMeetingSummary = async (roomId) => {
-	const token = localStorage.getItem("access_token")
-	const response = await fetch(`${API_URL}/ai/summary/${roomId}`, {
-		method: "GET",
-		headers: {
-			"Authorization": `Bearer ${token}`,
-			"Content-Type": "application/json",
-		},
-	});
-
-	if (!response.ok) {
-		if (response.status === 404) throw new Error("Summary not found");
-		throw new Error("Failed to fetch summary");
-	}
-
-	return await response.json();
+export const getAvatarUrl = (path) => {
+	if (!path) return null;
+	if (path.startsWith("http")) return path;
+	return `${API_URL}${path}`;
 };
