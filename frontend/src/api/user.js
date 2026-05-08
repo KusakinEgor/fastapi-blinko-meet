@@ -2,7 +2,7 @@ import { refreshAccessToken } from "./auth.js";
 
 const API_URL = "http://localhost:8000";
 
-async function apiRequest(endpoint, options = {}) {
+export async function apiRequest(endpoint, options = {}) {
 	const token = localStorage.getItem("access_token");
 
 	const headers = {
