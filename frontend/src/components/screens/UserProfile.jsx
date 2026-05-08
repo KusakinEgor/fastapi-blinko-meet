@@ -22,7 +22,12 @@ const UserProfile = () => {
 		  try {
 			  const profileData = await getProfile(id);
 
+			  if (!profileData) {
+				  throw new Error("No profile data received");
+			  }
+
 			  let historyData = [];
+
 			  if (!id) {
 				  historyData = await getUserHistory();
 			  }
@@ -38,18 +43,20 @@ const UserProfile = () => {
 
 			  setUserBadges(profileData.badges || []);
 			  setHistory(historyData);
-		  } catch (err) {
-			  console.error("Profile load failed", err);
+		 } catch (err) {
+			 console.error("Profile load failed:", err);
 
-			  if (!id) {
-				  const stored = localStorage.getItem("user");
-				  if (stored) setUser(JSON.parse(stored));
-			  }
-		  }
+			 if (err.status === 401) {
+				 navigate("/login");
+			 } else if (!id) {
+				 const stored = localStorage.getItem("user");
+				 if (stored) setUser(JSON.parse(stored));
+			 }
+		 }
 	  };
 
 	  loadAllData();
-  }, [id]);
+  }, [id, navigate]);
 
   const handleLike = async () => {
 	  try {
