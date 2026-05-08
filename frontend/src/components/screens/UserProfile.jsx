@@ -26,11 +26,7 @@ const UserProfile = () => {
 				  throw new Error("No profile data received");
 			  }
 
-			  let historyData = [];
-
-			  if (!id) {
-				  historyData = await getUserHistory();
-			  }
+			  const historyData = await getUserHistory(id);
 
 			  setUser({
 				  username: profileData.display_name || "New User",
@@ -263,7 +259,9 @@ const UserProfile = () => {
             <div className="relative group overflow-hidden bg-zinc-900/20 p-7 rounded-[32px] border border-white/5 hover:border-white/10 transition-all">
               <div className="absolute -right-4 -top-4 w-20 h-20 bg-blue-500/5 blur-2xl group-hover:bg-blue-500/10 transition-all" />
               <p className="text-zinc-600 text-[10px] font-black uppercase tracking-[0.3em] mb-3">Events</p>
-              <p className="text-4xl font-black tracking-tighter">12</p>
+              <p className="text-4xl font-black tracking-tighter">
+				{history?.length || 0}
+			  </p>
             </div>
             <div className="relative group overflow-hidden bg-zinc-900/20 p-7 rounded-[32px] border border-white/5 border-l-[#3f81fd]/30 hover:border-[#3f81fd]/50 transition-all">
               <div className="absolute -right-4 -top-4 w-20 h-20 bg-[#3f81fd]/5 blur-2xl group-hover:bg-[#3f81fd]/10 transition-all" />
