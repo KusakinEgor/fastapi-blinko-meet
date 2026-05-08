@@ -159,17 +159,20 @@ async def get_profile(
         }
 )
 async def get_user_history(
+        user_id: int = None,
         db: AsyncSession = Depends(get_db_session),
         current_user: User = Depends(get_current_user)
 ):
     try:
+        target_id = user_id if user_id is not None else current_user.id
+
         stmt = (
                 select(Rooms)
                 .outerjoin(Participants, Rooms.id == Participants.room_id)
                 .where(
                     or_(
-                        Rooms.owner_id == current_user.id,
-                        Participants.user_id == current_user.id
+                        Rooms.owner_id == target_id,
+                        Participants.user_id == target_id
                     )
                 )
                 .distinct()
