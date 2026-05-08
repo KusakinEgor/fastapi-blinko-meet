@@ -49,6 +49,10 @@ class SettingsUpdate(BaseModel):
             True,
             description="Automatically adjust microphone input volume"
     )
+    hide_history: bool = Field(
+            False,
+            description="Hide meeting history and event count from other users"
+    )
 
     class Config:
         from_attributes = True
