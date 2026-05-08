@@ -73,8 +73,9 @@ export const deleteAccount = async () => {
 	return await apiRequest("/user/account", { method: "DELETE" });
 };
 
-export const getUserHistory = async () => {
-	return await apiRequest("/user/history");
+export const getUserHistory = async (userId = null) => {
+	const endpoint = userId ? `/user/history?user_id=${userId}` : "/user/history";
+	return await apiRequest(endpoint);
 };
 
 export const searchUser = async (query) => {
