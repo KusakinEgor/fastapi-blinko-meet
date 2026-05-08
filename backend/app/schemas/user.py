@@ -1,5 +1,6 @@
+from datetime import datetime
 from typing import Optional
-from sqlalchemy import String, Boolean, ForeignKey
+from sqlalchemy import DateTime, String, Boolean, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.db import Base
 from .common import TimestampMixin
@@ -19,7 +20,7 @@ class UserProfile(TimestampMixin, Base):
 
     user: Mapped["User"] = relationship("User", back_populates="profile")
 
-class UserSettings(TimestampMixin, Base):
+class UserSettings(Base):
     """Technical setttings for the interface and audio processing."""
     __tablename__ = "user_settings"
 
@@ -30,5 +31,8 @@ class UserSettings(TimestampMixin, Base):
 
     enable_noise_suppression: Mapped[bool] = mapped_column(Boolean, default=True)
     auto_gain_control: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    hide_history: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     user: Mapped["User"] = relationship("User", back_populates="settings")
