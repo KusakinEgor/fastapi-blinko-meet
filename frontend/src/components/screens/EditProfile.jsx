@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { updateProfile, uploadAvatar, deleteAccount } from "../../api/user.js";
+import { updateProfile, uploadAvatar, deleteAccount, getProfile, getSettings, updateSettings } from "../../api/user.js";
 
 const EditProfile = () => {
 	const navigate = useNavigate();
@@ -13,16 +13,40 @@ const EditProfile = () => {
 		avatarPreview: null
 	});
 
-	useEffect(() => {
-		const stored = localStorage.getItem("user");
+	const [settings, setSettings] = useState({
+		hide_history: false,
+		enable_noise_suppression: true,
+		theme: "dark",
+		language: "ru"
+	});
 
-		if (stored) {
-			const parsed = JSON.parse(stored);
-			setForm({
-				...parsed,
-				avatarPreview: parsed.avatarPreview || null
-			});
-		}
+	useEffect(() => {
+		const loadAllData = async () => {
+			try {
+				const [profileData, settingsData] = await Promise.all([
+					getProfile(),
+					getSettings()
+				]);
+
+				setForm({
+					username: profileData.display_name || "",
+					email: profileData.email || "",
+					dateOfBirth: profileData.date_of_birth || "",
+					avatarPreview: profileData.avatar_url || null,
+					avatar: null
+				});
+
+				if (settingsData) {
+					setSettings(settingsData);
+				}
+			} catch (err) {
+				console.error("Ошибка загрузки данных:", err);
+				const stored = localStorage.getItem("user");
+				if (stored) setForm(JSON.parse(stored));
+			}
+		};
+
+		loadAllData();
 	}, []);
 
 	const handleChange = (field, value) => {
@@ -30,6 +54,11 @@ const EditProfile = () => {
 			...prev,
 			[field]: value
 		}));
+	};
+
+	const handleSettingsChange = (field, value) => {
+		console.log("Setting field:", field, "to", value);
+		setSettings((prev) => ({ ...prev, [field]: value }));
 	};
 
 	const handleAvatarChange = (e) => {
@@ -80,18 +109,20 @@ const EditProfile = () => {
 				finalAvatarUrl = undefined;
 			}
 
-			const result = await updateProfile({
-				display_name: form.username,
-				avatar_url: finalAvatarUrl,
-			});
+			await Promise.all([
+				updateProfile({
+					display_name: form.username,
+					avatar_url: finalAvatarUrl,
+				}),
+				updateSettings(settings)
+			]);
 
-			if (result) {
-				const updateForm = { ...form, avatar: null, avatarPreview: finalAvatarUrl };
-				setForm(updateForm);
-				localStorage.setItem("user", JSON.stringify(updateForm));
+			const updateForm = { ...form, avatar: null, avatarPreview: finalAvatarUrl };
+			setForm(updateForm);
+			localStorage.setItem("user", JSON.stringify(updateForm));
 
-				navigate("/profile")
-			}
+
+			navigate("/profile");
 		} catch (err) {
 			console.error("Error save:", err);
 			alert("Не удалось сохранить профиль");
@@ -169,6 +200,28 @@ const EditProfile = () => {
 							onChange={(e) => handleChange("dateOfBirth", e.target.value)}
 							className="w-full mt-1 p-3 bg-zinc-900 rounded-lg outline-none"
 						/>
+					</div>
+					
+					<div className="pt-10 mt-10 border-t border-white/5">
+						<h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-600 mb-6">Приватность</h3>
+						
+						<div className="flex items-center justify-between p-5 bg-zinc-900/50 rounded-2xl border border-white/5">
+							<div>
+								<p className="text-sm font-bold">Скрыть историю встреч</p>
+								<p className="text-[10px] text-zinc-500 font-medium mt-1">Другие пользователи не увидят ваши события</p>
+							</div>
+
+							<button
+								onClick={() => handleSettingsChange("hide_history", !settings.hide_history)}
+								className={`w-12 h-6 rounded-full transition-all duration-500 relative ${
+									settings.hide_history ? "bg-[#3f81fd]" : "bg-zinc-800"
+								}`}
+							>
+								<div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-500 ${
+									settings.hide_history ? "left-7" : "left-1"
+								}`} />
+							</button>
+						</div>
 					</div>
 					
 					<div className="pt-10 mt-10 border-t border-zinc-800">
