@@ -1,10 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { loginEmployee } from "../../api/auth";
 
 const LoginScreen = ({ onLogin, onBack }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+	  localStorage.removeItem("access_token");
+	  localStorage.removeItem("refresh_token");
+  }, []);
 
   const handleLogin = async () => {
 	  if (!username || !password) {
