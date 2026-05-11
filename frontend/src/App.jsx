@@ -14,6 +14,7 @@ import AdminDashboard from "./components/screens/AdminDashboard";
 import AdminAuth from "./components/screens/AdminLogin";
 import EmojiGuide from "./components/chat/EmojiGuide";
 import MeetingSummaryProfile from "./components/screens/MeetingSummaryProfile";
+import EmployeeDashboard from "./components/screens/EmployeeDashboard";
 
 function AppContent() {
   const navigate = useNavigate();
@@ -59,7 +60,14 @@ function AppContent() {
 
 	  <Route
 		path="/login"
-		element={<LoginScreen onBack={() => navigate("/")} onLogin={(data) => {navigate("/admin")}} />}
+		element={
+			<LoginScreen
+				onBack={() => navigate("/")}
+				onLogin={(data) => {
+					navigate("/employee-dashboard");
+				}}
+			/>
+		}
 	  />
 
 	  <Route
@@ -94,6 +102,11 @@ function AppContent() {
 				<AdminDashboard />
 			</AdminAuth>
 		}
+	  />
+
+	  <Route
+		path="/employee-dashboard"
+		element={<EmployeeDashboard />}
 	  />
 
 	  <Route
