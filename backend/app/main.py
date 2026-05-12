@@ -13,6 +13,7 @@ from app.routing.admin import router as admin_router
 from app.routing.chat import router as chat_router
 from app.routing.ai import router as ai_router
 from app.routing.users import router as users_router
+from app.routing.employee import router as employee_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -51,6 +52,7 @@ app.include_router(admin_router)
 app.include_router(chat_router)
 app.include_router(ai_router)
 app.include_router(users_router)
+app.include_router(employee_router)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
