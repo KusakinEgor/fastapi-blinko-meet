@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAvatarUrl } from "../../api/user.js";
+import { useLang } from "../../hooks/useLang.js";
 
 export default function LoginPanel({ visible, onClose }) {
+	const navigate = useNavigate();
     const [animate, setAnimate] = useState(false);
 	const [user, setUser] = useState(null);
-	const navigate = useNavigate();
+
+	const { t, toggleLanguage, isRussian } = useLang();
 
 	useEffect(() => {
 		const stored = localStorage.getItem("user");
@@ -80,7 +83,7 @@ export default function LoginPanel({ visible, onClose }) {
 							
 							<div>
 								<p className="text-xs text-zinc-500 uppercase font-bold tracking-widest">
-									Account
+									{t("home.account")}
 								</p>
 								<p className="font-bold text-white">
 									{user?.username || "Unknown"}
@@ -92,7 +95,7 @@ export default function LoginPanel({ visible, onClose }) {
 							onClick={handleAction}
 							className="rounded-xl font-bold w-full p-4 bg-zinc-900 border border-white/5 hover:bg-zinc-800 transition-colors"
 						>
-							Перейти в профиль
+							{t("home.go_to_profile")}
 						</button>
 
 						<button
@@ -105,12 +108,12 @@ export default function LoginPanel({ visible, onClose }) {
 							}}
 							className="mt-auto text-[10px] text-zinc-600 hover:text-red-500 uppercase font-bold tracking-[0.2em] transition-colors"
 						>
-							Log Out
+							{t("home.logout")}
 						</button>
 					</div>
 				) : (
 					<button onClick={handleAction} className="rounded-xl font-bold w-full p-4 bg-[#3f81fd]">
-						Sign in as an user
+						{t("home.sign_in_as_an_user")}
 					</button>
 				)}
             </div>

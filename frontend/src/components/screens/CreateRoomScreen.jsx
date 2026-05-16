@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { refreshAccessToken } from "../../api/auth";
+import { useLang } from "../../hooks/useLang";
 import axios from 'axios';
 import Sidebar from "../ui/SideBar";
 import MeetRoom from "./MeetRoom";
@@ -12,6 +13,8 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const animationRef = useRef(null);
+
+  const { t, toggleLanguage, isRussian} = useLang();
 
   const [loaded, setLoaded] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -178,7 +181,7 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span className="text-white font-semibold text-lg">Back</span>
+          <span className="text-white font-semibold text-lg">{t("room_preview.back")}</span>
         </div>
 
         <div className="flex flex-col md:flex-row gap-6 flex-1">
@@ -215,7 +218,7 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
 
 					
 					<div className="text-[#999999] text-center text-3xl font-bold mb-2">
-						{camMuted ? "Camera is off" : "Camera prohibited"}
+						{camMuted ? "Camera is off" : t("room_preview.camera_proh")}
 					</div>
 					
 					{!stream && (
@@ -223,7 +226,7 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
 							onClick={setupMedia}
 							className="text-center font-semibold text-[#3f7fdf] cursor-pointer hover:underline"
 						>
-							Allow
+							{t("room_preview.allow")}
 						</div>
 					)}
 				</>
@@ -232,7 +235,7 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
           </div>
 
           <div className="flex flex-col justify-center gap-4 flex-1 max-w-md w-full">
-            <span className="font-bold text-[40px] leading-none">New video meeting</span>
+            <span className="font-bold text-[40px] leading-none">{t("room_preview.new_video")}</span>
 
             <div className="relative w-full">
               <input
@@ -249,7 +252,7 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
                 peer-placeholder-shown:top-5 peer-placeholder-shown:text-base
                 peer-focus:top-2 peer-focus:text-sm"
               >
-                Your name
+				{t("room_preview.your_name")}
               </label>
             </div>
 
@@ -268,7 +271,7 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
                 peer-placeholder-shown:top-5 peer-placeholder-shown:text-base
                 peer-focus:top-2 peer-focus:text-sm"
               >
-                Meeting title
+				{t("room_preview.meeting_title")}
               </label>
             </div>
 
@@ -276,7 +279,7 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
               onClick={handleCreateRoom}
               className="bg-[#3f81fd] py-3 rounded-lg text-center text-lg font-semibold cursor-pointer mt-4 max-w-md mx-auto p-2"
             >
-              Create and join
+				{t("room_preview.create_and_join")}
             </div>
           </div>
         </div>

@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAvatarUrl, searchUser } from "../../api/user.js";
+import { useLang } from "../../hooks/useLang.js";
 
 const UserSearch = ({ onClose }) => {
 	const navigate = useNavigate();
 	const [query, setQuery] = useState("");
 	const [results, setResults] = useState([]);
 	const [isSearching, setIsSearching] = useState(false);
+
+	const { t, toggleLanguage, isRussian } = useLang();
 
 	useEffect(() => {
 		const handleEsc = (e) => {
@@ -64,7 +67,7 @@ const UserSearch = ({ onClose }) => {
 					<input 
 						autoFocus
 						type="text"
-						placeholder="SEARCH PROFILES"
+						placeholder={t("profile.search_placeholder")}
 						value={query}
 						onChange={(e) => setQuery(e.target.value)}
 						className="relative w-full bg-zinc-900/50 border-b-2 border-white/10 focus:border-[#3f81fd] outline-none py-6 px-4 text-2xl font-black tracking-tighter placeholder:text-zinc-800 transition-all uppercase"

@@ -2,14 +2,17 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Sidebar from "../ui/SideBar";
 import SettingsModal from "../ui/SettingsModal";
 import { useNavigate, useParams } from "react-router-dom";
+import { useLang } from "../../hooks/useLang";
 
 export default function JoinScreen({ onBack, onJoin }) {
+  const navigate = useNavigate();
   const { slug } = useParams();
   const localVideoRef = useRef(null);
   const [loaded, setLoaded] = useState(false);
   const [stream, setStream] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const navigate = useNavigate();
+
+  const { t, toggleLanguage, isRussian } = useLang();
 
   const setupMedia = useCallback(async () => {
 	  try {
@@ -71,7 +74,7 @@ export default function JoinScreen({ onBack, onJoin }) {
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span className="text-white font-semibold text-lg">Back</span>
+          <span className="text-white font-semibold text-lg">{t("room_preview.back")}</span>
         </div>
 
         <div className="flex flex-col md:flex-row gap-6 flex-1">
@@ -108,19 +111,19 @@ export default function JoinScreen({ onBack, onJoin }) {
 						/>
 					)}
 
-					<div className="text-[#999999] text-center text-3xl font-bold mb-2">Camera prohibited</div>
+					<div className="text-[#999999] text-center text-3xl font-bold mb-2">{t("room_preview.camera_proh")}</div>
 					<div
 						onClick={setupMedia}
 						className="text-center font-semibold text-[#3f7fdf] cursor-pointer hover:underline"
 					>
-						Allow	
+						{t("room_preview.allow")}
 					</div>
 				</>
 			)}
           </div>
 
           <div className="flex flex-col justify-center gap-4 flex-1 max-w-md w-full">
-            <span className="font-bold text-[40px] leading-none">Introduce yourself to the meeting participants</span>
+            <span className="font-bold text-[40px] leading-none">{t("join_preview.title")}</span>
 
             <div className="relative w-full">
               <input
@@ -137,7 +140,7 @@ export default function JoinScreen({ onBack, onJoin }) {
                 peer-placeholder-shown:top-5 peer-placeholder-shown:text-base
                 peer-focus:top-2 peer-focus:text-sm"
               >
-                Your name
+				{t("join_preview.name_placeholder")}
               </label>
             </div>
 
@@ -156,7 +159,7 @@ export default function JoinScreen({ onBack, onJoin }) {
                 peer-placeholder-shown:top-5 peer-placeholder-shown:text-base
                 peer-focus:top-2 peer-focus:text-sm"
               >
-                Video Meeting Code
+				{t("join_preview.code_placeholder")}
               </label>
             </div>
 
@@ -175,7 +178,7 @@ export default function JoinScreen({ onBack, onJoin }) {
                 peer-placeholder-shown:top-5 peer-placeholder-shown:text-base
                 peer-focus:top-2 peer-focus:text-sm"
               >
-                Video Meeting Password
+				{t("join_preview.password_placeholder")}
               </label>
             </div>
 
@@ -183,7 +186,7 @@ export default function JoinScreen({ onBack, onJoin }) {
               onClick={handleJoinClick}
               className="bg-[#3f81fd] py-3 rounded-lg text-center text-lg font-semibold cursor-pointer mt-4 max-w-md mx-auto p-2"
             >
-              Join the Meeting
+				{t("join_preview.submit_btn")}
             </div>
           </div>
         </div>

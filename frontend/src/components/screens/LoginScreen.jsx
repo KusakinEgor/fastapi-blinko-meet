@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { loginEmployee } from "../../api/auth";
+import { useLang } from "../../hooks/useLang";
 
 const LoginScreen = ({ onLogin, onBack }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const { t, toggleLanguage, isRussian } = useLang();
 
   useEffect(() => {
 	  localStorage.removeItem("access_token");
@@ -41,8 +43,8 @@ const LoginScreen = ({ onLogin, onBack }) => {
       </svg>
 
       <div className="flex flex-col items-center gap-1">
-        <span className="text-white font-bold text-[50px] text-center">Login credentials</span>
-        <span className="text-[#999999] font-semibold text-center">Enter your account login and password</span>
+        <span className="text-white font-bold text-[50px] text-center">{t("auth.login_credentials")}</span>
+        <span className="text-[#999999] font-semibold text-center">{t("auth.enter_your_data")}</span>
       </div>
 
       <div className="w-full max-w-md flex flex-col gap-4">
@@ -61,7 +63,7 @@ const LoginScreen = ({ onLogin, onBack }) => {
                        peer-placeholder-shown:top-5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-500
                        peer-focus:top-2 peer-focus:text-sm"
           >
-            Username or Email
+			{t("auth.username_or_email")}
           </label>
         </div>
 
@@ -80,12 +82,12 @@ const LoginScreen = ({ onLogin, onBack }) => {
                        peer-placeholder-shown:top-5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-500
                        peer-focus:top-2 peer-focus:text-sm"
           >
-            Password
+			{t("auth.password")}
           </label>
         </div>
 
         <div className="text-left text-sm font-semibold text-[#0088ce] cursor-pointer hover:underline">
-          Reset Password
+			{t("auth.reset_password")}
         </div>
 
         <div
@@ -94,7 +96,7 @@ const LoginScreen = ({ onLogin, onBack }) => {
 			  loading ? "opacity-50 cursor-not-allowed" : "hover:bg-[#3570e2] cursor-pointer"
 		  }`}
         >
-			{loading ? "Authenticating..." : "Log In"}
+			{loading ? "Authenticating..." : t("auth.login")}
         </div>
       </div>
     </div>

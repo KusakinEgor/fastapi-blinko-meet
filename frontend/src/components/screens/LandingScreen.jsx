@@ -50,7 +50,7 @@ export default function LandingScreen({onJoin, onCreate, onLogin}) {
                 fill="currentColor"
               ></path>
             </svg>
-            Login
+			{t("home.login")}
           </Button>
 
           <Button
@@ -77,7 +77,7 @@ export default function LandingScreen({onJoin, onCreate, onLogin}) {
                 fillOpacity="0.96"
               ></path>
             </svg>
-            Meetings
+			{t("home.meetings")}
           </Button>
 
         </div>

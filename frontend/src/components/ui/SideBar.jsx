@@ -1,6 +1,14 @@
 import Button from "./Button";
+import { useTranslation } from "react-i18next";
 
 export default function Sidebar({ loaded, onLogin, onCreate }) {
+  const { t, i18n }  = useTranslation();
+
+  const toggleLanguage = () => {
+	  const nextLang = i18n.language === "ru" ? "en" : "ru";
+	  i18n.changeLanguage(nextLang);
+  };
+
   return (
     <div
       className={`sm:w-24 bg-white/10 backdrop-blur-xl flex flex-col justify-between items-center p-4 transition-all duration-1000
@@ -25,7 +33,7 @@ export default function Sidebar({ loaded, onLogin, onCreate }) {
                 fill="currentColor"
               ></path>
             </svg>
-            Login
+			{t("home.login")}
           </Button>
 
           <Button
@@ -52,7 +60,7 @@ export default function Sidebar({ loaded, onLogin, onCreate }) {
                 fillOpacity="0.96"
               ></path>
             </svg>
-            Meetings
+			{t("home.meetings")}
           </Button>
       </div>
 

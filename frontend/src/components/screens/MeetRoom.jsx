@@ -11,6 +11,7 @@ import { useParticipants } from "../../hooks/useParticipants.js";
 import { AudioSocket } from "../../api/audioSocket.js";
 import { AudioPlayer } from "../../utils/AudioPlayer.js";
 import { roomsApi } from "../../api/rooms.js";
+import { useLang } from "../../hooks/useLang.js";
 
 export default function MeetRoom({ name, meetingTitle, onBack }) {
   const { slug } = useParams();
@@ -31,6 +32,8 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   const [inputValue, setInputValue] = useState('');
   const [micMuted, setMicMuted] = useState(false);
   const [camMuted, setCamMuted] = useState(false);
+
+  const { t, toggleLanguage, isRussian } = useLang();
   
   const transcriptRef = useRef("");
   const recognitionRef = useRef(null);
@@ -483,7 +486,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 					<div className="bg-[#171717] w-full h-full min-h-0 rounded-xl flex flex-col overflow-hidden p-4">
 						<div className="flex w-full justify-between flex-none">
 							<span className="font-bold text-[25px] p-2">
-								{count} {count === 1 ? "participant" : "participants"}
+								{count} {count === 1 ? "participant" : t("meeting_room.participants_list_title")}
 							</span>
 							<div className="flex gap-1 p-2">
 								<svg width="30px" viewBox="0 0 24 24" fill="none">
@@ -499,7 +502,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 							{activeTab === 'participants' ? (
 								<div className="flex flex-col gap-2 p-2 overflow-y-auto custom-scrollbar" style={{ maxHeight: "calc(100vh - 34vh)"}}>
 									{(!participants || participants.length === 0) ? (
-										<div className="text-gray-500 italic p-2">No other participants...</div>
+										<div className="text-gray-500 italic p-2">{t("meeting_room.no_participants")}</div>
 									) : (
 										participants.map((p) => (
 											<div
@@ -517,7 +520,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 															{p.username || p.user_id}
 															{p.user_id === userId && (
 																<span className="ml-2 text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full uppercase tracking-tighter">
-																	You
+																	{t("meeting_room.you")}
 																</span>
 															)}
 														</span>
@@ -538,7 +541,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 								<div className="flex flex-col flex-1 min-h-0">
 									<div className="flex-1 overflow-y-auto mb-4 space-y-3 pr-2 custom-scrollbar" style={{ maxHeight: 'calc(100vh - 34vh)' }}>
 										{messages.length === 0 ? (
-											<div className="text-gray-500 text-sm italic">No messages yet...</div>
+											<div className="text-gray-500 text-sm italic">{t("meeting_room.no_messages")}</div>
 										) : (
 											messages.map((msg) => (
 												<div key={msg.id} className="self-end bg-[#262626] text-white p-3 rounded-2xl rounded-tr-none max-w-[80%] ml-auto shadow-sm">
@@ -554,7 +557,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 									<div className="flex-none pt-2 mt-auto">
 										<input
 											type="text"
-											placeholder="Enter message"
+											placeholder={t("meeting_room.enter_message_placeholder")}
 											value={inputValue}
 											onChange={(e) => setInputValue(e.target.value)}
 											onKeyDown={handleKeyDown}
@@ -572,7 +575,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 										<path fill-rule="evenodd" clip-rule="evenodd" d="M16.2504 7.49999C16.2504 9.84719 14.3476 11.75 12.0004 11.75C9.65318 11.75 7.75039 9.84719 7.75039 7.49999C7.75039 5.15278 9.65318 3.25 12.0004 3.25C14.3476 3.25 16.2504 5.15278 16.2504 7.49999ZM11.8696 20.75C11.3165 19.7939 11 18.6839 11 17.5C11 16.1039 11.4401 14.8107 12.1892 13.7514C12.1265 13.7505 12.0638 13.75 12.001 13.75C9.10759 13.75 6.4203 14.7482 4.19361 16.4568C3.73539 16.8084 3.48305 17.3648 3.50089 17.9421C3.52124 18.6009 3.58196 19.0294 3.76311 19.385C4.00279 19.8554 4.38524 20.2378 4.85565 20.4775C5.39043 20.75 6.09049 20.75 7.49063 20.75H11.8696Z" fill="currentColor"></path>
 										<path fill-rule="evenodd" clip-rule="evenodd" d="M17.5 23C20.5376 23 23 20.5376 23 17.5C23 14.4624 20.5376 12 17.5 12C14.4624 12 12 14.4624 12 17.5C12 20.5376 14.4624 23 17.5 23ZM18 14.5C18 14.2239 17.7761 14 17.5 14C17.2239 14 17 14.2239 17 14.5V17H14.5C14.2239 17 14 17.2239 14 17.5C14 17.7761 14.2239 18 14.5 18H17V20.5C17 20.7761 17.2239 21 17.5 21C17.7761 21 18 20.7761 18 20.5V18H20.5C20.7761 18 21 17.7761 21 17.5C21 17.2239 20.7761 17 20.5 17H18V14.5Z" fill="currentColor"></path>
 									</svg>
-									<span className="font-bold">Invite to meeting</span>
+									<span className="font-bold">{t("meeting_room.invite_btn")}</span>
 								</div>
 							</button>
 						)}
@@ -605,7 +608,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 						/>
 					) : (
 						<div>
-							<span className="font-bold text-[30px] text-[#999595]">Ожидание...</span>
+							<span className="font-bold text-[30px] text-[#999595]">{t("meeting_room.waiting")}</span>
 						</div>
 					)}
 				</div>
@@ -622,7 +625,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 							/>
 						) : (
 							<div className="flex flex-col items-center justify-center p-2">
-								<span className="text-[#999595] text-[10px] font-bold text-center">Вы</span>
+								<span className="text-[#999595] text-[10px] font-bold text-center">{t("meeting_room.you")}</span>
 							</div>
 						)}
 						
@@ -699,7 +702,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 										<path d="M17.0834 13.75C16.3654 13.75 15.6707 13.8522 15.0134 14.0429C16.2016 14.7364 17 16.025 17 17.5C17 17.8754 16.9483 18.2388 16.8516 18.5833H19.9858C21.0983 18.5833 22.0001 17.6815 22.0001 16.5691C22.0001 15.9726 21.7341 15.3502 21.1742 14.9793C20.0012 14.2024 18.594 13.75 17.0834 13.75Z" fill="currentColor"></path>
 									</svg>
 								</div>
-								<span className="text-center font-semibold">Participants</span> 
+								<span className="text-center font-semibold">{t("meeting_room.nav_participants")}</span> 
 							</div>
 							<div onClick={() => toggleTab('chat')} className="flex flex-col items-center cursor-pointer">
 								<div className="bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center">
@@ -708,7 +711,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 										<path d="M9.83203 18.9996C10.6685 18.9918 11.4769 18.8666 12.2416 18.6398C12.8665 18.8727 13.5429 18.9999 14.249 18.9999C14.7842 18.9999 15.3011 18.927 15.791 18.791C16.5279 18.5865 17.3926 18.4596 18.2572 18.6871L20.1965 19.1974L19.6862 17.2582C19.4586 16.3935 19.5855 15.5289 19.7901 14.792C19.9261 14.3021 19.999 13.7851 19.999 13.2499C19.999 11.7324 19.4111 10.3521 18.4507 9.32452C18.3637 8.49719 18.1614 7.7042 17.8602 6.96191C20.0349 8.2135 21.499 10.5607 21.499 13.2499C21.499 13.922 21.4074 14.5739 21.2354 15.1932C21.0633 15.8132 21.0059 16.3793 21.1368 16.8764L21.6471 18.8157C21.9395 19.9266 20.9257 20.9404 19.8148 20.648L17.8755 20.1377C17.3783 20.0069 16.8123 20.0642 16.1923 20.2364C15.573 20.4083 14.9211 20.4999 14.249 20.4999C12.5867 20.4999 11.055 19.9405 9.83203 18.9996Z" fill="currentColor"></path>
 									</svg>
 								</div>
-								<span className="text-center font-semibold">Chat</span>
+								<span className="text-center font-semibold">{t("meeting_room.nav_chat")}</span>
 							</div>
 							<div onClick={startScreenShare} className="flex flex-col items-center cursor-pointer">
 								<div className="bg-[#262626] w-[40px] h-[40px] rounded-full flex justify-center items-center">
@@ -717,7 +720,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 										<path d="M12.5303 10.2197C12.2374 9.92678 11.7626 9.92678 11.4697 10.2197L8.46967 13.2197C8.17678 13.5126 8.17678 13.9874 8.46967 14.2803C8.76256 14.5732 9.23744 14.5732 9.53033 14.2803L11.25 12.5607V21.25C11.25 21.6642 11.5858 22 12 22C12.4142 22 12.75 21.6642 12.75 21.25V12.5607L14.4697 14.2803C14.7626 14.5732 15.2374 14.5732 15.5303 14.2803C15.8232 13.9874 15.8232 13.5126 15.5303 13.2197L12.5303 10.2197Z" fill="currentColor"></path>
 									</svg>
 								</div>
-								<span className="text-center font-semibold">Screen</span>
+								<span className="text-center font-semibold">{t("meeting_room.nav_screen")}</span>
 							</div>
 							<div className="relative">
 								{showReactions && (
@@ -740,7 +743,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 										<button className="w-full flex items-center justify-center gap-2 bg-[#2b2b2b] hover:bg-[#323232] border border-blue-500/50 py-3 rounded-xl transition-all active:scalse-[0.98]"
 										>
 											<span className="text-lg">✋</span>
-											<span className="font-semibold text-sm">Raise hand</span>
+											<span className="font-semibold text-sm">{t("meeting_room.raise_hand")}</span>
 										</button>
 									</div>
 								)}
@@ -759,7 +762,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 											<path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM3.5 12C3.5 7.30558 7.30558 3.5 12 3.5C16.6944 3.5 20.5 7.30558 20.5 12C20.5 16.6944 16.6944 20.5 12 20.5C7.30558 20.5 3.5 16.6944 3.5 12Z" fill="currentColor"></path>
 										</svg>
 									</div>
-									<span className="text-center font-semibold">Reactions</span>
+									<span className="text-center font-semibold">{t("meeting_room.nav_reactions")}</span>
 								</div>
 							</div>
 							
@@ -785,7 +788,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 										</div>
 
 										<span className="font-medium text-[15px]">
-											{isRecording ? 'Stop recording' : 'Record meeting'}
+											{isRecording ? t("meeting_room.stop_recording") : t("meeting_room.record_meeting")}
 										</span>
 									</div>
 								)}
@@ -794,7 +797,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 										<path fill-rule="evenodd" clip-rule="evenodd" d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" fill="currentColor"></path>
 									</svg>
 								</div>
-								<span className="text-center font-semibold">More</span>
+								<span className="text-center font-semibold">{t("meeting_room.nav_more")}</span>
 							</div>
 						</div>
 					</div>
@@ -805,7 +808,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 								onClick={() => setShowConfirm(true)}
 								className="bg-[#262626] w-[80px] h-[40px] rounded-xl"
 							>
-								<span className="text-red-600 font-semibold">Leave</span>
+								<span className="text-red-600 font-semibold">{t("meeting_room.leave_btn")}</span>
 							</button>
 						) : (
 							<div className="absolute bottom-0 right-0 flex flex-col items-end gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
@@ -813,14 +816,14 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 									onClick={handleLeaveAndGenerate}
 									className="bg-[#262626] hover:bg-[#323232] px-6 py-3 rounded-2xl transition-colors shadow-2xl border border-white/5"
 								>
-									<span className="text-red-500 font-semibold">Leave meeting</span>
+									<span className="text-red-500 font-semibold">{t("meeting_room.leave_confirm_title")}</span>
 								</button>
 
 								<button
 									onClick={() => setShowConfirm(false)}
 									className="bg-[#121212] hover:bg-[#1a1a1a] border-[2px] border-blue-600/80 px-8 py-2 rounded-2xl transition-all shadow-xl"
 								>
-									<span className="text-white font-bold text-sm">Stay</span>
+									<span className="text-white font-bold text-sm">{t("meeting_room.stay_btn")}</span>
 								</button>
 							</div>
 						)}

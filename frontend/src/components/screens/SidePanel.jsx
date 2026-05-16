@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { roomsApi } from "../../api/rooms.js";
+import { useLang } from "../../hooks/useLang.js";
 
 export default function SidePanel({ isOpen, onClose, children }) {
   const [meetingTitle, setMeetingTitle] = useState("");
@@ -7,6 +8,8 @@ export default function SidePanel({ isOpen, onClose, children }) {
   const [showToast, setShowToast] = useState(false);
   const [inviteLink, setInviteLink] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const { t, toggleLanguage, isRussian } = useLang();
   
   const handleSchedule = async () => {
 	  if (!meetingTitle.trim()) return;
@@ -46,7 +49,7 @@ export default function SidePanel({ isOpen, onClose, children }) {
 		${showToast ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0 pointer-events-none"}`}>
 		<div className="bg-[#242424] text-white px-6 py-3 rounded-2xl shadow-2xl border border-white/10 flex items-center gap-3">
 			<div className="bg-green-500 w-2 h-2 rounded-full animate-pulse" />
-			<span className="font-medium text-sm">Ссылка скопирована в буфер</span>
+			<span className="font-medium text-sm">{t("schedule.copy_btn")}</span>
 		</div>
 	  </div>
 
@@ -95,33 +98,33 @@ export default function SidePanel({ isOpen, onClose, children }) {
 								 peer-placeholder-shown:top-5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-500
 								 peer-focus:top-2 peer-focus:text-sm"
 					>
-					  Meeting title
+						{t("schedule.meeting_title")}
 					</label>
 				  </div>
 
 				  <div className="flex gap-4">
 					<button onClick={handleSchedule} disabled={isLoading} className="bg-[#5d95fd] rounded-xl w-[93px] font-bold text-white">
-						{isLoading ? "Wait..." : "Schedule"}
+						{isLoading ? "Wait..." : t("schedule.schedule")}
 					</button>
 					<button
 					  onClick={handleClose}
 					  className="bg-transparent w-[93px] text-white font-bold py-3 px-6 rounded-xl border-none"
 					>
-					  Cancel
+						{t("schedule.cancel")}
 					</button>
 				  </div>
 			  </>
 		  ) : (
 			  <div className="w-[600px] animate-in fade-in duration-500">
-				<h2 className="text-white text-2xl font-bold mb-2">Видеовстреча запланирована</h2>
+				<h2 className="text-white text-2xl font-bold mb-2">{t("schedule.title")}</h2>
 				<p className="text-[#999999] mb-8 text-sm">
-					Отправьте ссылку участникам встречи и подключайтесь в любое время
+					{t("schedule.subtitle")}
 				</p>
 				
 				<div className="relative mb-4">
 					<div className="w-full bg-[#171717] p-4 rounded-xl flex justify-between items-center border border-white/5">
 						<div className="overflow-hidden">
-							<span className="text-[#999999] text-xs block mb-1">Адрес видеовстречи</span>
+							<span className="text-[#999999] text-xs block mb-1">{t("schedule.link_label")}</span>
 							<p className="text-white truncate text-sm">{inviteLink}</p>
 						</div>
 						<button onClick={handleCopy} className="ml-4 text-[#999999] hover:text-white transition-colors">
@@ -131,7 +134,7 @@ export default function SidePanel({ isOpen, onClose, children }) {
 				</div>
 				
 				<button onClick={handleCopy} className="w-full bg-[#242424] text-white font-bold py-4 rounded-xl hover:bg-[#323232] transition-colors">
-					Скопировать приглашение
+					{t("schedule.copy_btn")}
 				</button>
 			  </div>
 		  )}

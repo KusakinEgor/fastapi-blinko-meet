@@ -1,11 +1,14 @@
 import React, { useState } from "react";
 import { getProfile } from "../../api/user";
+import { useLang } from "../../hooks/useLang";
 
 const LoginScreenUser = ({ onLogin, onBack }) => {
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+
+  const { t, toggleLanguage, isRussian } = useLang();
 
   const handleLogin = () => {
     onLogin({ username, password });
@@ -79,10 +82,10 @@ const LoginScreenUser = ({ onLogin, onBack }) => {
 
       <div className="flex flex-col items-center gap-1">
         <span className="text-white font-bold text-[50px] text-center">
-			{isRegister ? "Create account" : "Welcome back"}
+			{isRegister ? t("register_user.create_account") : t("login_user.welcome_back")}
 		</span>
         <span className="text-[#999999] font-semibold text-center">
-			{isRegister ? "Join the comminity and start meeting" : "Enter your email and password"}
+			{isRegister ? t("register_user.join_the_com") : t("login_user.enter_your_data")}
 		</span>
       </div>
 
@@ -103,7 +106,7 @@ const LoginScreenUser = ({ onLogin, onBack }) => {
 						   peer-placeholder-shown:top-5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-500
 						   peer-focus:top-2 peer-focus:text-sm"
 			  >
-				Username
+				{t("register_user.username")}
 			  </label>
 			</div>
 		)}
@@ -123,7 +126,7 @@ const LoginScreenUser = ({ onLogin, onBack }) => {
                        peer-placeholder-shown:top-5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-500
                        peer-focus:top-2 peer-focus:text-sm"
           >
-            Email address
+			{t("login_user.email_add")}
           </label>
         </div>
 		
@@ -142,13 +145,13 @@ const LoginScreenUser = ({ onLogin, onBack }) => {
                        peer-placeholder-shown:top-5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-500
                        peer-focus:top-2 peer-focus:text-sm"
           >
-			Password 
+			{t("login_user.password")}
           </label>
         </div>
 
 		{!isRegister && (
 			<div className="text-left text-sm font-semibold text-[#0088ce] cursor-pointer hover:underline">
-			  Reset Password
+				{t("login_user.reset_password")}
 			</div>
 		)}
 
@@ -156,16 +159,16 @@ const LoginScreenUser = ({ onLogin, onBack }) => {
           onClick={handleSubmit}
           className="bg-[#3f81fd] text-white py-3 rounded-lg text-center cursor-pointer"
         >
-			{isRegister ? "Sign Up" : "Log In"} 
+			{isRegister ? t("register_user.sign_up") : t("login_user.login")} 
         </div>
 
 		<div className="text-center text-sm text-[#999999] mt-4">
-			{isRegister ? "Already have an account?" : "Don't have and account?"}{" "}
+			{isRegister ? t("register_user.already_account") : t("login_user.no_account")}{" "}
 			<span
 				onClick={() => setIsRegister(!isRegister)}
 				className="text-[#3f81fd] cursor-pointer font-bold hover:underline"
 			>
-				{isRegister ? "Log In" : "Create one"}
+				{isRegister ? t("register_user.login") : t("login_user.create_one")}
 			</span>
 		</div>
       </div>

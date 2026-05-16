@@ -58,9 +58,9 @@ export default function SummaryScreen({ roomSlug, onClose }) {
 			<div className="bg-[#080808] w-full max-w-3xl h-[80vh] rounded-3xl border border-white/10 flex flex-col overflow-hidden relative">
 				<div className="p-8 pb-4 flex justify-between items-start">
 					<div>
-						<p className="text-blue-500 font-mono text-sm uppercase tracking-widest mb-2">AI Analysis</p>
+						<p className="text-blue-500 font-mono text-sm uppercase tracking-widest mb-2">{t("ai_summary.badge")}</p>
 						<h2 className="text-white text-[56px] leading-[58px] font-bold">
-							{t("summary.title", "Summary")}
+							{t("ai_summary.title")}
 						</h2>
 					</div>
 					<button
@@ -112,8 +112,8 @@ export default function SummaryScreen({ roomSlug, onClose }) {
 					) : (
 						<div className="h-full flex flex-col items-center justify-center text-center">
 							<div className="bg-red-500/10 p-6 rounded-2xl border border-red-500/20">
-								<p className="text-red-500 text-xl font-semibold">No summary found</p>
-								<p className="text-gray-500 mt-2">Try to generate it after the meeting</p>
+								<p className="text-red-500 text-xl font-semibold">{t("ai_summary.error_title")}</p>
+								<p className="text-gray-500 mt-2">{t("ai_summary.error_desc")}</p>
 							</div>
 						</div>
 					)}
@@ -124,7 +124,7 @@ export default function SummaryScreen({ roomSlug, onClose }) {
 						onClick={handleGoHome}
 						className="w-full py-6 bg-white text-black font-bold text-xl rounded-2xl hover:bg-gray-200 transition-all active:scale-[0.98]"
 					>
-						{t("common.back_to_lobby", "Back to Lobby")}
+						{t("ai_summary.back_btn")}
 					</Button>
 				</div>
 			</div>

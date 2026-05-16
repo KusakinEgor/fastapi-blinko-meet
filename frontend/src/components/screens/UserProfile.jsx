@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getProfile, getAvatarUrl, getUserHistory, likeProfile, inviteToCall } from "../../api/user.js";
+import { useLang } from "../../hooks/useLang.js";
 import UserSearch from "./UserSearch.jsx";
 import Toast from "../ui/Toast.jsx";
 
@@ -12,6 +13,8 @@ const UserProfile = () => {
   const [history, setHistory] = useState([]);
   const [userBadges, setUserBadges] = useState([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const { t, toggleLanguage, isRussian } = useLang();
 
   const showToast = (message, type = "success") => {
 	  setToast({ message, type });
@@ -111,7 +114,7 @@ const UserProfile = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
               </svg>
             </div>
-            <span className="text-[10px] uppercase tracking-[0.3em] font-black">Back</span>
+            <span className="text-[10px] uppercase tracking-[0.3em] font-black">{t("profile.back_btn")}</span>
           </button>
 		  
 	      <button 
@@ -128,7 +131,7 @@ const UserProfile = () => {
 				onClick={() => navigate("/profile/edit")}
 				className="px-6 py-2.5 bg-gradient-to-tr from-zinc-800 to-zinc-900 hover:from-white hover:to-white hover:text-black rounded-full text-[10px] uppercase tracking-[0.2em] font-black transition-all duration-500 border border-white/5 shadow-xl"
 			  >
-				Settings
+				{t("profile.settings_btn")}
 			  </button>
 		  )}
         </nav>
@@ -196,7 +199,7 @@ const UserProfile = () => {
 						</div>
 						
 						<span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 group-hover:text-white transition-colors">
-							{user.likes} Likes
+							{user.likes} {t("profile.likes_counter")}
 						</span>
 					</button>
 					
@@ -218,7 +221,7 @@ const UserProfile = () => {
           
           <section>
             <div className="flex items-center gap-4 mb-6 px-1">
-              <h3 className="text-zinc-600 font-black text-[10px] uppercase tracking-[0.4em]">Badges</h3>
+              <h3 className="text-zinc-600 font-black text-[10px] uppercase tracking-[0.4em]">{t("profile.badges_title")}</h3>
               <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
             </div>
             <div className="grid grid-cols-4 gap-4">
@@ -258,14 +261,14 @@ const UserProfile = () => {
           <section className="grid grid-cols-2 gap-5">
             <div className="relative group overflow-hidden bg-zinc-900/20 p-7 rounded-[32px] border border-white/5 hover:border-white/10 transition-all">
               <div className="absolute -right-4 -top-4 w-20 h-20 bg-blue-500/5 blur-2xl group-hover:bg-blue-500/10 transition-all" />
-              <p className="text-zinc-600 text-[10px] font-black uppercase tracking-[0.3em] mb-3">Events</p>
+              <p className="text-zinc-600 text-[10px] font-black uppercase tracking-[0.3em] mb-3">{t("profile.events_counter")}</p>
               <p className="text-4xl font-black tracking-tighter">
 				{history?.length || 0}
 			  </p>
             </div>
             <div className="relative group overflow-hidden bg-zinc-900/20 p-7 rounded-[32px] border border-white/5 border-l-[#3f81fd]/30 hover:border-[#3f81fd]/50 transition-all">
               <div className="absolute -right-4 -top-4 w-20 h-20 bg-[#3f81fd]/5 blur-2xl group-hover:bg-[#3f81fd]/10 transition-all" />
-              <p className="text-[#3f81fd] text-[10px] font-black uppercase tracking-[0.3em] mb-3 opacity-80">Likes</p>
+              <p className="text-[#3f81fd] text-[10px] font-black uppercase tracking-[0.3em] mb-3 opacity-80">{t("profile.likes_counter")}</p>
               <p className="text-4xl font-black tracking-tighter text-[#3f81fd] drop-shadow-[0_0_15px_rgba(63,129,253,0.3)]">
                 {user.likes}
               </p>
@@ -274,7 +277,7 @@ const UserProfile = () => {
 
           <section>
             <div className="flex items-center gap-4 mb-6 px-1">
-              <h3 className="text-zinc-600 font-black text-[10px] uppercase tracking-[0.4em]">Activity</h3>
+              <h3 className="text-zinc-600 font-black text-[10px] uppercase tracking-[0.4em]">{t("profile.activity_title")}</h3>
               <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
             </div>
             <div className="space-y-4">
