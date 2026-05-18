@@ -3,23 +3,41 @@ version: '3.8'
 services:
   frontend:
     build: ./frontend
-    ports:
-      - "80:80"
+    container_name: blinko-frontend
+    volumes:
+      - frontend_dist:/app/dist
     restart: always
-    depends_on:
-      - backend
 
   backend:
     build: ./backend
-    ports:
-      - "8000:8000"
+    container_name: blinko-backend
     environment:
-      - MEDIASERVER_URL=http://media-core:8888
+      - MEDIASERVER_URL=http://media-core:3000
     restart: always
     depends_on:
       - media-core
 
   media-core:
     build: ./media-core
-    network_mode: "host"
+    container_name: blinko-media-core
     restart: always
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy-server
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - frontend_dist:/var/www/html:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: always
+    depends_on:
+      - frontend
+
+volumes:
+  frontend_dist:
+  caddy_data:
+  caddy_config:
