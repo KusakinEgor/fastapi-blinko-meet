@@ -5,7 +5,8 @@ mod rtc;
 use axum::{Router, routing::{get, post}};
 use std::{sync::Arc, collections::HashMap};
 use tokio::sync::Mutex;
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{Any, CorsLayer};
+use axum::http::Method;
 
 use state::AppState;
 use handlers::{offer::handle_offer, ws_handler::ws_handler};
@@ -24,17 +25,21 @@ async fn main() {
         rooms: Mutex::new(HashMap::new()),
     });
 
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods([Method::GET, Method::POST])
+        .allow_headers(Any);
+
     let app = Router::new()
         .route("/offer", post(handle_offer))
         .route("/ws/:room_id/:user_id", get(ws_handler))
         .route("/rooms/:room_id/participants", get(handlers::offer::get_participants))
-        .layer(CorsLayer::permissive())
+        .layer(cors)
         .with_state(shared_state);
 
-    let addr = "127.0.0.1:3000";
+    let addr = "0.0.0.0:3000";
     println!("Server started: {}", addr);
 
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
-
