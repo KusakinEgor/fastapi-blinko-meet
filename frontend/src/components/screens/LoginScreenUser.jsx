@@ -17,7 +17,7 @@ const LoginScreenUser = ({ onLogin, onBack }) => {
   const handleSubmit = async () => {
 	  const url = isRegister
 		? "http://localhost:8000/register"
-		: "http://localhost:8000/login";
+		: "http://192.168.0.143:8000/login";
 
 	  const body = isRegister
 		? { email, password, username }

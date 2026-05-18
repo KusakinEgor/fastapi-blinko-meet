@@ -1,9 +1,7 @@
-import { useState } from "react";
 import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
 import "./i18n";
 
 import LandingScreen from "./components/screens/LandingScreen";
-import JoinRoomScreen from "./components/screens/JoinRoomScreen";
 import CreateRoomScreen from "./components/screens/CreateRoomScreen";
 import LoginScreen from "./components/screens/LoginScreen";
 import JoinScreen from "./components/screens/JoinScreen";

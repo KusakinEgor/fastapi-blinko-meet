@@ -1,5 +1,5 @@
 export function createSignaling({ roomId, userId, onMessage, onOpen }) {
-	const ws = new WebSocket(`ws://127.0.0.1:3000/ws/${roomId}/${userId}`);
+	const ws = new WebSocket(`ws://192.168.0.143:3000/ws/${roomId}/${userId}`);
 
 	ws.onmessage = async (e) => {
 		const data = JSON.parse(e.data);
@@ -18,8 +18,8 @@ export async function sendOffer({ pc, roomId, userId }) {
 	const storedUser = JSON.parse(localStorage.getItem("user"));
 	const username = storedUser?.username || userId;
 
-	if (pc.getSenders() === 0) {
-		console.error("NO TRACKS");
+	if (pc.getSenders().length === 0) {
+		alert("⚠️ Локальный баг: Телефон не смог захватить камеру (NO TRACKS)!");
 		return;
 	}
 
@@ -29,7 +29,7 @@ export async function sendOffer({ pc, roomId, userId }) {
 	console.log("SDP OFFER:");
 	console.log(pc.localDescription.sdp);
 
-	const res = await fetch("http://127.0.0.1:3000/offer", {
+	const res = await fetch("http://192.168.0.143:3000/offer", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({

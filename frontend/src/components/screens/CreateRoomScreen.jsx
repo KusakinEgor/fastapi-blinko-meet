@@ -119,7 +119,7 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
 
 	  try {
 		  return await axios.post(
-			  "http://localhost:8000/rooms/create",
+			  "http://192.168.0.143:8000/rooms/create",
 			  data,
 			  {
 				  headers: { Authorization: `Bearer ${token}` }
@@ -132,7 +132,7 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
 			  if (!token) throw err;
 
 			  return await axios.post(
-				  "http://localhost:8000/rooms/create",
+				  "http://192.168.0.143:8000/rooms/create",
 				  data,
 				  {
 					  headers: { Authorization: `Bearer ${token}` }

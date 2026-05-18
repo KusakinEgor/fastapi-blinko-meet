@@ -44,10 +44,10 @@ export function useWebRTC({ localStream, roomId, userId }) {
 			onMessage: async (data) => {
 				if (data.type === "offer") {
 					try {
-						if (peer.signalingState !== "stable") {
-							console.warn("Соединение занято (состояние:", peer.signalingState, "), ждем стабилизации...");
+						console.log("📥 [Signaling] Получен повторный Offer от сервера. Текущее состояние:", peer.signalingState);
 
-							return;
+						if (peer.signalingState !== "stable") {
+							console.warn("⚠️ Соединение не stable, делаем rollback для принятия сервера...");
 						}
 
 						console.log("Принимаем входящий оффер...");

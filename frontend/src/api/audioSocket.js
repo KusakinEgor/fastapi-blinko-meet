@@ -6,7 +6,7 @@ export class AudioSocket {
 	}
 
 	connect() {
-		const url = `ws://localhost:8000/media/ws/audio/${this.roomId}`;
+		const url = `ws://192.168.0.143:8000/media/ws/audio/${this.roomId}`;
 
 		this.socket = new WebSocket(url);
 		this.socket.binaryType = "arraybuffer";

@@ -18,7 +18,7 @@ export default function JoinScreen({ onBack, onJoin }) {
 	  try {
 		  const userStream = await navigator.mediaDevices.getUserMedia({
 			  video: true,
-			  audio: true
+			  audio: false
 		  });
 
 		  setStream(userStream);

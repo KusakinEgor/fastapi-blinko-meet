@@ -199,8 +199,23 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   const videoRef = useRef(null);
   const videoRefs = useRef({});
   const localVideoRef = useRef(null);
-  const [userId] = useState(() => Math.random().toString(36).substring(7));
+  const [userId] = useState(() => {
+	  try {
+		  const storedUser = JSON.parse(localStorage.getItem("user"));
+
+		  if (storedUser && (storedUser.id || storedUser.userId)) {
+			  return String(storedUser.id || storedUser.userId);
+		  }
+
+		  if (storedUser && storedUser.username) {
+			  return storedUser.username;
+		  }
+	  } catch (e) {
+		  console.error("Ошибка чтения пользователя из localStorage:", e);
+	  }
+  })
   const { participants, count } = useParticipants(slug, userId);
+  const isReadyToCall = count === 2;
   
   const handleEmojiClick = (emoji) => {
 	  const id = Date.now();
@@ -318,7 +333,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 		  tempStream.getTracks().forEach(track => track.stop());
 
 		  const stream = await navigator.mediaDevices.getUserMedia({
-			  video: { width: 640, height: 360, frameRate: 24 },
+			  video: { width: 640, height: 360, frameRate: 24, facingMode: "user" },
 			  audio: {
 				  deviceId: preferredMic ? { exact: preferredMic.deviceId } : undefined,
 				  echoCancellation: true,
@@ -360,30 +375,6 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   }, [screenStream]);
 
   useEffect(() => {
-	  remoteStreams.forEach((stream, index) => {
-		  const video = videoRefs.current[index];
-
-		  if (!video) {
-			  console.log("no video", index);
-			  return;
-		  }
-
-		  if (video.srcObject !== stream) {
-			  console.log("Assigned stream to video element", index);
-			  video.srcObject = stream;
-
-			  video.onloadedmetadata = () => {
-				  setTimeout(() => {
-					  video.play().catch(err => {
-						  console.log("play error:", err);
-					  });
-				  }, 100);
-			  };
-		  }
-	  });
-  }, [remoteStreams, remoteStreams.length]);
-
-  useEffect(() => {
 	  remoteStreams.forEach((stream, i) => {
 		console.log("---- STREAM", i);
 	  	console.log("tracks:", stream.getTracks());
@@ -392,8 +383,18 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  });
   }, [remoteStreams]);
 
-  const mainStream = remoteStreams.length > 0 ? remoteStreams[0] : null;
-  const sidebarStreams = remoteStreams.slice(1);
+  //const peerStreams = remoteStreams.filter(stream => {
+  //    const isNotMe = !localStream || stream.id !== localStream.id;
+  //    const hasVideo = stream.getVideoTracks().length > 0;
+  //    return isNotMe && hasVideo;
+  //});
+
+  const peerStreams = remoteStreams.filter(stream => {
+	  return stream.getVideoTracks().length > 0;
+  });
+
+  const mainStream = peerStreams[0] || null;
+  const sidebarStreams = peerStreams.slice(1);
 
   const EMOJIS = ['❤️', '👍', '😂', '🎉', '🔥', '👏', '🤝', '🙏', '🤔', '😢', '👎', '😮'];
 
@@ -603,7 +604,31 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 							autoPlay
 							playsInline
 							muted
-							ref={(el) => { if (el) videoRefs.current[0] = el; }}
+							ref={(el) => {
+								if (el && el.srcObject !== mainStream) {
+									console.log("🍏 [UI] Привязываем стрим к видео-тегу:", mainStream.id);
+									el.srcObject = mainStream;
+								}
+							}}
+							onLoadedMetadata={(e) => {
+								const el = e.target;
+								console.log("🎬 [UI] Метаданные загружены, пинаем .play()");
+								el.play()
+									.then(() => console.log("🔥 [UI] ВИДЕО УСПЕШНО ИГРАЕТ!"))
+									.catch(err => {
+										console.error("❌ [UI] Браузер заблокировал автоплей потока:", err);
+
+										const playOnInteraction = () => {
+											el.play()
+												.then(() => {
+													console.log("🔥 [UI] Запустили после клика!");
+													document.removeEventListener("click", playOnInteraction);
+												})
+												.catch(e => console.error("Все еще заблокировано:", e));
+										};
+										document.addEventListener("click", playOnInteraction);
+									});
+							}}
 							className="w-full h-full object-cover"
 						/>
 					) : (
@@ -640,7 +665,10 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 								playsInline
 								muted
 								ref={(el) => {
-									if (el) videoRefs.current[index + 1] = el;
+									if (el && el.srcObject !== stream) {
+										console.log(`🎥 Рендерим поток участника в боковой панели: ${stream.id}`);
+										el.srcObject = stream;
+									}
 								}}
 								className="w-full h-full object-cover"
 							/>

@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8000";
+const API_URL = "http://192.168.0.143:8000";
 
 export const sendMessage = async (content) => {
 	const token = localStorage.getItem("access_token");

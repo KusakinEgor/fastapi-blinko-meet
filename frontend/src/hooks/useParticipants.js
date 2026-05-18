@@ -8,7 +8,7 @@ export function useParticipants(slug, userId) {
 
 	const fetchParticipants = async () => {
 		try {
-			const response = await fetch(`http://127.0.0.1:3000/rooms/${slug}/participants`);
+			const response = await fetch(`http://192.168.0.143:3000/rooms/${slug}/participants`);
 			const data = await response.json();
 
 			const hasMe = data.some(p => p.user_id === userId);
@@ -24,8 +24,16 @@ export function useParticipants(slug, userId) {
 	};
 
 	useEffect(() => {
-		if (slug) fetchParticipants();
-	}, [slug]);
+		if (!slug) return;
+
+		fetchParticipants();
+
+		const interval = setInterval(() => {
+			fetchParticipants();
+		}, 2000);
+
+		return () => clearInterval(interval);
+	}, [slug, userId]);
 
 	useEffect(() => {
 		const handleUpdate = (e) => {
