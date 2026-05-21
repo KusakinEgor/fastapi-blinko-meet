@@ -1,25 +1,38 @@
 version: '3.8'
 
 services:
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: blinko-postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=blinko_backend
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   frontend:
     build: ./frontend
     container_name: blinko-frontend
     volumes:
-      - frontend_dist:/app/dist
+      - frontend_dist:/app/share
     restart: always
 
   backend:
     build: ./backend
     container_name: blinko-backend
-    environment:
-      - MEDIASERVER_URL=http://media-core:3000
+    env_file:
+      - ./backend/.env
     restart: always
     depends_on:
-      - media-core
+      - postgres-db
 
   media-core:
     build: ./media-core
     container_name: blinko-media-core
+    ports:
+      - "49152-65535:49152-65535/udp"
     restart: always
 
   caddy:
@@ -36,8 +49,11 @@ services:
     restart: always
     depends_on:
       - frontend
+      - backend
+      - media-core
 
 volumes:
+  postgres_data:
   frontend_dist:
   caddy_data:
   caddy_config:
