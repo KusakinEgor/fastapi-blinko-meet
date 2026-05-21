@@ -1,0 +1,19 @@
+blinko.mooo.com {
+	root * /var/www/html
+
+	encode gzip zstd
+
+	try_files {path} /index.html
+
+	file_server
+}
+
+api.blinko.mooo.com {
+	reverse_proxy backend:8000
+}
+
+media.blinko.mooo.com {
+	reverse_proxy media-core:3000 {
+		flush_interval -1
+	}
+}
