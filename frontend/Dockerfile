@@ -1,13 +1,15 @@
-FROM node:20-alpine
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm ci
+RUN npm run build
 
 COPY . .
 
-RUN npm run build
+FROM alpine:latest
 
-CMD ["sh", "-c", "echo 'Frontend built' && sleep infinity"]
+COPY --from=builder /app/dist ./dist
+
+CMD ["sh", "-c", "rm -rf /app/share/* && cp -r ./dist/* /app/share/ && echo 'Frontend updated successfully' && sleep infinity"]
