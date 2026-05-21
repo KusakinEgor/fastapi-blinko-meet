@@ -30,6 +30,8 @@ export async function sendOffer({ pc, roomId, userId }) {
 	const offer = await pc.createOffer();
 	await pc.setLocalDescription(offer);
 
+	console.log("HAS VIDEO MLINE:", pc.localDescription.sdp.includes("m=video"));
+
 	console.log("SDP OFFER:");
 	console.log(pc.localDescription.sdp);
 

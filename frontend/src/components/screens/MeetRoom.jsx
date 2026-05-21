@@ -357,7 +357,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  localStream,
 	  roomId: slug,
 	  userId
-  })
+  });
 
   useEffect(() => {
 	  console.log("stream:", localStream);
