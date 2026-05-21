@@ -12,13 +12,22 @@ use state::AppState;
 use handlers::{offer::handle_offer, ws_handler::ws_handler};
 
 use webrtc::api::media_engine::MediaEngine;
+use webrtc::api::setting_engine::SettingEngine;
 use webrtc::api::{APIBuilder, API};
 
 #[tokio::main]
 async fn main() {
     let mut m = MediaEngine::default();
     m.register_default_codecs().unwrap();
-    let api = APIBuilder::new().with_media_engine(m).build();
+
+    let mut se = SettingEngine::default();
+
+    se.set_nat_1to1_ips(
+        vec!["77.110.125.7".to_string()],
+        webrtc::ice_transport::ice_candidate_type::RTCIceCandidateType::Host,
+    );
+
+    let api = APIBuilder::new().with_media_engine(m).with_setting_engine(se).build();
 
     let shared_state = Arc::new(AppState {
         api,
