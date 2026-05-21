@@ -19,7 +19,9 @@ export default function SummaryScreen({ roomSlug, onClose }) {
 			try {
 				const token = localStorage.getItem("access_token");
 
-				const response = await fetch(`http://localhost:8000/ai/summary/${roomSlug}`, {
+				const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+				const response = await fetch(`${API_BASE_URL}/ai/summary/${roomSlug}`, {
 					method: "GET",
 					headers: {
 						"Content-Type": "application/json",

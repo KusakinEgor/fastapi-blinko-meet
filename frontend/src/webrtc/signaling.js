@@ -1,5 +1,9 @@
 export function createSignaling({ roomId, userId, onMessage, onOpen }) {
-	const ws = new WebSocket(`ws://192.168.0.143:3000/ws/${roomId}/${userId}`);
+	const baseRustUrl = import.meta.env.VITE_RUST_API_URL;
+	const wsProtocol = baseRustUrl.startsWith('https') ? 'wss://' : 'ws://';
+	const baseWsUrl = baseRustUrl.replace(/^https?:\/\//, wsProtocol);
+
+	const ws = new WebSocket(`${baseWsUrl}/ws/${roomId}/${userId}`);
 
 	ws.onmessage = async (e) => {
 		const data = JSON.parse(e.data);
@@ -29,7 +33,9 @@ export async function sendOffer({ pc, roomId, userId }) {
 	console.log("SDP OFFER:");
 	console.log(pc.localDescription.sdp);
 
-	const res = await fetch("http://192.168.0.143:3000/offer", {
+	const baseRustUrl = import.meta.env.VITE_RUST_API_URL;
+
+	const res = await fetch(`${baseRustUrl}/offer`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({

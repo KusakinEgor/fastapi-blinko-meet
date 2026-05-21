@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://192.168.0.143:8000";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export async function loginEmployee(username, password) {
 	const res = await fetch(`${API_BASE_URL}/employee/login`, {

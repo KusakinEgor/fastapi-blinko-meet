@@ -6,7 +6,11 @@ export class AudioSocket {
 	}
 
 	connect() {
-		const url = `ws://192.168.0.143:8000/media/ws/audio/${this.roomId}`;
+		const baseHttpUrl = import.meta.env.VITE_API_URL;
+		const wsProtocol = baseHttpUrl.startsWith('https') ? 'wss://' : 'ws://';
+		const baseWsUrl = baseHttpUrl.replace(/^https?:\/\//, wsProtocol);
+
+		const url = `${baseWsUrl}/media/ws/audio/${this.roomId}`;
 
 		this.socket = new WebSocket(url);
 		this.socket.binaryType = "arraybuffer";

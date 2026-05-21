@@ -6,9 +6,11 @@ export function useParticipants(slug, userId) {
 	const storedUser = JSON.parse(localStorage.getItem("user"));
 	const myName = storedUser?.username || userId;
 
+	const RUST_API_URL = import.meta.env.VITE_RUST_API_URL;
+
 	const fetchParticipants = async () => {
 		try {
-			const response = await fetch(`http://192.168.0.143:3000/rooms/${slug}/participants`);
+			const response = await fetch(`${RUST_API_URL}/rooms/${slug}/participants`);
 			const data = await response.json();
 
 			const hasMe = data.some(p => p.user_id === userId);

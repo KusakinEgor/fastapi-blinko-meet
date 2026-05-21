@@ -116,10 +116,11 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
 
   async function createRoomRequest(data) {
 	  let token = localStorage.getItem("access_token");
+	  const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 	  try {
 		  return await axios.post(
-			  "http://192.168.0.143:8000/rooms/create",
+			  `${API_BASE_URL}/rooms/create`,
 			  data,
 			  {
 				  headers: { Authorization: `Bearer ${token}` }
@@ -132,7 +133,7 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
 			  if (!token) throw err;
 
 			  return await axios.post(
-				  "http://192.168.0.143:8000/rooms/create",
+				  `${API_BASE_URL}/rooms/create`,
 				  data,
 				  {
 					  headers: { Authorization: `Bearer ${token}` }

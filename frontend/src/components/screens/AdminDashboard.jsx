@@ -11,7 +11,7 @@ const AdminDashboard = () => {
 	const [search, setSearch] = useState("");
 	const [logs, setLogs] = useState([]);
 
-	const API_URL = "http://localhost:8000/admin";
+	const API_URL = import.meta.env.VITE_API_URL;
 	const token = localStorage.getItem("access_token");
 
 	const fetchData = async () => {

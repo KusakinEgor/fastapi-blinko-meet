@@ -8,6 +8,8 @@ const LoginScreenUser = ({ onLogin, onBack }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
+  const API_BASE_URL = import.meta.env.VITE_API_URL;
+
   const { t, toggleLanguage, isRussian } = useLang();
 
   const handleLogin = () => {
@@ -16,8 +18,8 @@ const LoginScreenUser = ({ onLogin, onBack }) => {
   
   const handleSubmit = async () => {
 	  const url = isRegister
-		? "http://localhost:8000/register"
-		: "http://192.168.0.143:8000/login";
+		? `${API_BASE_URL}/register`
+		: `${API_BASE_URL}/login`;
 
 	  const body = isRegister
 		? { email, password, username }

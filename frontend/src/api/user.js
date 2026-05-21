@@ -1,6 +1,6 @@
 import { refreshAccessToken } from "./auth.js";
 
-const API_URL = "http://192.168.0.143:8000";
+const API_URL = import.meta.env.VITE_API_URL;
 
 export async function apiRequest(endpoint, options = {}) {
 	const token = localStorage.getItem("access_token");
