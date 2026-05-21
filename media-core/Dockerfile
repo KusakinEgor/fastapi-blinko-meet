@@ -1,3 +1,4 @@
+# ЭТАП 1: Планирование кэша зависимостей
 FROM lukemathwalker/cargo-chef:latest-rust-1.75 AS planner
 WORKDIR /app
 COPY . .
@@ -7,7 +8,13 @@ FROM lukemathwalker/cargo-chef:latest-rust-1.75 AS builder
 WORKDIR /app
 COPY --from=planner /app/recipe.json recipe.json
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 ENV CARGO_BUILD_JOBS=1
+
 RUN cargo chef cook --release --recipe-path recipe.json
 
 COPY . .
