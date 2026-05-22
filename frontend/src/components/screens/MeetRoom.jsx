@@ -321,25 +321,40 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 
   const setupMedia = useCallback(async () => {
 	  try {
-		  const tempStream = await navigator.mediaDevices.getUserMedia({ audio: false, video: true});
+		  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-		  const devices = await navigator.mediaDevices.enumerateDevices();
-		  const audioInputDevices = devices.filter(d => d.kind === 'audioinput');
+		  let audioConstraints = {
+			  echoCancellation: true,
+			  noiseSuppression: true,
+			  autoGainControl: true
+		  };
 
-		  const preferredMic = audioInputDevices.find(d =>
-			  /headset|bluetooth|airpods|external|usb/i.test(d.label)
-		  ) || audioInputDevices[0];
+		  if (!isMobile) {
+			  try {
+				  const devices = await navigator.mediaDevices.enumerateDevices();
+				  const audioInputDevices = devices.filter(d => d.kind === 'audioinput');
+				  const preferredMic = audioInputDevices.find(d => 
+					  /headset|bluetooth|airpods|external|usb/i.test(d.label)
+				  ) || audioInputDevices[0];
 
-		  tempStream.getTracks().forEach(track => track.stop());
+				  if (preferredMic && preferredMic.deviceId) {
+					  audioConstraints.deviceId = { ideal: preferredMic.deviceId };
+				  }
+			  } catch (e) {
+				  console.warn("Не удалось перечислить устройства:", e);
+			  }
+		  } else {
+			  audioConstraints.facingMode = "user";
+		  }
 
 		  const stream = await navigator.mediaDevices.getUserMedia({
-			  video: { width: 640, height: 360, frameRate: 24, facingMode: "user" },
-			  audio: {
-				  deviceId: preferredMic ? { exact: preferredMic.deviceId } : undefined,
-				  echoCancellation: true,
-				  noiseSuppression: true,
-				  autoGainControl: true
-			  }
+			  video: {
+				  width: isMobile ? { ideal: 480 } : 640,
+				  height: isMobile ? { ideal: 360 } : 360,
+				  frameRate: { ideal: 24 },
+				  facingMode: "user"
+			  },
+			  audio: audioConstraints
 		  });
 
 		  setLocalStream(stream);
