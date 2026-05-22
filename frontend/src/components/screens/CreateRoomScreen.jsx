@@ -181,7 +181,7 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
 					autoPlay
 					playsInline
 					muted
-					className={`absolute inset-0 w-full h-full object-cover rounded-xl ${camMuted ? 'hidden' : 'block'}`}
+					className="absolute inset-0 w-full h-full object-cover rounded-xl"
 					style={{ maxWidth: '100%', maxHeight: '100%' }}
 				/>
 			) : (
