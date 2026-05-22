@@ -105,11 +105,42 @@ pub async fn handle_offer(
         participant.clone(),
     );
 
+
+    println!("Setting remote description");
+
+    let remote = RTCSessionDescription::offer(offer.sdp.clone()).unwrap();
+    pc.set_remote_description(remote).await.unwrap();
+
+    println!("Creating answer");
+
+    let answer = pc.create_answer(None).await.unwrap();
+
+    println!("ANSWER SDP:\n{}", answer.sdp);
+
+    pc.set_local_description(answer.clone()).await.unwrap();
+
+    println!("ANSWER ready");
+
     for other in participants.iter() {
         let tracks = other.published_tracks.lock().await;
         for track in tracks.iter() {
             let track_clone = Arc::clone(track) as Arc<dyn TrackLocal + Send + Sync>;
-            let _ = pc.add_track(track_clone).await;
+            if let Ok(_) = pc.add_track(track_clone).await {
+                println!("➕ Добавлен трек старого участника {} для нового юзера {}", other.user_id, user_id);
+
+                let pc_clone = pc.clone();
+                let sender_clone = participant.sender.clone();
+                tokio::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+                    if let Ok(offer) = pc_clone.create_offer(None).await {
+                        if pc_clone.set_local_description(offer.clone()).await.is_ok() {
+                            let msg = serde_json::json!({"type": "offer", "sdp": offer.sdp}).to_string();
+                            let _ = sender_clone.send(msg);
+                            println!("🚀 [Offer] Пересогласование (Renegotiation) запущено");
+                        }
+                    }
+                });
+            }
         }
     }
 
@@ -130,21 +161,6 @@ pub async fn handle_offer(
     for p in participants.iter() {
         let _ = p.sender.send(update_msg.clone());
     }
-
-    println!("Setting remote description");
-
-    let remote = RTCSessionDescription::offer(offer.sdp.clone()).unwrap();
-    pc.set_remote_description(remote).await.unwrap();
-
-    println!("Creating answer");
-
-    let answer = pc.create_answer(None).await.unwrap();
-
-    println!("ANSWER SDP:\n{}", answer.sdp);
-
-    pc.set_local_description(answer.clone()).await.unwrap();
-
-    println!("ANSWER ready");
 
     Json(Sdp {
         sdp: answer.sdp,

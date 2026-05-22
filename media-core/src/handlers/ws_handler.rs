@@ -62,17 +62,11 @@ pub async fn ws_handler(
                     if json["type"] == "answer" {
                         if let Some(sdp) = json["sdp"].as_str() {
                             println!("📥 [WS] Получен Answer для Renegotiation");
-                            match RTCSessionDescription::answer(sdp.to_string()) {
-                                Ok(desc) => {
-                                    let pc_clone = pc.clone();
-                                    tokio::spawn(async move {
-                                        match pc_clone.set_remote_description(desc).await {
-                                            Ok(_) => println!("✅ [WS] Remote Description (Answer) успешно установлен на сервере"),
-                                            Err(e) => println!("❌ [WS] Ошибка set_remote_description на сервере: {:?}", e),
-                                        }
-                                    });
-                                },
-                                Err(e) => println!("❌ [WS] Ошибка парсинга Answer SDP: {:?}", e),
+                            if let Ok(desc) = RTCSessionDescription::answer(sdp.to_string()) {
+                                match pc.set_remote_description(desc).await {
+                                    Ok(_) => println!("✅ [WS] Remote Description (Answer) успешно установлен на сервере"),
+                                    Err(e) => println!("❌ [WS] Ошибка set_remote_description на сервере: {:?}", e),
+                                }
                             }
                         }
                     }
