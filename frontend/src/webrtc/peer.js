@@ -1,8 +1,13 @@
 export function createPeer({ localStream, onTrack, onIceCandidate }) {
 	const pc = new RTCPeerConnection({
-		iceServers: [{
-			urls: "stun:stun.l.google.com:19302"
-		}],
+		iceServers: [
+			{ urls: "stun:stun.l.google.com:19302" },
+			{
+				urls: "https://blinko.mooo.com:3478",
+				username: "coolserver",
+				credential: "niceserver"
+			}
+		],
 		iceTransportPolicy: 'all',
 		bundlePolicy: 'max-bundle'
 	});
