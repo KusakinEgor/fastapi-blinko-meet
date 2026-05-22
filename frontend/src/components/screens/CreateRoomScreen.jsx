@@ -13,6 +13,7 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const animationRef = useRef(null);
+  const streamRef = useRef(null);
 
   const { t, toggleLanguage, isRussian} = useLang();
 
@@ -72,6 +73,7 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
 			  audio: true
 		  });
 
+		  streamRef.current = userStream;
 		  setStream(userStream);
 	  } catch (err) {
 		  console.error("Error accessing camera/mic:", err);
@@ -84,11 +86,11 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
 	  setupMedia();
 
 	  return () => {
-		  if (stream) {
-			  stream.getTracks().forEach(track => track.stop());
+		  if (streamRef.current) {
+			  streamRef.current.getTracks().forEach(track => track.stop());
 		  }
 	  };
-  }, [setupMedia, stream]);
+  }, [setupMedia]);
 
   useEffect(() => {
 	  if (stream && localVideoRef.current) {

@@ -11,6 +11,7 @@ export default function JoinScreen({ onBack, onJoin }) {
   const [loaded, setLoaded] = useState(false);
   const [stream, setStream] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const streamRef = useRef(null);
 
   const { t, toggleLanguage, isRussian } = useLang();
 
@@ -21,6 +22,7 @@ export default function JoinScreen({ onBack, onJoin }) {
 			  audio: false
 		  });
 
+		  streamRef.current = userStream;
 		  setStream(userStream);
 	  } catch (err) {
 		  console.error("Error accessing camera:", err);
@@ -33,11 +35,11 @@ export default function JoinScreen({ onBack, onJoin }) {
 	  setupMedia();
 
 	  return () => {
-		  if (stream) {
-			  stream.getTracks().forEach(track => track.stop());
+		  if (streamRef.current) {
+			  streamRef.getTracks().forEach(track => track.stop());
 		  }
 	  };
-  }, [setupMedia, slug, navigate, stream])
+  }, [setupMedia])
 
 
   const [isRoomFound, setIsRoomFound] = useState(true);
