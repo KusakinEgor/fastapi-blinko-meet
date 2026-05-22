@@ -321,7 +321,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 
   const setupMedia = useCallback(async () => {
 	  try {
-		  const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true});
+		  const tempStream = await navigator.mediaDevices.getUserMedia({ audio: false, video: true});
 
 		  const devices = await navigator.mediaDevices.enumerateDevices();
 		  const audioInputDevices = devices.filter(d => d.kind === 'audioinput');
