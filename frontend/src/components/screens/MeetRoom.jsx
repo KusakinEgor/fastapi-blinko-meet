@@ -325,43 +325,12 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 
   const setupMedia = useCallback(async () => {
 	  try {
-		  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-		  let audioConstraints = {
-			  echoCancellation: true,
-			  noiseSuppression: true,
-			  autoGainControl: true
-		  };
-
-		  if (!isMobile) {
-			  try {
-				  const devices = await navigator.mediaDevices.enumerateDevices();
-				  const audioInputDevices = devices.filter(d => d.kind === 'audioinput');
-				  const preferredMic = audioInputDevices.find(d => 
-					  /headset|bluetooth|airpods|external|usb/i.test(d.label)
-				  ) || audioInputDevices[0];
-
-				  if (preferredMic && preferredMic.deviceId) {
-					  audioConstraints.deviceId = { ideal: preferredMic.deviceId };
-				  }
-			  } catch (e) {
-				  console.warn("Не удалось перечислить устройства:", e);
-			  }
-		  } else {
-			  audioConstraints.facingMode = "user";
-		  }
-
-		  const stream = await navigator.mediaDevices.getUserMedia({
-			  video: {
-				  width: isMobile ? { ideal: 480 } : 640,
-				  height: isMobile ? { ideal: 360 } : 360,
-				  frameRate: { ideal: 24 },
-				  facingMode: "user"
-			  },
-			  audio: audioConstraints
+		  const userStream = await navigator.mediaDevices.getUserMedia({
+			  video: true,
+			  audio: false
 		  });
 
-		  setLocalStream(stream);
+		  setLocalStream(userStream);
 	  } catch (err) {
 		  console.error("Error accessing camera:", err);
 		  setLocalStream(null);
@@ -372,18 +341,18 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  setupMedia();
   }, [setupMedia])
 
-  const { remoteStreams, ws } = useWebRTC({
-	  localStream,
-	  roomId: slug,
-	  userId
-  });
-
   useEffect(() => {
 	  console.log("stream:", localStream);
 	  if (localStream && localVideoRef.current) {
 		  localVideoRef.current.srcObject = localStream;
 	  }
   }, [localStream]);
+
+  const { remoteStreams, ws } = useWebRTC({
+	  localStream,
+	  roomId: slug,
+	  userId
+  });
 
   useEffect(() => {
 	  if (videoRef.current && screenStream) {
