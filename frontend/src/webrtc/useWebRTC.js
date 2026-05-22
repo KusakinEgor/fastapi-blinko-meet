@@ -98,10 +98,10 @@ export function useWebRTC({ localStream, roomId, userId }) {
 			},
 
 			onOpen: async () => {
+				await sendOffer({ pc: peer, roomId, userId });
+
 				iceQueue.current.forEach(msg => ws.send(msg));
 				iceQueue.current = [];
-
-				await sendOffer({ pc: peer, roomId, userId });
 			}
 		});
 
