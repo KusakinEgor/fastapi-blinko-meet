@@ -82,12 +82,6 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
   useEffect(() => {
 	  setLoaded(true);
 	  setupMedia();
-
-	  return () => {
-		  if (stream) {
-			  stream.getTracks().forEach(track => track.stop());
-		  }
-	  };
   }, [setupMedia]);
 
   useEffect(() => {
@@ -95,13 +89,6 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
 		  localVideoRef.current.srcObject = stream;
 	  }
   }, [stream]);
-
-  useEffect(() => {
-	  if (stream) {
-		  stream.getVideoTracks().forEach(track => (track.enabled = !camMuted));
-		  stream.getAudioTracks().forEach(track => (track.enabled = !micMuted));
-	  }
-  }, [camMuted, micMuted, stream]);
 
   if (screen === "meet") {
     return (
