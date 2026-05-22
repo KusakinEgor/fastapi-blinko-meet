@@ -60,22 +60,21 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
 				  };
 
 				  updateVolume();
-			  } catch (e) {
+			  } catch(e) {
 				  console.error("Audio context error:", e);
 			  }
-		  } else {
-			  if (animationRef.current) cancelAnimationFrame(animationRef.current);
-			  if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-				  audioContextRef.current.close();
-			  }
-			  setVolume(1);
 		  }
-
-
-		  return () => {
-			  if (animationRef.current) cancelAnimationFrame(animationRef.current);
-		  };
+	  } else {
+		  if (animationRef.current) cancelAnimationFrame(animationRef.current);
+		  if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+			  audioContextRef.current.close();
+		  }
+		  setVolume(1);
 	  }
+
+	  return () => {
+		  if (animationRef.current) cancelAnimationFrame(animationRef.current);
+	  };
   }, [micMuted, stream])
 
   const setupMedia = useCallback(async () => {
