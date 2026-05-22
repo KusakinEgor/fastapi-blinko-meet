@@ -73,7 +73,11 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  let source;
 	  let audioClone;
 
+	  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
 	  const startAudioCapture = async () => {
+		  if (isMobile) return;
+
 		  if (!localStream || micMuted || localStream.getAudioTracks().length === 0) return;
 		  if (audioSocketRef.current?.socket?.readyState !== WebSocket.OPEN) return;
 
