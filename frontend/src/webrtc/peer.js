@@ -8,7 +8,7 @@ export function createPeer({ localStream, onTrack, onIceCandidate }) {
 				credential: "niceserver"
 			}
 		],
-		iceTransportPolicy: 'relay',
+		iceTransportPolicy: 'all',
 		bundlePolicy: 'max-bundle'
 	});
 
