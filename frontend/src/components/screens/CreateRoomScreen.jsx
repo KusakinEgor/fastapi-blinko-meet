@@ -10,6 +10,10 @@ import SettingsModal from "../ui/SettingsModal";
 export default function CreateRoomScreen({ onBack, onJoin }) {
   const navigate = useNavigate();
   const localVideoRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const animationRef = useRef(null);
+  const sourceRef = useRef(null);
 
   const { t, toggleLanguage, isRussian} = useLang();
 
@@ -27,11 +31,58 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
   const [micMuted, setMicMuted] = useState(false);
   const [camMuted, setCamMuted] = useState(false);
 
+  useEffect(() => {
+	  if (stream && !micMuted) {
+		  const audioTrack = stream.getAudioTracks()[0];
+		  if (audioTrack && audioTrack.enabled) {
+			  try {
+				  if (audioContextRef.current) audioContextRef.current.close();
+
+				  audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+				  analyserRef.current = audioContextRef.current.createAnalyser();
+
+				  sourceRef.current = audioContextRef.current.createMediaStreamSource(stream);
+				  sourceRef.current.connect(analyserRef.current);
+				  analyserRef.current.fftSize = 64;
+
+				  const bufferLength = analyserRef.current.frequencyBinCount;
+				  const dataArray = new Uint8Array(bufferLength);
+
+				  const updateVolume = () => {
+					  if (!analyserRef.current) return;
+					  analyserRef.current.getByteFrequencyData(dataArray);
+					  const sum = dataArray.reduce((a, b) => a + b, 0);
+					  const average = sum / bufferLength;
+
+					  const scale = 1 + (average / 255) * 0.5;
+					  setVolume(scale);
+					  animationRef.current = requestAnimationFrame(updateVolume);
+				  };
+
+				  updateVolume();
+			  } catch (e) {
+				  console.error("Audio context error:", e);
+			  }
+		  } else {
+			  if (animationRef.current) cancelAnimationFrame(animationRef.current);
+			  if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+				  audioContextRef.current.close();
+			  }
+			  setVolume(1);
+		  }
+
+
+		  return () => {
+			  if (animationRef.current) cancelAnimationFrame(animationRef.current);
+		  };
+	  }
+  }, [micMuted, stream])
+
   const setupMedia = useCallback(async () => {
 	  try {
 		  const userStream = await navigator.mediaDevices.getUserMedia({
 			  video: true,
-			  audio: true
+			  audio: false
 		  });
 
 		  setStream(userStream);
