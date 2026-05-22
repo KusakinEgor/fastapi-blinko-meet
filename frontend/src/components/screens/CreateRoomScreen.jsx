@@ -13,7 +13,7 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const animationRef = useRef(null);
-  const streamRef = useRef(null);
+  const sourceRef = useRef(null);
 
   const { t, toggleLanguage, isRussian} = useLang();
 
@@ -32,39 +32,49 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
   const [camMuted, setCamMuted] = useState(false);
 
   useEffect(() => {
-	  if (!micMuted) {
-		  navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-			  audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-			  analyserRef.current = audioContextRef.current.createAnalyser();
-			  const source = audioContextRef.current.createMediaStreamSource(stream);
-			  source.connect(analyserRef.current);
-			  analyserRef.current.fftSize = 64;
+	  if (stream && !micMuted) {
+		  const audioTrack = stream.getAudioTracks()[0];
+		  if (audioTrack && audioTrack.enabled) {
+			  try {
+				  if (audioContextRef.current) audioContextRef.current.close();
 
-			  const bufferLength = analyserRef.current.frequencyBinCount;
-			  const dataArray = new Uint8Array(bufferLength);
+				  audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+				  analyserRef.current = audioContextRef.current.createAnalyser();
 
-			  const updateVolume = () => {
-				  analyserRef.current.getByteFrequencyData(dataArray);
-				  const sum = dataArray.reduce((a, b) => a + b, 0);
-				  const average = sum / bufferLength;
+				  sourceRef.current = audioContextRef.current.createMediaStreamSource(stream);
+				  sourceRef.current.connect(analyserRef.current);
 
-				  const scale = 1 + (average / 255) * 0.5;
-				  setVolume(scale);
-				  animationRef.current = requestAnimationFrame(updateVolume);
-			  };
+				  const bufferLength = analyserRef.current.frequencyBinCount;
+				  const dataArray = new Uint8Array(bufferLength);
 
-			  updateVolume();
-		  }).catch(err => console.error("Error micro:", err));
+				  const updateVolume = () => {
+					  if (!analyserRef.current) return;
+					  analyserRef.current.getByteFrequencyData(dataArray);
+					  const sum = dataArray.reduce((a, b) => a + b, 0);
+					  const average = sum / bufferLength;
+
+					  const scale = 1 + (average / 255) * 0.5;
+					  setVolume(scale);
+					  animationRef.current = requestAnimationFrame(updateVolume);
+				  };
+
+				  updateVolume();
+			  } catch (e) {
+				  console.error("Audio context error:", e);
+			  }
+		  }
 	  } else {
 		  if (animationRef.current) cancelAnimationFrame(animationRef.current);
-		  if (audioContextRef.current) audioContextRef.current.close();
+		  if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+			  audioContextRef.current.close();
+		  }
 		  setVolume(1);
 	  }
 
 	  return () => {
 		  if (animationRef.current) cancelAnimationFrame(animationRef.current);
 	  };
-  }, [micMuted]);
+  }, [micMuted, stream]);
 
   const setupMedia = useCallback(async () => {
 	  try {
@@ -73,7 +83,6 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
 			  audio: true
 		  });
 
-		  streamRef.current = userStream;
 		  setStream(userStream);
 	  } catch (err) {
 		  console.error("Error accessing camera/mic:", err);
@@ -84,12 +93,6 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
   useEffect(() => {
 	  setLoaded(true);
 	  setupMedia();
-
-	  return () => {
-		  if (streamRef.current) {
-			  streamRef.current.getTracks().forEach(track => track.stop());
-		  }
-	  };
   }, [setupMedia]);
 
   useEffect(() => {
