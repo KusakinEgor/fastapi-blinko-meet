@@ -91,10 +91,10 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
   }, [setupMedia]);
 
   useEffect(() => {
-	  if (stream && localVideoRef.current && !camMuted && !micMuted) {
+	  if (stream && localVideoRef.current) {
 		  localVideoRef.current.srcObject = stream;
 	  }
-  }, [stream, camMuted, micMuted]);
+  }, [stream]);
 
   useEffect(() => {
 	  if (stream) {
@@ -188,7 +188,7 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
         <div className="flex flex-col md:flex-row gap-6 flex-1">
 
           <div className="flex flex-col relative items-center justify-center bg-[#1c1c1c] p-8 rounded-2xl shadow-xl flex-1">
-			{stream && !camMuted ? (
+			{stream ? (
 				<video
 					ref={localVideoRef}
 					autoPlay
