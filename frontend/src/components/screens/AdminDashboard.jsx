@@ -42,7 +42,7 @@ const AdminDashboard = () => {
 		if (!window.confirm("Удалить пользователя?")) return;
 
 		try {
-			const res = await fetch(`${API_URL}/users/${id}`, {
+			const res = await fetch(`${API_URL}/admin/users/${id}`, {
 				method: "DELETE",
 				headers: { "Authorization": `Bearer ${token}` }
 			});
@@ -66,7 +66,7 @@ const AdminDashboard = () => {
 
 		try {
 			const isEdit = !!currentUser;
-			const url = isEdit ? `${API_URL}/users/${currentUser.id}` : `${API_URL}/users`;
+			const url = isEdit ? `${API_URL}/admin/users/${currentUser.id}` : `${API_URL}/admin/users`;
 			const method = isEdit ? "PATCH" : "POST";
 
 			const res = await fetch(url, {
