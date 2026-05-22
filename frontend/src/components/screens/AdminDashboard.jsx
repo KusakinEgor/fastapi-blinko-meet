@@ -19,9 +19,9 @@ const AdminDashboard = () => {
 			const headers = { "Authorization": `Bearer ${token}` };
 
 			const [usersRes, statsRes, logsRes] = await Promise.all([
-				fetch(`${API_URL}/users`, { headers }),
-				fetch(`${API_URL}/stats`, { headers }),
-				fetch(`${API_URL}/logs`, { headers })
+				fetch(`${API_URL}/admin/users`, { headers }),
+				fetch(`${API_URL}/admin/stats`, { headers }),
+				fetch(`${API_URL}/admin/logs`, { headers })
 			]);
 
 			if (usersRes.ok && statsRes.ok) {
