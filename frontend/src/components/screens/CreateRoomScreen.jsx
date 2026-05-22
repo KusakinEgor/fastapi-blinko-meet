@@ -82,7 +82,13 @@ export default function CreateRoomScreen({ onBack, onJoin }) {
   useEffect(() => {
 	  setLoaded(true);
 	  setupMedia();
-  }, [setupMedia]);
+
+	  return () => {
+		  if (stream) {
+			  stream.getTracks().forEach(track => track.stop());
+		  }
+	  };
+  }, [setupMedia, stream]);
 
   useEffect(() => {
 	  if (stream && localVideoRef.current) {

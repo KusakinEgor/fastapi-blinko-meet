@@ -31,7 +31,13 @@ export default function JoinScreen({ onBack, onJoin }) {
   useEffect(() => {
 	  setLoaded(true);
 	  setupMedia();
-  }, [setupMedia, slug, navigate])
+
+	  return () => {
+		  if (stream) {
+			  stream.getTracks().forEach(track => track.stop());
+		  }
+	  };
+  }, [setupMedia, slug, navigate, stream])
 
 
   const [isRoomFound, setIsRoomFound] = useState(true);
