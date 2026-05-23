@@ -64,13 +64,13 @@ pub async fn handle_offer(
     println!("Creating new participant: {}", user_id);
     let pc = create_peer(&state.api).await;
 
-    pc.add_transceiver_from_kind(
-        RTPCodecType::Video,
-        Some(RTCRtpTransceiverInit {
-            direction: RTCRtpTransceiverDirection::Sendrecv,
-            send_encodings: vec![],
-        }),
-    ).await.unwrap();
+    //pc.add_transceiver_from_kind(
+    //    RTPCodecType::Video,
+    //    Some(RTCRtpTransceiverInit {
+    //        direction: RTCRtpTransceiverDirection::Sendrecv,
+    //        send_encodings: vec![],
+    //    }),
+    //).await.unwrap();
 
     let (tx, _) = broadcast::channel(64);
 
