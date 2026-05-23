@@ -54,7 +54,7 @@ export async function sendOffer({ pc, roomId, userId }) {
 
 	await pc.setRemoteDescription({
 		type: "answer",
-		sdp: answer.sdp
+		sdp: fixedSdp
 	});
 
 	console.log(
@@ -63,8 +63,9 @@ export async function sendOffer({ pc, roomId, userId }) {
 			: "remote no video"
 	);
 
-	await pc.setRemoteDescription({
-		type: "answer",
-		sdp: fixedSdp
-	});
+	console.log("TRANSCEIVERS STATUS:", pc.getTransceivers().map(t => ({
+		mid: t.mid,
+		direction: t.direction,
+		currentDirection: t.currentDirection
+	})));
 }
