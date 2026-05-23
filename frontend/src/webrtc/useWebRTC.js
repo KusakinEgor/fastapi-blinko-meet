@@ -46,11 +46,12 @@ export function useWebRTC({ localStream, roomId, userId }) {
 					try {
 						console.log("📥 [Signaling] Получен повторный Offer от сервера. Текущее состояние:", peer.signalingState);
 
-						if (peer.signalingState !== "stable") {
-							console.warn("⚠️ Соединение не stable, делаем rollback для принятия сервера...");
+						if (peer.signalingState === "stable") {
+							console.log("Соединение уже в состоянии stable. Игнорируем дубликат.");
+							return;
 						}
 
-						console.log("Принимаем входящий оффер...");
+						console.log("Принимаем входящий оффер от другого участника...");
 
 						await peer.setRemoteDescription(new RTCSessionDescription({
 							type: "offer",
