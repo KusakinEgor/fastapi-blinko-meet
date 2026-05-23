@@ -50,11 +50,9 @@ export async function sendOffer({ pc, roomId, userId }) {
 
 	const answer = await res.json()
 
-	const fixedSdp = answer.sdp.replace(/a=recvonly/g, 'a=sendrecv');
-
 	await pc.setRemoteDescription({
 		type: "answer",
-		sdp: fixedSdp
+		sdp: answer.sdp
 	});
 
 	console.log(
