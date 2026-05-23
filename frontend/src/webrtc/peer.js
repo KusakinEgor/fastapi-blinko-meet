@@ -27,11 +27,31 @@ export function createPeer({ localStream, onTrack, onIceCandidate }) {
 	//}
 	
 	localStream.getVideoTracks().forEach(track => {
-		console.log("ADDING TRACK:", track);
-		pc.addTransceiver(track, {
-			direction: 'sendonly',
-			streams: [localStream]
-		});
+		console.log("ADDING TRACK AND SETTING DIRECTION:", track);
+
+		let transceiver = pc.getTransceivers().find(t => t.sender.track?.kind === 'video');
+
+		if (!transceiver) {
+			transceiver = pc.addTransceiver(track, {
+				direction: 'sendonly',
+				streams: [localStream]
+			});
+		} else {
+			transceiver.direction = 'sendonly';
+			transceiver.sender.replaceTrack(track);
+		}
+
+		track.onunmute = () => {
+			console.log(" Камера ожила (unmute)! Перепривязываем трек...");
+			transceiver.sender.replaceTrack(track);
+		};
+
+		if (track.readyState === "live") {
+			setTimeout(() => {
+				console.log(" Накатываем фикс задержки камеры...");
+				transceiver.sender.replaceTrack(track);
+			}, 500);
+		}
 	});
 
 	console.log(
