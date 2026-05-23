@@ -28,7 +28,10 @@ export function createPeer({ localStream, onTrack, onIceCandidate }) {
 	
 	localStream.getVideoTracks().forEach(track => {
 		console.log("ADDING TRACK:", track);
-		pc.addTrack(track, localStream);
+		pc.addTransceiver(track, {
+			direction: 'sendonly',
+			streams: [localStream]
+		});
 	});
 
 	console.log(
