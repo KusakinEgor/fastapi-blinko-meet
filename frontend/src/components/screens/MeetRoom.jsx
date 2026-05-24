@@ -382,11 +382,11 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   //});
 
   const peerStreams = remoteStreams.filter(item => {
-	  return item.stream && item.stream.getVideoTracks().length > 0;
+	  return item && item.stream && typeof item.stream.getVideoTracks === 'function' && item.stream.getVideoTracks().length > 0;
   });
 
   const mainStream = peerStreams[0] || null;
-  const sidebarStreams = peerStreams.slice(1);
+  const sidebarStreams = peerStreams ? peerStreams.slice(1) : [];
 
   const EMOJIS = ['❤️', '👍', '😂', '🎉', '🔥', '👏', '🤝', '🙏', '🤔', '😢', '👎', '😮'];
 
