@@ -1,7 +1,7 @@
 export function createPeer({ localStream, onTrack, onIceCandidate }) {
 	const pc = new RTCPeerConnection({
 		iceServers: [
-			{ urls: "stun:stun.l.google.com:19302" },
+			{ urls: "stun:://google.com" },
 			{
 				urls: "turn:77.110.125.7:3478",
 				username: "coolserver",
@@ -12,9 +12,12 @@ export function createPeer({ localStream, onTrack, onIceCandidate }) {
 		bundlePolicy: 'max-bundle'
 	});
 
-	localStream.getTracks().forEach(track => {
-		pc.addTrack(track, localStream);
-	});
+	if (localStream) {
+		localStream.getTracks().forEach(track => {
+			console.log("➕ Добавляем локальный трек в PC:", track.kind);
+			pc.addTrack(track, localStream);
+		});
+	}
 
 	pc.ontrack = (event) => {
 		console.log("📥 ПОЛУЧЕН УДАЛЕННЫЙ ТРЕК ОТ ПИРА:", event.streams[0]?.id);
@@ -29,13 +32,9 @@ export function createPeer({ localStream, onTrack, onIceCandidate }) {
 		}
 	};
 
-	pc.oniceconnectionstatechange = () => {
-		console.log("🟢 ICE STATE:", pc.iceConnectionState);
-	};
-
-	pc.onconnectionstatechange = () => {
-		console.log("🟢 PC STATE:", pc.connectionState);
-	};
+	pc.oniceconnectionstatechange = () => console.log("🟢 ICE STATE:", pc.iceConnectionState);
+	pc.onconnectionstatechange = () => console.log("🟢 PC STATE:", pc.connectionState);
 
 	return pc;
 }
+

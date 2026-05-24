@@ -8,10 +8,9 @@ export function createSignaling({ roomId, userId, onMessage, onOpen }) {
 	ws.onmessage = async (e) => {
 		try {
 			const data = JSON.parse(e.data);
-			console.log("SIGNAL:", data);
 			onMessage(data);
 		} catch (err) {
-			console.error("Ошибка парсинга WebSocket сообщения:", err);
+			console.error("Ошибка парсинга сигнала:", err);
 		}
 	};
 
@@ -20,9 +19,7 @@ export function createSignaling({ roomId, userId, onMessage, onOpen }) {
 		onOpen();
 	};
 
-	ws.onclose = () => {
-		console.log("WS closed");
-	}
+	ws.onclose = () => console.log("❌ Сигнальный сокет закрыт");
 
 	return ws;
 }
