@@ -11,6 +11,10 @@ const FLAT_EMOJI_MAP = Object.values(EMOJI_CATEGORIES).reduce((acc, category) =>
 }, {});
 
 export function parseMessage(text) {
+	if (!text || typeof text !== "string") {
+		return "";
+	}
+
 	const regex = /:([a-z0-9_]+):/gi;
 	const result = [];
 	let lastIndex = 0;
