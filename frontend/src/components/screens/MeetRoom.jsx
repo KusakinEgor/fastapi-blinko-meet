@@ -271,19 +271,22 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  const handler = (e) => {
 		  const msg = e.detail;
 
+		  const incomingContent = msg.payload?.content || msg.payload?.text || "";
+		  const senderId = msg.sender_id || msg.userId || "Собеседник";
+
 		  setMessages(prev => [
 			  ...prev,
 			  {
 				  id: Date.now(),
-				  text: msg.content,
-				  sender: msg.user_id,
+				  text: incomingContent,
+				  content: incomingContent,
+				  sender: senderId,
 				  time: new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
 			  }
 		  ]);
 	  };
 
 	  window.addEventListener("chat_message", handler);
-
 	  return () => window.removeEventListener("chat_message", handler);
   }, []);
 
