@@ -13,18 +13,18 @@ export function useWebRTC({ localStream, roomId, userId }) {
 			return peers.current.get(targetId);
 		}
 
-		console.log(`🛠️ Инициализация RTCPeerConnection для: ${targetId}`);
+		console.log(`🛠️ Создаем PeerConnection для: ${targetId}`);
 
 		const pc = createPeer({
+			localStream,
 			onTrack: (stream) => {
-				console.log(`📥 [UI] Получен удаленный стрим от ${targetId}:`, stream.id);
+				console.log(`📥 Получен удаленный стрим от ${targetId}:`, stream.id);
 				setRemoteStreams(prev => {
 					if (prev.find(s => s.id === stream.id)) return prev;
 					return [...prev, stream];
 				});
 			},
 			onIceCandidate: (candidate) => {
-				console.log(`📡 [ICE] Сгенерирован локальный кандидат для ${targetId}`);
 				const message = JSON.stringify({
 					type: "candidate",
 					target_id: targetId,
@@ -40,18 +40,6 @@ export function useWebRTC({ localStream, roomId, userId }) {
 			}
 		});
 
-		if (localStream) {
-			localStream.getTracks().forEach(track => {
-				console.log(`➕ [Peer] Добавляем трек ${track.kind} в PC для ${targetId}`);
-				pc.addTransceiver(track, {
-					direction: 'sendrecv',
-					streams: [localStream]
-				});
-			});
-		} else {
-			pc.addTransceiver('video', { direction: 'sendrecv' });
-		}
-
 		peers.current.set(targetId, pc);
 		return pc;
 	};
@@ -59,12 +47,13 @@ export function useWebRTC({ localStream, roomId, userId }) {
 	useEffect(() => {
 		if (!localStream || !roomId || !userId) return;
 
-		console.log("🔌 Подключаем WebSocket к Rust...");
+		console.log("🔌 Подключаемся к сигнальному серверу...");
 		const ws = createSignaling({
 			roomId,
 			userId,
 			onMessage: async (data) => {
 				const { type, sender_id, payload } = data;
+				
 				const isPolite = userId < sender_id;
 
 				if (type === "user_joined") {
@@ -97,7 +86,7 @@ export function useWebRTC({ localStream, roomId, userId }) {
 					try {
 						const collision = pc.signalingState !== "stable" || pc.localDescription;
 						if (collision && !isPolite) {
-							console.log(`⚠️ Коллизия офферов! Игнорируем оффер от ${sender_id}`);
+							console.log(`⚠️ Коллизия! Игнорируем оффер от ${sender_id}`);
 							return;
 						}
 
@@ -125,14 +114,12 @@ export function useWebRTC({ localStream, roomId, userId }) {
 				}
 
 				if (type === "candidate") {
-					console.log(`📡 Получен удаленный ICE от ${sender_id}`);
 					const pc = peers.current.get(sender_id);
 					if (pc && payload) {
 						try {
 							await pc.addIceCandidate(new RTCIceCandidate(payload));
-							console.log(`✅ Удаленный ICE успешно применен для ${sender_id}`);
 						} catch (e) {
-							console.warn("[WebRTC] Мягкая ошибка добавления кандидата:", e);
+							console.warn("[WebRTC] Ошибка добавления кандидата:", e);
 						}
 					}
 				}
@@ -152,7 +139,6 @@ export function useWebRTC({ localStream, roomId, userId }) {
 				if (type === "emoji_reaction") window.dispatchEvent(new CustomEvent("emoji_reaction", { detail: data }));
 			},
 			onOpen: () => {
-				console.log("🟢 Сигнальный сокет открыт. Сбрасываем очередь кандидатов...");
 				iceQueue.current.forEach(msg => ws.send(msg));
 				iceQueue.current = [];
 			}
@@ -161,7 +147,6 @@ export function useWebRTC({ localStream, roomId, userId }) {
 		socket.current = ws;
 
 		return () => {
-			console.log("🧹 Уничтожение хука useWebRTC: закрываем все соединения");
 			peers.current.forEach(pc => pc.close());
 			peers.current.clear();
 			if (socket.current) {
@@ -170,14 +155,14 @@ export function useWebRTC({ localStream, roomId, userId }) {
 				socket.current = null;
 			}
 		};
-	}, [localStream, roomId, userId]);
+	}, [localStream, roomId, userId]); 
 
 	useEffect(() => {
 		const interval = setInterval(() => {
 			if (socket.current && socket.current.readyState === WebSocket.OPEN) {
 				socket.current.send(JSON.stringify({ type: "ping" }));
 			}
-		}, 2000);
+		}, 2500);
 		return () => clearInterval(interval);
 	}, []);
 

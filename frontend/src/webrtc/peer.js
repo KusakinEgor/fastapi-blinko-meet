@@ -1,4 +1,4 @@
-export function createPeer({ onTrack, onIceCandidate }) {
+export function createPeer({ localStream, onTrack, onIceCandidate }) {
 	const pc = new RTCPeerConnection({
 		iceServers: [
 			{ urls: "stun:stun.l.google.com:19302" },
@@ -10,6 +10,14 @@ export function createPeer({ onTrack, onIceCandidate }) {
 		],
 		iceTransportPolicy: 'all',
 		bundlePolicy: 'max-bundle'
+	});
+
+	localStream.getTracks().forEach(track => {
+		console.log("➕ Добавляем локальный трек в PC:", track.kind);
+		pc.addTransceiver(track, {
+			direction: 'sendrecv', 
+			streams: [localStream]
+		});
 	});
 
 	pc.ontrack = (event) => {
