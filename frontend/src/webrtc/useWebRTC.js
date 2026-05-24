@@ -5,7 +5,12 @@ import { createSignaling } from "./signaling";
 export function useWebRTC({ localStream, roomId, userId }) {
 	const peers = useRef(new Map());
 	const socket = useRef(null);
+	const localStreamRef = useState(null);
 	const [remoteStreams, setRemoteStreams] = useState([]); 
+
+	useEffect(() => {
+		localStreamRef.current = localStream;
+	}, [localStream]);
 
 	const initPeerConnection = (targetId) => {
 		if (peers.current.has(targetId)) {
