@@ -25,15 +25,17 @@ export function useWebRTC({
 		}
 
 		if (!localStreamRef.current) {
-			console.error("localStream еще не готов в рефе!");
+			console.error("❌ [WebRTC] Ошибка: localStream еще не готов в рефе!");
 			return null;
 		}
+
+		console.log(`🛠️ [WebRTC] Создаем PeerConnection для: ${targetId}`);
 
 		const pc = createPeer({
 			localStream: localStreamRef.current,
 
 			onTrack: (stream) => {
-				console.log("REMOTE STREAM:", stream.id);
+				console.log(`📥 [WebRTC] ПОЛУЧЕН УДАЛЕННЫЙ СТРИМ от ${targetId}:`, stream.id);
 
 				setRemoteStreams(prev => {
 					const exists = prev.find(
@@ -89,14 +91,16 @@ export function useWebRTC({
 					payload
 				} = data;
 
-				console.log("SIGNAL:", type, "FROM:", sender_id);
+				if (type !== "ping") {
+					console.log(`📡 [Я: ${userId}] ПОЛУЧИЛ СИГНАЛ [${type}] ОТ [${sender_id}]`);
+				}
 
-				if (sender_id === userId) {
+				if (sender_id === userId && type !== "client_ready") {
 					return;
 				}
 
 				if (type === "client_ready") {
-					console.log(`🚀 Юзер ${sender_id} готов принимать звонок.`);
+					console.log(`🚀 Юзер ${sender_id} готов принимать звонок. Инициализируем соединение...`);
 
 					if (peers.current.has(sender_id)) {
 						console.log(`🧹 Сбрасываем старый пир для ${sender_id}`);
@@ -106,23 +110,34 @@ export function useWebRTC({
 						setRemoteStreams(prev => prev.filter(item => item.userId !== sender_id));
 					}
 
-					const pc = initPeerConnection(sender_id, ws);
-					if (!pc) return;
+					const isOfferInitiator = userId < sender_id;
 
-					const offer = await pc.createOffer();
-					await pc.setLocalDescription(offer);
+					if (isOfferInitiator) {
+						const pc = initPeerConnection(sender_id, ws);
+						if (!pc) return;
 
-					ws.send(
-						JSON.stringify({
-							type: "offer",
-							target_id: sender_id,
-							payload: offer
-						})
-					);
+						try {
+							console.log(`📡 Создаем и отправляем Offer для ${sender_id}...`);
+							const offer = await pc.createOffer();
+							await pc.setLocalDescription(offer);
+
+							ws.send(
+								JSON.stringify({
+									type: "offer",
+									target_id: sender_id,
+									payload: offer
+								})
+							);
+						} catch (err) {
+							console.error("❌ Ошибка создания Offer:", err);
+						}
+					} else {
+						console.log(`⏳ Ждем входящий Offer от ${sender_id} (мы вежливый пир)`);
+					}
 				}
 
 				if (type === "offer") {
-					console.log(`OFFER FROM ${sender_id}`);
+					console.log(`📥 Обрабатываем OFFER от ${sender_id}`);
 
 					if (peers.current.has(sender_id)) {
 						console.log(`🧹 Сбрасываем старый пир перед новым оффером от ${sender_id}`);
@@ -135,30 +150,43 @@ export function useWebRTC({
 					const pc = initPeerConnection(sender_id, ws);
 					if (!pc) return;
 
-					await pc.setRemoteDescription(
-						new RTCSessionDescription(payload)
-					);
+					try {
+						await pc.setRemoteDescription(
+							new RTCSessionDescription(payload)
+						);
 
-					const answer = await pc.createAnswer();
-					await pc.setLocalDescription(answer);
+						const answer = await pc.createAnswer();
+						await pc.setLocalDescription(answer);
 
-					ws.send(
-						JSON.stringify({
-							type: "answer",
-							target_id: sender_id,
-							payload: answer
-						})
-					);
+						console.log(`📡 Отправляем Answer для ${sender_id}...`);
+						ws.send(
+							JSON.stringify({
+								type: "answer",
+								target_id: sender_id,
+								payload: answer
+							})
+						);
+					} catch (err) {
+						console.error("❌ Ошибка обработки Offer / создания Answer:", err);
+					}
 				}
 
 				if (type === "answer") {
-					console.log(`ANSWER FROM ${sender_id}`);
+					console.log(`📥 Обрабатываем ANSWER от ${sender_id}`);
 					const pc = peers.current.get(sender_id);
-					if (!pc) return;
+					if (!pc) {
+						console.warn(`⚠️ Не найден PeerConnection для ${sender_id}, чтобы применить Answer`);
+						return;
+					}
 
-					await pc.setRemoteDescription(
-						new RTCSessionDescription(payload)
-					);
+					try {
+						await pc.setRemoteDescription(
+							new RTCSessionDescription(payload)
+						);
+						console.log(`🟢 [WebRTC] Успешно установили Remote Description для ${sender_id}!`);
+					} catch (err) {
+						console.error("❌ Ошибка установки Remote Answer:", err);
+					}
 				}
 
 				if (type === "candidate") {
@@ -168,12 +196,12 @@ export function useWebRTC({
 					try {
 						await pc.addIceCandidate(new RTCIceCandidate(payload));
 					} catch (e) {
-						console.error("ICE ERROR:", e);
+						console.error("❌ ICE ERROR:", e);
 					}
 				}
 
 				if (type === "user_left") {
-					console.log(`USER LEFT: ${sender_id}`);
+					console.log(`❌ USER LEFT: ${sender_id}`);
 					const pc = peers.current.get(sender_id);
 					if (pc) {
 						pc.close();
@@ -187,8 +215,7 @@ export function useWebRTC({
 			},
 
 			onOpen: () => {
-				console.log("SIGNALING READY. Оповещаем комнату...");
-				
+				console.log("🟢 SIGNALING READY. Оповещаем комнату о готовности...");
 				ws.send(
 					JSON.stringify({
 						type: "client_ready"
@@ -200,7 +227,7 @@ export function useWebRTC({
 		socket.current = ws;
 
 		return () => {
-			console.log("CLEANUP WEBRTC");
+			console.log("🧹 CLEANUP WEBRTC");
 			peers.current.forEach(pc => {
 				pc.close();
 			});
