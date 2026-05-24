@@ -293,6 +293,12 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  setShowMore(prev => !prev);
   };
 
+  const { remoteStreams, sendMessage: sendSignal } = useWebRTC({
+	  localStream,
+	  roomId: slug,
+	  userId
+  });
+
   const handleSendMessage = async () => {
 	  const text = inputValue.trim();
 	  if (!text) return;
@@ -300,12 +306,10 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  try {
 		  const savedMessage = await sendMessage(text);
 
-		  if (ws && ws.readyState === WebSocket.OPEN) {
-			  ws.send(JSON.stringify({
-				  type: "chat_message",
-				  content: text
-			  }));
-		  }
+		  sendSignal({
+			  type: "chat_message",
+			  content: text
+		  });
 
 		  setInputValue('');
 	  } catch (err) {
@@ -347,12 +351,6 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 		  localVideoRef.current.srcObject = localStream;
 	  }
   }, [localStream]);
-
-  const { remoteStreams, ws } = useWebRTC({
-	  localStream,
-	  roomId: slug,
-	  userId
-  });
 
   useEffect(() => {
 	  if (videoRef.current && screenStream) {

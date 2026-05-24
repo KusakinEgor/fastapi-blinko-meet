@@ -12,63 +12,18 @@ export function createPeer({ localStream, onTrack, onIceCandidate }) {
 		bundlePolicy: 'max-bundle'
 	});
 
-	//localStream.getTracks().forEach(track => {
-	//	pc.addTrack(track, localStream);
-	//});
-
-	//localStream.getVideoTracks().forEach(track => pc.addTrack(track, localStream));
-	
-	//const videoTrack = localStream.getVideoTracks()[0];
-	//if (videoTrack) {
-	//	pc.addTransceiver(videoTrack, {
-    //        direction: 'sendrecv', 
-    //        streams: [localStream]
-    //    });
-	//}
-	
-	localStream.getVideoTracks().forEach(track => {
-		console.log("ADDING TRACK AND SETTING DIRECTION:", track);
-
-		let transceiver = pc.getTransceivers().find(t => t.sender.track?.kind === 'video');
-
-		if (!transceiver) {
-			transceiver = pc.addTransceiver(track, {
-				direction: 'sendonly',
-				streams: [localStream]
-			});
-		} else {
-			transceiver.direction = 'sendonly';
-			transceiver.sender.replaceTrack(track);
-		}
-
-		track.onunmute = () => {
-			console.log(" Камера ожила (unmute)! Перепривязываем трек...");
-			transceiver.sender.replaceTrack(track);
-		};
-
-		if (track.readyState === "live") {
-			setTimeout(() => {
-				console.log(" Накатываем фикс задержки камеры...");
-				transceiver.sender.replaceTrack(track);
-			}, 500);
-		}
+	localStream.getTracks().forEach(track => {
+		console.log("Добавляем локальный трек в PC:", track.kind);
+		pc.addTransceiver(track, {
+			direction: 'sendrecv', streams: [localStream]
+		});
 	});
 
-	console.log(
-		"SENDERS:",
-		pc.getSenders().map(s => ({
-			track: s.track?.kind,
-			readyState: s.track?.readyState
-		}))
-	);
-
 	pc.ontrack = (event) => {
-		console.log("ON TRACK FIRED");
-
-		const stream = (event.streams && event.streams[0]) || new MediaStream([event.track]);
-        onTrack(stream);
-
-		console.log(event.streams);
+		console.log("📥 ПОЛУЧЕН УДАЛЕННЫЙ ТРЕК ОТ ПИРА:", event.streams[0]?.id);
+		if (event.streams && event.streams[0]) {
+			onTrack(event.streams[0]);
+		}
 	};
 
 	pc.onicecandidate = (event) => {
@@ -78,15 +33,11 @@ export function createPeer({ localStream, onTrack, onIceCandidate }) {
 	};
 
 	pc.oniceconnectionstatechange = () => {
-		console.log("ICE STATE:", pc.iceConnectionState);
+		console.log("🟢 ICE STATE:", pc.iceConnectionState);
 	};
 
 	pc.onconnectionstatechange = () => {
-		console.log("PC STATE:", pc.connectionState);
-	};
-
-	pc.onsignalingstatechange = () => {
-		console.log("SIGNAL STATE:", pc.signalingState);
+		console.log("🟢 PC STATE:", pc.connectionState);
 	};
 
 	return pc;

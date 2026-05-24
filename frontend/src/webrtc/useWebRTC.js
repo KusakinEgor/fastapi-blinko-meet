@@ -1,106 +1,128 @@
 import { useEffect, useRef, useState } from "react";
 import { createPeer } from "./peer";
-import { createSignaling, sendOffer } from "./signaling";
+import { createSignaling } from "./signaling";
 
 export function useWebRTC({ localStream, roomId, userId }) {
-	const pc = useRef(null);
+	const peers = useRef(new Map());
 	const socket = useRef(null);
 	const iceQueue = useRef([]);
-	const [remoteStreams, setRemoteStreams] = useState([]); 
+	const [remoteStreams, setRemoteStreams] = useState([]);
 
-	useEffect(() => {
-		if (!localStream) return;
+	const initPeerConnection = (targetId) => {
+		if (peers.current.has(targetId)) {
+			return peers.current.get(targetId);
+		}
 
-		const peer = createPeer({
+		const pc = createPeer({
 			localStream,
-
 			onTrack: (stream) => {
-				console.log("GOT REMOTE STREAM", stream.id);
-
 				setRemoteStreams(prev => {
 					if (prev.find(s => s.id === stream.id)) return prev;
 					return [...prev, stream];
 				});
 			},
-
 			onIceCandidate: (candidate) => {
-				const message = JSON.stringify({ type: "candidate", candidate });
+				const message = JSON.stringify({
+					type: "candidate",
+					target_id: targetId,
+					payload: candidate
+				});
 
 				if (socket.current?.readyState === WebSocket.OPEN) {
 					socket.current.send(message);
 				} else {
-					console.warn("WS not open, candidate skipped");
 					iceQueue.current.push(message);
 				}
 			}
 		});
 
-		pc.current = peer;
+		peers.current.set(targetId, pc);
+		return pc;
+	};
+
+	useEffect(() => {
+		if (!localStream) return;
 
 		const ws = createSignaling({
 			roomId,
 			userId,
-
+			
 			onMessage: async (data) => {
-				if (data.type === "offer") {
-					try {
-						console.log("📥 [Signaling] Получен повторный Offer от сервера. Текущее состояние:", peer.signalingState);
+				const {type, sender_id, payload} = data;
 
-						if (peer.signalingState === "stable") {
-							console.log("Соединение уже в состоянии stable. Игнорируем дубликат.");
-							return;
-						}
+				if (type === "user_joined") {
+					console.log(`Новый юзер ${sender_id} зашел. Создаем для него Offer...`);
+					const pc = initPeerConnection(sender_id);
 
-						console.log("Принимаем входящий оффер от другого участника...");
+					const offer = await pc.createOffer();
+					await pc.setLocalDescription(offer);
 
-						await peer.setRemoteDescription(new RTCSessionDescription({
-							type: "offer",
-							sdp: data.sdp
-						}));
+					ws.send(JSON.stringify({
+						type: "offer",
+						target_id: sender_id,
+						payload: offer
+					}));
+				}
 
-						const answer = await peer.createAnswer();
-						await peer.setLocalDescription(answer);
+				if (type === "offer") {
+					console.log(`Получен Offer от ${sender_id}. Создаем Answer...`);
+					const pc = initPeerConnection(sender_id);
 
-						ws.send(JSON.stringify({
-							type: "answer",
-							sdp: answer.sdp
-						}));
-					} catch (err) {
-						console.error("Ошибка при установке оффера:", err);
+					await pc.setRemoteDescription(new RTCSessionDescription(payload));
+					const answer = await pc.createAnswer();
+					await pc.setLocalDescription(answer);
+
+					ws.send(JSON.stringify({
+						type: "answer",
+						target_id: sender_id,
+						payload: answer
+					}));
+				}
+
+				if (type === "answer") {
+					console.log(`Получен Answer от ${sender_id}`);
+					const pc = peers.current.get(sender_id);
+					if (pc) {
+						await pc.setRemoteDescription(new RTCSessionDescription(payload));
 					}
 				}
 
-				if (data.type === "candidate") {
-					try {
-						if (peer.remoteDescription) {
-							await peer.addIceCandidate(new RTCIceCandidate(data.candidate));
-						} else {
-							console.warn("Кандидат получен раньше описания, игнорируем");
+				if (type === "candidate") {
+					const pc = peers.current.get(sender_id);
+					if (pc && payload) {
+						try {
+							await pc.addIceCandidate(new RTCIceCandidate(payload));
+						} catch (e) {
+							console.error("Ошибка добавления ICE-кандидата пиру:", e);
 						}
-					} catch (err) {
-						console.error("Ошибка добавления ICE-кандидата:", err);
 					}
 				}
 
-				if (data.type === "participants_update") {
-					console.log("Participants updated:", data.users);
+				if (type === "user_left") {
+					console.log(`Юзер ${sender_id} покинул комнату. Закрываем Peer Connection.`);
+					const pc = peers.current.get(sender_id);
+					if (pc) {
+						pc.close();
+						peers.current.delete(sender_id);
+					}
+
+					setRemoteStreams(prev => prev.filter(s => s.id !== sender_id));
+				}
+
+				if (type === "participants_update") {
 					window.dispatchEvent(new CustomEvent("webrtc_event", { detail: data }));
 				}
 
-				if (data.type === "chat_message") {
-					setRemoteStreams(prev => prev);
+				if (type === "chat_message") {
 					window.dispatchEvent(new CustomEvent("chat_message", { detail: data }));
 				}
 
-				if (data.type === "emoji_reaction") {
-					console.log("WS MESSAGE RECEIVED:", data);
+				if (type === "emoji_reaction") {
 					window.dispatchEvent(new CustomEvent("emoji_reaction", { detail: data }));
 				}
 			},
 
-			onOpen: async () => {
-				await sendOffer({ pc: peer, roomId, userId });
-
+			onOpen: () => {
 				iceQueue.current.forEach(msg => ws.send(msg));
 				iceQueue.current = [];
 			}
@@ -109,14 +131,23 @@ export function useWebRTC({ localStream, roomId, userId }) {
 		socket.current = ws;
 
 		return () => {
-			peer.close();
+			peers.current.forEach(pc => pc.close());
+			peers.current.clear();
 			ws.close();
 		};
 	}, [localStream, roomId, userId]);
 
+	const sendMessage = (messageObj) => {
+		if (socket.current && socket.current.readyState === WebSocket.OPEN) {
+			socket.current.send(JSON.stringify(messageObj));
+		} else {
+			console.warn("Не удалось отправить сообщение: сокет закрыт");
+		}
+	}
+
 	return {
 		remoteStreams,
-		ws: socket.current
+		sendMessage
 	};
 }
 
