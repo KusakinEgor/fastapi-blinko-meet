@@ -51,6 +51,11 @@ export function useWebRTC({ localStream, roomId, userId }) {
 				const {type, sender_id, payload} = data;
 
 				if (type === "user_joined") {
+					if (peers.current.has(sender_id)) {
+						peers.current.get(sender_id).close();
+						peers.current.delete(sender_id);
+					}
+
 					console.log(`Новый юзер ${sender_id} зашел. Создаем для него Offer...`);
 					const pc = initPeerConnection(sender_id);
 
