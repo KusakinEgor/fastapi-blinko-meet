@@ -361,11 +361,13 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   }, [screenStream]);
 
   useEffect(() => {
-	  remoteStreams.forEach((stream, i) => {
-		console.log("---- STREAM", i);
-	  	console.log("tracks:", stream.getTracks());
-	  	console.log("video:", stream.getVideoTracks());
-	  	console.log("audio:", stream.getAudioTracks());
+	  remoteStreams.forEach((item, i) => {
+		  if (item.stream) {
+			  console.log("---- STREAM", i, "FROM:", item.userId);
+			  console.log("tracks:", item.stream.getTracks());
+			  console.log("video:", item.stream.getVideoTracks());
+			  console.log("audio:", item.stream.getAudioTracks());
+		  }
 	  });
   }, [remoteStreams]);
 
@@ -376,7 +378,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   //});
 
   const peerStreams = remoteStreams.filter(item => {
-	  return item.stream.getVideoTracks().length > 0;
+	  return item.stream && item.stream.getVideoTracks().length > 0;
   });
 
   const mainStream = peerStreams[0] || null;
