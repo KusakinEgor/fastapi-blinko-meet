@@ -217,13 +217,6 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  } catch (e) {
 		  console.error("Ошибка чтения пользователя из localStorage:", e);
 	  }
-
-	  let guestId = sessionStorage.getItem("guest_rtc_id");
-	  if (!guestId) {
-		  guestId = "guest_" + Math.random().toString(36).substring(2, 8);
-		  sessionStorage.setItem("guest_rtc_id", guestId);
-	  }
-	  return guestId;
   })
   const { participants, count } = useParticipants(slug, userId);
   const isReadyToCall = count === 2;
