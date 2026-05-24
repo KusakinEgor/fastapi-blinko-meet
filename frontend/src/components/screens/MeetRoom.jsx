@@ -650,8 +650,8 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 							Вы
 						</div>
 					</div>
-					{sidebarStreams.map((item, index) => (
-						<div key={item.userId} className="bg-[#171717] w-full aspect-video flex-shrink-0 rounded-xl flex items-center justify-center relative overflow-hidden">
+					{sidebarStreams && sidebarStreams.length > 0 && sidebarStreams.map((item, index) => (
+						<div key={item.userId || index} className="bg-[#171717] w-full aspect-video flex-shrink-0 rounded-xl flex items-center justify-center relative overflow-hidden">
 							<video
 								autoPlay
 								playsInline
