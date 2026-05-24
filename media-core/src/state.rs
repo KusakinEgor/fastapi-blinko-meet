@@ -1,11 +1,12 @@
 use serde::Serialize;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::{Mutex, broadcast};
+use tokio::sync::mpsc::UnboundedSender;
 
 pub struct Participant {
     pub user_id: String,
     pub username: String,
-    pub sender: broadcast::Sender<String>,
+    pub sender: UnboundedSender<String>,
 }
 
 pub struct AppState {
