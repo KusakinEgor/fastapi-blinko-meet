@@ -13,11 +13,7 @@ export function createPeer({ localStream, onTrack, onIceCandidate }) {
 	});
 
 	localStream.getTracks().forEach(track => {
-		console.log("➕ Добавляем локальный трек в PC:", track.kind);
-		pc.addTransceiver(track, {
-			direction: 'sendrecv', 
-			streams: [localStream]
-		});
+		pc.addTrack(track, localStream);
 	});
 
 	pc.ontrack = (event) => {

@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { createPeer } from "./peer";
 import { createSignaling } from "./signaling";
-import { createWebSocketModuleRunnerTransport } from "vite/module-runner";
 
 export function useWebRTC({ localStream, roomId, userId }) {
 	const peers = useRef(new Map());
 	const socket = useRef(null);
-	const iceQueue = useRef([]);
 	const [remoteStreams, setRemoteStreams] = useState([]); 
 
 	const initPeerConnection = (targetId) => {
@@ -18,21 +16,32 @@ export function useWebRTC({ localStream, roomId, userId }) {
 			localStream,
 			onTrack: (stream) => {
 				setRemoteStreams(prev => {
-					if (prev.find(s => s.id === stream.id)) return prev;
-					return [...prev, stream];
+					const exists = prev.find(
+						item => item.userId === targetId
+					);
+
+					if (exists) {
+						return prev;
+					}
+
+					return [
+						...prev,
+						{
+							userId: targetId,
+							stream
+						}
+					];
 				});
 			},
 			onIceCandidate: (candidate) => {
-				const message = JSON.stringify({ 
-					type: "candidate", 
-					target_id: targetId, 
-					payload: candidate 
-				});
-
-				if (socket.current?.readyState === WebSocket.OPEN) {
-					socket.current.send(message);
-				} else {
-					iceQueue.current.push(message);
+				if (socket.current && socket.current.readyState === WebSocket.OPEN) {
+					socket.current.send(
+						JSON.stringify({
+							type: "candidate",
+							target_id: targetId,
+							payload: candidate
+						})
+					);
 				}
 			}
 		});
@@ -51,14 +60,14 @@ export function useWebRTC({ localStream, roomId, userId }) {
 			onMessage: async (data) => {
 				const { type, sender_id, payload } = data;
 
-				if (type === "client_ready") {
-					console.log(`🚀 Новый юзер ${sender_id} зашел. Создаем для него Offer...`);
+				console.log("SIGNAL_TYPE:", type, "FROM:", sender_id);
 
-					if (peers.current.get(sender_id)) {
-						peers.current.get(sender_id).close();
-						peers.current.delete(sender_id);
-						setRemoteStreams(prev => prev.filter(s => s.id !== sender_id));
-					}
+				if (sender_id === userId) {
+					return;
+				}
+
+				if (type === "user_joined") {
+					console.log(`🚀 Новый юзер ${sender_id} зашел. Создаем для него Offer...`);
 
 					const pc = initPeerConnection(sender_id);
 
@@ -76,6 +85,10 @@ export function useWebRTC({ localStream, roomId, userId }) {
 					console.log(`📥 Получен Offer от ${sender_id}. Создаем Answer...`);
 					const pc = initPeerConnection(sender_id);
 
+					if (pc.signalingState !== "stable") {
+						console.warn("PC not stable");
+					}
+
 					await pc.setRemoteDescription(new RTCSessionDescription(payload));
 					const answer = await pc.createAnswer();
 					await pc.setLocalDescription(answer);
@@ -90,19 +103,21 @@ export function useWebRTC({ localStream, roomId, userId }) {
 				if (type === "answer") {
 					console.log(`📥 Получен Answer от ${sender_id}`);
 					const pc = peers.current.get(sender_id);
-					if (pc) {
-						await pc.setRemoteDescription(new RTCSessionDescription(payload));
-					}
+
+					if (!pc) return;
+
+					await pc.setRemoteDescription(new RTCSessionDescription(payload));
 				}
 
 				if (type === "candidate") {
 					const pc = peers.current.get(sender_id);
-					if (pc && payload) {
-						try {
-							await pc.addIceCandidate(new RTCIceCandidate(payload));
-						} catch (e) {
-							console.error("Ошибка добавления ICE-кандидата пиру:", e);
-						}
+
+					if (!pc || !payload) return;
+
+					try {
+						await pc.addIceCandidate(new RTCIceCandidate(payload));
+					} catch (e) {
+						console.error("ICE ERROR:", e);
 					}
 				}
 
@@ -113,7 +128,7 @@ export function useWebRTC({ localStream, roomId, userId }) {
 						pc.close();
 						peers.current.delete(sender_id);
 					}
-					setRemoteStreams(prev => prev.filter(s => s.id !== sender_id));
+					setRemoteStreams(prev => prev.filter(item => item.userId !== sender_id));
 				}
 
 				if (type === "participants_update") {
@@ -128,22 +143,20 @@ export function useWebRTC({ localStream, roomId, userId }) {
 			},
 
 			onOpen: () => {
-				ws.send(JSON.stringify({
-					type: "client_ready"
-				}));
-
-				iceQueue.current.forEach(msg => ws.send(msg));
-				iceQueue.current = [];
+				console.log("Signaling ready");
 			}
 		});
 
 		socket.current = ws;
 
 		return () => {
-			peers.current.forEach(pc => pc.close());
+			peers.current.forEach(pc => {
+				pc.close();
+			});
+
 			peers.current.clear();
+
 			if (socket.current) {
-				socket.current.onclose = null;
 				socket.current.close();
 				socket.current = null;
 			}

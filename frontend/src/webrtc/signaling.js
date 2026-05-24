@@ -8,6 +8,7 @@ export function createSignaling({ roomId, userId, onMessage, onOpen }) {
 	ws.onmessage = async (e) => {
 		try {
 			const data = JSON.parse(e.data);
+			console.log("SIGNAL:", data);
 			onMessage(data);
 		} catch (err) {
 			console.error("Ошибка парсинга WebSocket сообщения:", err);
@@ -18,6 +19,10 @@ export function createSignaling({ roomId, userId, onMessage, onOpen }) {
 		console.log("🔌 Успешное подключение к сигнальному серверу Rust");
 		onOpen();
 	};
+
+	ws.onclose = () => {
+		console.log("WS closed");
+	}
 
 	return ws;
 }
