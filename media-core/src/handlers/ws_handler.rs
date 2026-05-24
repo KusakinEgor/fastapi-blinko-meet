@@ -44,13 +44,13 @@ async fn handle_socket(socket: WebSocket, room_id: String, user_id: String, stat
 
         participants.retain(|p| p.user_id != user_id);
 
-        let new_participant = Arc::new(Participant {
+        let current_participant = Arc::new(Participant {
             user_id: user_id.clone(),
             username: user_id.clone(),
             sender: tx.clone(),
         });
 
-        participants.push(new_participant);
+        participants.push(current_participant.clone());
         println!("Пользователь [{}] вошел в комнату [{}]", user_id, room_id);
 
         let join_msg = serde_json::json!({
@@ -79,6 +79,7 @@ async fn handle_socket(socket: WebSocket, room_id: String, user_id: String, stat
 
     let mut recv_task = tokio::spawn(async move {
         while let Some(Ok(Message::Text(text))) = ws_receiver.next().await {
+            println!("WS MESSAGE: {}", text);
             if let Ok(mut signal) = serde_json::from_str::<SignalMessage>(&text) {
                 signal.sender_id = user_id_clone.clone();
 
@@ -88,7 +89,7 @@ async fn handle_socket(socket: WebSocket, room_id: String, user_id: String, stat
 
                     if let Some(target) = &signal.target_id {
                         if let Some(p) = participants.iter().find(|p| &p.user_id == target) {
-                            let _ = p.sender.send(encoded_msg);
+                            let _ = p.sender.send(encoded_msg.clone());
                         }
                     } else {
                         for p in participants.iter() {
@@ -109,22 +110,17 @@ async fn handle_socket(socket: WebSocket, room_id: String, user_id: String, stat
 
     let mut rooms = state.rooms.lock().await;
     if let Some(participants) = rooms.get_mut(&room_id) {
-        let is_same_socket = participants.iter().any(|p| Arc::ptr_eq(p, &current_participant));
         println!("Пользователь [{}] покинул комнату [{}]", user_id, room_id);
 
-        if is_same_socket {
-            participants.retain(|p| !Arc::ptr_eq(p, &current_participant));
+        participants.retain(|p| !Arc::ptr_eq(p, &current_participant));
 
-            let leave_msg = serde_json::json!({
-                "type": "user_left",
-                "sender_id": user_id
-            }).to_string();
+        let leave_msg = serde_json::json!({
+            "type": "user_left",
+            "sender_id": user_id
+        }).to_string();
 
-            for p in participants.iter() {
-                let _ = p.sender.send(leave_msg.clone());
-            }
-        } else {
-            println!("♻️ [Rust] Пропущен ложный уход для [{}], так как юзер уже переподключился", user_id);
+        for p in participants.iter() {
+            let _ = p.sender.send(leave_msg.clone());
         }
     }
 }
