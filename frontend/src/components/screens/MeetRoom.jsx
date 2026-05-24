@@ -224,14 +224,14 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   const handleEmojiClick = (emoji) => {
 	  const id = Date.now();
 
-	  if (ws && ws.readyState === WebSocket.OPEN) {
-		  ws.send(JSON.stringify({
-			  type: "emoji_reaction",
+	  sendSignal({
+		  type: "emoji_reaction",
+		  payload: {
 			  emoji: emoji,
 			  userId: userId,
 			  id: id
-		  }));
-	  }
+		  }
+	  });
 
 	  setActiveEmojis((prev) => [...prev, { id, emoji }]);
 	  setShowReactions(false);
@@ -241,10 +241,12 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  const handleRemoteReaction = (event) => {
 		  const data = event.detail;
 
-		  if (data.type === "emoji_reaction" && data.userId !== userId) {
+		  const payload = data.payload;
+
+		  if (data.type === "emoji_reaction" && data.sender_id !== userId && payload) {
 			  setActiveEmojis((prev) => [
 				  ...prev,
-				  { id: data.id, emoji: data.emoji }
+				  { id: payload.id, emoji: payload.emoji }
 			  ]);
 		  }
 	  };
