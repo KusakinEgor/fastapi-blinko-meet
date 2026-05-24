@@ -310,7 +310,9 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 
 		  sendSignal({
 			  type: "chat_message",
-			  content: text
+			  payload: {
+				  content: text
+			  }
 		  });
 
 		  setInputValue('');
