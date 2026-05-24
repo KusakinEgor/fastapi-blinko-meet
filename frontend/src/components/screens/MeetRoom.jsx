@@ -375,8 +375,8 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   //    return isNotMe && hasVideo;
   //});
 
-  const peerStreams = remoteStreams.filter(stream => {
-	  return stream.getVideoTracks().length > 0;
+  const peerStreams = remoteStreams.filter(item => {
+	  return item.stream.getVideoTracks().length > 0;
   });
 
   const mainStream = peerStreams[0] || null;
@@ -586,14 +586,14 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 						/>
 					) : mainStream ? (
 						<video
-							key={mainStream.id}
+							key={mainStream.userId}
 							autoPlay
 							playsInline
 							muted
 							ref={(el) => {
-								if (el && el.srcObject !== mainStream) {
-									console.log("🍏 [UI] Привязываем стрим к видео-тегу:", mainStream.id);
-									el.srcObject = mainStream;
+								if (el && el.srcObject !== mainStream.stream) {
+									console.log("🍏 [UI] Привязываем стрим к видео-тегу:", mainStream.stream.id);
+									el.srcObject = mainStream.stream;
 								}
 							}}
 							onLoadedMetadata={(e) => {
@@ -644,16 +644,16 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 							Вы
 						</div>
 					</div>
-					{sidebarStreams.map((stream, index) => (
-						<div key={stream.id} className="bg-[#171717] w-full aspect-video flex-shrink-0 rounded-xl flex items-center justify-center relative overflow-hidden">
+					{sidebarStreams.map((item, index) => (
+						<div key={item.userId} className="bg-[#171717] w-full aspect-video flex-shrink-0 rounded-xl flex items-center justify-center relative overflow-hidden">
 							<video
 								autoPlay
 								playsInline
 								muted
 								ref={(el) => {
-									if (el && el.srcObject !== stream) {
-										console.log(`🎥 Рендерим поток участника в боковой панели: ${stream.id}`);
-										el.srcObject = stream;
+									if (el && el.srcObject !== item.stream) {
+										console.log(`🎥 Рендерим поток участника в боковой панели: ${item.stream.id}`);
+										el.srcObject = item.stream;
 									}
 								}}
 								className="w-full h-full object-cover"
