@@ -533,12 +533,12 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 							) : (
 								<div className="flex flex-col flex-1 min-h-0">
 									<div className="flex-1 overflow-y-auto mb-4 space-y-3 pr-2 custom-scrollbar" style={{ maxHeight: 'calc(100vh - 34vh)' }}>
-										{messages.length === 0 ? (
+										{(!messages || messages.length === 0) ? (
 											<div className="text-gray-500 text-sm italic">{t("meeting_room.no_messages")}</div>
 										) : (
-											messages.map((msg) => (
+											messages?.map((msg) => (
 												<div key={msg.id} className="self-end bg-[#262626] text-white p-3 rounded-2xl rounded-tr-none max-w-[80%] ml-auto shadow-sm">
-													<p className="text-sm leading-relaxed break-words">{parseMessage(msg.text)}</p>
+													<p className="text-sm leading-relaxed break-words">{parseMessage(msg.text || msg.content)}</p>
 													<span className="block text-[10px] text-gray-500 text-right mt-1">
 														{msg.time}
 													</span>
