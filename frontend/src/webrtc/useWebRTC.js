@@ -2,11 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import { createPeer } from "./peer";
 import { createSignaling } from "./signaling";
 
-export function useWebRTC({ localStream, roomId, userId }) {
+export function useWebRTC({
+	localStream,
+	roomId,
+	userId
+}) {
 	const peers = useRef(new Map());
 	const socket = useRef(null);
-	const localStreamRef = useState(null);
-	const [remoteStreams, setRemoteStreams] = useState([]); 
+
+	const localStreamRef = useRef(null);
+
+	const [remoteStreams, setRemoteStreams] =
+		useState([]);
 
 	useEffect(() => {
 		localStreamRef.current = localStream;
@@ -17,12 +24,26 @@ export function useWebRTC({ localStream, roomId, userId }) {
 			return peers.current.get(targetId);
 		}
 
+		if (!localStreamRef.current) {
+			console.error(
+				"localStream"
+			);
+			return null;
+		}
+
 		const pc = createPeer({
-			localStream,
+			localStream: localStreamRef.current,
+
 			onTrack: (stream) => {
+				console.log(
+					"REMOTE STREAM:",
+					stream.id
+				);
+
 				setRemoteStreams(prev => {
 					const exists = prev.find(
-						item => item.userId === targetId
+						item =>
+							item.userId === targetId
 					);
 
 					if (exists) {
@@ -38,8 +59,13 @@ export function useWebRTC({ localStream, roomId, userId }) {
 					];
 				});
 			},
+
 			onIceCandidate: (candidate) => {
-				if (socket.current && socket.current.readyState === WebSocket.OPEN) {
+				if (
+					socket.current &&
+					socket.current.readyState ===
+						WebSocket.OPEN
+				) {
 					socket.current.send(
 						JSON.stringify({
 							type: "candidate",
@@ -52,133 +78,197 @@ export function useWebRTC({ localStream, roomId, userId }) {
 		});
 
 		peers.current.set(targetId, pc);
+
 		return pc;
 	};
 
 	useEffect(() => {
-		if (!localStream) return;
+		if (!roomId || !userId) return;
 
 		const ws = createSignaling({
 			roomId,
 			userId,
 
 			onMessage: async (data) => {
-				const { type, sender_id, payload } = data;
+				const {
+					type,
+					sender_id,
+					payload
+				} = data;
 
-				console.log("SIGNAL_TYPE:", type, "FROM:", sender_id);
+				console.log(
+					"SIGNAL:",
+					type,
+					"FROM:",
+					sender_id
+				);
 
 				if (sender_id === userId) {
 					return;
 				}
 
 				if (type === "user_joined") {
-					console.log(`🚀 Новый юзер ${sender_id} зашел. Создаем для него Offer...`);
+					console.log(
+						`USER JOINED: ${sender_id}`
+					);
 
-					const pc = initPeerConnection(sender_id);
-
-					const offer = await pc.createOffer();
-					await pc.setLocalDescription(offer);
-
-					ws.send(JSON.stringify({
-						type: "offer",
-						target_id: sender_id,
-						payload: offer
-					}));
-				}
-
-				if (type === "offer") {
-					console.log(`📥 Получен Offer от ${sender_id}. Создаем Answer...`);
-					const pc = initPeerConnection(sender_id);
-
-					if (pc.signalingState !== "stable") {
-						console.warn("PC not stable");
-					}
-
-					await pc.setRemoteDescription(new RTCSessionDescription(payload));
-					const answer = await pc.createAnswer();
-					await pc.setLocalDescription(answer);
-
-					ws.send(JSON.stringify({
-						type: "answer",
-						target_id: sender_id,
-						payload: answer
-					}));
-				}
-
-				if (type === "answer") {
-					console.log(`📥 Получен Answer от ${sender_id}`);
-					const pc = peers.current.get(sender_id);
+					const pc =
+						initPeerConnection(sender_id);
 
 					if (!pc) return;
 
-					await pc.setRemoteDescription(new RTCSessionDescription(payload));
+					const offer =
+						await pc.createOffer();
+
+					await pc.setLocalDescription(
+						offer
+					);
+
+					ws.send(
+						JSON.stringify({
+							type: "offer",
+							target_id: sender_id,
+							payload: offer
+						})
+					);
+				}
+
+				if (type === "offer") {
+					console.log(
+						`OFFER FROM ${sender_id}`
+					);
+
+					const pc =
+						initPeerConnection(sender_id);
+
+					if (!pc) return;
+
+					await pc.setRemoteDescription(
+						new RTCSessionDescription(
+							payload
+						)
+					);
+
+					const answer =
+						await pc.createAnswer();
+
+					await pc.setLocalDescription(
+						answer
+					);
+
+					ws.send(
+						JSON.stringify({
+							type: "answer",
+							target_id: sender_id,
+							payload: answer
+						})
+					);
+				}
+
+				if (type === "answer") {
+					console.log(
+						`ANSWER FROM ${sender_id}`
+					);
+
+					const pc =
+						peers.current.get(sender_id);
+
+					if (!pc) return;
+
+					await pc.setRemoteDescription(
+						new RTCSessionDescription(
+							payload
+						)
+					);
 				}
 
 				if (type === "candidate") {
-					const pc = peers.current.get(sender_id);
+					const pc =
+						peers.current.get(sender_id);
 
 					if (!pc || !payload) return;
 
 					try {
-						await pc.addIceCandidate(new RTCIceCandidate(payload));
+						await pc.addIceCandidate(
+							new RTCIceCandidate(
+								payload
+							)
+						);
 					} catch (e) {
-						console.error("ICE ERROR:", e);
+						console.error(
+							"ICE ERROR:",
+							e
+						);
 					}
 				}
 
 				if (type === "user_left") {
-					console.log(`❌ Юзер ${sender_id} покинул комнату. Закрываем Peer Connection.`);
-					const pc = peers.current.get(sender_id);
+					console.log(
+						`USER LEFT: ${sender_id}`
+					);
+
+					const pc =
+						peers.current.get(sender_id);
+
 					if (pc) {
 						pc.close();
-						peers.current.delete(sender_id);
-					}
-					setRemoteStreams(prev => prev.filter(item => item.userId !== sender_id));
-				}
 
-				if (type === "participants_update") {
-					window.dispatchEvent(new CustomEvent("webrtc_event", { detail: data }));
-				}
-				if (type === "chat_message") {
-					window.dispatchEvent(new CustomEvent("chat_message", { detail: data }));
-				}
-				if (type === "emoji_reaction") {
-					window.dispatchEvent(new CustomEvent("emoji_reaction", { detail: data }));
+						peers.current.delete(
+							sender_id
+						);
+					}
+
+					setRemoteStreams(prev =>
+						prev.filter(
+							item =>
+								item.userId !==
+								sender_id
+						)
+					);
 				}
 			},
 
 			onOpen: () => {
-				console.log("Signaling ready");
+				console.log(
+					"SIGNALING READY"
+				);
 			}
 		});
 
 		socket.current = ws;
 
 		return () => {
+			console.log("CLEANUP WEBRTC");
+
 			peers.current.forEach(pc => {
 				pc.close();
 			});
 
 			peers.current.clear();
 
+			setRemoteStreams([]);
+
 			if (socket.current) {
 				socket.current.close();
 				socket.current = null;
 			}
 		};
-	}, [localStream, roomId, userId]);
+	}, [roomId, userId]);
 
 	const sendMessage = (messageObj) => {
-		if (socket.current && socket.current.readyState === WebSocket.OPEN) {
-			socket.current.send(JSON.stringify(messageObj));
-		} else {
-			console.warn("Не удалось отправить сообщение: сокет закрыт");
+		if (
+			socket.current &&
+			socket.current.readyState ===
+				WebSocket.OPEN
+		) {
+			socket.current.send(
+				JSON.stringify(messageObj)
+			);
 		}
-	}
+	};
 
 	return {
 		remoteStreams,
 		sendMessage
 	};
 }
-
