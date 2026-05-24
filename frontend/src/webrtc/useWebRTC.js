@@ -50,45 +50,65 @@ export function useWebRTC({ localStream, roomId, userId }) {
 			onMessage: async (data) => {
 				const {type, sender_id, payload} = data;
 
+				const isPolite = userId < sender_id;
+
 				if (type === "user_joined") {
+					console.log(`Новый юзер ${sender_id} зашел. Создаем для него Offer...`);
+
 					if (peers.current.has(sender_id)) {
 						peers.current.get(sender_id).close();
 						peers.current.delete(sender_id);
+						setRemoteStreams(prev => prev.filter(s => s.id !== sender_id));
 					}
 
-					console.log(`Новый юзер ${sender_id} зашел. Создаем для него Offer...`);
 					const pc = initPeerConnection(sender_id);
 
-					const offer = await pc.createOffer();
-					await pc.setLocalDescription(offer);
 
-					ws.send(JSON.stringify({
-						type: "offer",
-						target_id: sender_id,
-						payload: offer
-					}));
+					if (!isPolite) {
+						try {
+							console.log(`Отправляем Offer для ${sender_id}...`);
+							const offer = await pc.createOffer();
+							await pc.setLocalDescription(offer);
+							ws.send(JSON.stringify({ type: "offer", target_id: sender_id, payload: offer }));
+						} catch (err) {
+							console.error("Ошибка создания стартового оффера:", err);
+						}
+					}
 				}
 
 				if (type === "offer") {
 					console.log(`Получен Offer от ${sender_id}. Создаем Answer...`);
 					const pc = initPeerConnection(sender_id);
 
-					await pc.setRemoteDescription(new RTCSessionDescription(payload));
-					const answer = await pc.createAnswer();
-					await pc.setLocalDescription(answer);
+					try {
+						const collision = type === "offer" &&
+							(pc.signalingState !== "stable" || pc.localDescription);
 
-					ws.send(JSON.stringify({
-						type: "answer",
-						target_id: sender_id,
-						payload: answer
-					}));
+						if (collision && !isPolite) {
+							console.log(`Коллизия офферов! Мы impolite, игнорируем оффер от ${sender_id}`);
+							return;
+						}
+
+						console.log(`Принимаем Offer от ${sender_id}. Создаем Answer...`);
+						await pc.setRemoteDescription(new RTCSessionDescription(payload));
+						const answer = await pc.createAnswer();
+						await pc.setLocalDescription(answer);
+
+						ws.send(JSON.stringify({ type: "answer", target_id: sender_id, payload: answer }));
+					} catch (err) {
+						console.error("Ошибка обработки входящего оффера:", err);
+					}
 				}
 
 				if (type === "answer") {
 					console.log(`Получен Answer от ${sender_id}`);
 					const pc = peers.current.get(sender_id);
 					if (pc) {
-						await pc.setRemoteDescription(new RTCSessionDescription(payload));
+						try {
+							await pc.setRemoteDescription(new RTCSessionDescription(payload));
+						} catch (err) {
+							console.error("Ошибка установки Answer:", err);
+						}
 					}
 				}
 
