@@ -26,7 +26,6 @@ export function useWebRTC({ localStream, roomId, userId }) {
 					target_id: targetId,
 					payload: candidate
 				});
-
 				if (socket.current?.readyState === WebSocket.OPEN) {
 					socket.current.send(message);
 				} else {
@@ -37,15 +36,12 @@ export function useWebRTC({ localStream, roomId, userId }) {
 
 		if (localStream) {
 			localStream.getTracks().forEach(track => {
-				console.log("[Dynamic] Добавляем локальный трек в PC для:", targetId, track.kind);
+				console.log("➕ Добавляем трек:", track.kind, "для:", targetId);
 				pc.addTransceiver(track, {
 					direction: 'sendrecv',
 					streams: [localStream]
 				});
 			});
-		} else {
-			console.warn(`Внимание: созвон с ${targetId} начался до того, как включилась камера!`);
-			pc.addTransceiver('video', { direction: 'recvonly' });
 		}
 
 		peers.current.set(targetId, pc);
@@ -53,20 +49,17 @@ export function useWebRTC({ localStream, roomId, userId }) {
 	};
 
 	useEffect(() => {
-		if (!localStream) return;
+		if (!localStream || !roomId || !userId) return;
 
 		const ws = createSignaling({
 			roomId,
 			userId,
-			
 			onMessage: async (data) => {
-				const {type, sender_id, payload} = data;
-
+				const { type, sender_id, payload } = data;
 				const isPolite = userId < sender_id;
 
 				if (type === "user_joined") {
-					console.log(`Новый юзер ${sender_id} зашел. Создаем для него Offer...`);
-
+					console.log(`🚀 Юзер ${sender_id} зашел.`);
 					if (peers.current.has(sender_id)) {
 						peers.current.get(sender_id).close();
 						peers.current.delete(sender_id);
@@ -75,90 +68,58 @@ export function useWebRTC({ localStream, roomId, userId }) {
 
 					const pc = initPeerConnection(sender_id);
 
-
+					// Оффер шлет только ОДИН (невежливый), предотвращая столкновение
 					if (!isPolite) {
 						try {
-							console.log(`Отправляем Offer для ${sender_id}...`);
 							const offer = await pc.createOffer();
 							await pc.setLocalDescription(offer);
 							ws.send(JSON.stringify({ type: "offer", target_id: sender_id, payload: offer }));
 						} catch (err) {
-							console.error("Ошибка создания стартового оффера:", err);
+							console.error("Ошибка Offer:", err);
 						}
 					}
 				}
 
 				if (type === "offer") {
-					console.log(`Получен Offer от ${sender_id}. Создаем Answer...`);
+					console.log(`📥 Оффер от ${sender_id}`);
 					const pc = initPeerConnection(sender_id);
-
 					try {
-						const collision = type === "offer" &&
-							(pc.signalingState !== "stable" || pc.localDescription);
-
-						if (collision && !isPolite) {
-							console.log(`Коллизия офферов! Мы impolite, игнорируем оффер от ${sender_id}`);
-							return;
-						}
-
-						console.log(`Принимаем Offer от ${sender_id}. Создаем Answer...`);
 						await pc.setRemoteDescription(new RTCSessionDescription(payload));
 						const answer = await pc.createAnswer();
 						await pc.setLocalDescription(answer);
-
 						ws.send(JSON.stringify({ type: "answer", target_id: sender_id, payload: answer }));
 					} catch (err) {
-						console.error("Ошибка обработки входящего оффера:", err);
+						console.error("Ошибка Answer:", err);
 					}
 				}
 
 				if (type === "answer") {
-					console.log(`Получен Answer от ${sender_id}`);
+					console.log(`📥 Ансвер от ${sender_id}`);
 					const pc = peers.current.get(sender_id);
 					if (pc) {
-						try {
-							await pc.setRemoteDescription(new RTCSessionDescription(payload));
-						} catch (err) {
-							console.error("Ошибка установки Answer:", err);
-						}
+						await pc.setRemoteDescription(new RTCSessionDescription(payload));
 					}
 				}
 
 				if (type === "candidate") {
 					const pc = peers.current.get(sender_id);
 					if (pc && payload) {
-						try {
-							await pc.addIceCandidate(new RTCIceCandidate(payload));
-						} catch (e) {
-							console.error("Ошибка добавления ICE-кандидата пиру:", e);
-						}
+						try { await pc.addIceCandidate(new RTCIceCandidate(payload)); } catch (e) {}
 					}
 				}
 
 				if (type === "user_left") {
-					console.log(`Юзер ${sender_id} покинул комнату. Закрываем Peer Connection.`);
+					console.log(`❌ Юзер ${sender_id} вышел.`);
 					const pc = peers.current.get(sender_id);
-					if (pc) {
-						pc.close();
-						peers.current.delete(sender_id);
-					}
-
+					if (pc) { pc.close(); peers.current.delete(sender_id); }
 					setRemoteStreams(prev => prev.filter(s => s.id !== sender_id));
 				}
 
-				if (type === "participants_update") {
-					window.dispatchEvent(new CustomEvent("webrtc_event", { detail: data }));
-				}
-
-				if (type === "chat_message") {
-					window.dispatchEvent(new CustomEvent("chat_message", { detail: data }));
-				}
-
-				if (type === "emoji_reaction") {
-					window.dispatchEvent(new CustomEvent("emoji_reaction", { detail: data }));
-				}
+				// Твои кастомные ивенты
+				if (type === "participants_update") window.dispatchEvent(new CustomEvent("webrtc_event", { detail: data }));
+				if (type === "chat_message") window.dispatchEvent(new CustomEvent("chat_message", { detail: data }));
+				if (type === "emoji_reaction") window.dispatchEvent(new CustomEvent("emoji_reaction", { detail: data }));
 			},
-
 			onOpen: () => {
 				iceQueue.current.forEach(msg => ws.send(msg));
 				iceQueue.current = [];
@@ -170,15 +131,26 @@ export function useWebRTC({ localStream, roomId, userId }) {
 		return () => {
 			peers.current.forEach(pc => pc.close());
 			peers.current.clear();
-			ws.close();
+			if (socket.current) {
+				socket.current.onclose = null;
+				socket.current.close();
+				socket.current = null;
+			}
 		};
-	}, [localStream, roomId, userId]);
+	}, [localStream, roomId, userId]); 
+
+	useEffect(() => {
+		const interval = setInterval(() => {
+			if (socket.current && socket.current.readyState === WebSocket.OPEN) {
+				socket.current.send(JSON.stringify({ type: "ping" }));
+			}
+		}, 2500);
+		return () => clearInterval(interval);
+	}, []);
 
 	const sendMessage = (messageObj) => {
 		if (socket.current && socket.current.readyState === WebSocket.OPEN) {
 			socket.current.send(JSON.stringify(messageObj));
-		} else {
-			console.warn("Не удалось отправить сообщение: сокет закрыт");
 		}
 	}
 
