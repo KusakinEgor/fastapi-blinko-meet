@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPeer } from "./peer";
 import { createSignaling } from "./signaling";
+import { createWebSocketModuleRunnerTransport } from "vite/module-runner";
 
 export function useWebRTC({ localStream, roomId, userId }) {
 	const peers = useRef(new Map());
@@ -50,10 +51,17 @@ export function useWebRTC({ localStream, roomId, userId }) {
 			onMessage: async (data) => {
 				const { type, sender_id, payload } = data;
 
-				if (type === "user_joined") {
+				if (type === "client_ready") {
 					console.log(`🚀 Новый юзер ${sender_id} зашел. Создаем для него Offer...`);
+
+					if (peers.current.get(sender_id)) {
+						peers.current.get(sender_id).close();
+						peers.current.delete(sender_id);
+						setRemoteStreams(prev => prev.filter(s => s.id !== sender_id));
+					}
+
 					const pc = initPeerConnection(sender_id);
-					
+
 					const offer = await pc.createOffer();
 					await pc.setLocalDescription(offer);
 
@@ -120,6 +128,10 @@ export function useWebRTC({ localStream, roomId, userId }) {
 			},
 
 			onOpen: () => {
+				ws.send(JSON.stringify({
+					type: "client_ready"
+				}));
+
 				iceQueue.current.forEach(msg => ws.send(msg));
 				iceQueue.current = [];
 			}
@@ -130,7 +142,11 @@ export function useWebRTC({ localStream, roomId, userId }) {
 		return () => {
 			peers.current.forEach(pc => pc.close());
 			peers.current.clear();
-			ws.close();
+			if (socket.current) {
+				socket.current.onclose = null;
+				socket.current.close();
+				socket.current = null;
+			}
 		};
 	}, [localStream, roomId, userId]);
 
