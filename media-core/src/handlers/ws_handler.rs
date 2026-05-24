@@ -16,7 +16,7 @@ struct SignalMessage {
     #[serde(default)]
     sender_id: String,
     target_id: Option<String>,
-    payload: serde_json::Value,
+    payload: Option<serde_json::Value>,
 }
 
 pub async fn ws_handler(
@@ -31,6 +31,12 @@ async fn handle_socket(socket: WebSocket, room_id: String, user_id: String, stat
     let (mut ws_sender, mut ws_receiver) = socket.split();
 
     let (tx, mut rx) = tokio::sync::broadcast::channel::<String>(100);
+
+    let current_participant = Arc::new(Participant {
+        user_id: user_id.clone(),
+        username: user_id.clone(),
+        sender: tx.clone(),
+    });
 
     {
         let mut rooms = state.rooms.lock().await;
@@ -103,16 +109,22 @@ async fn handle_socket(socket: WebSocket, room_id: String, user_id: String, stat
 
     let mut rooms = state.rooms.lock().await;
     if let Some(participants) = rooms.get_mut(&room_id) {
-        participants.retain(|p| p.user_id != user_id);
+        let is_same_socket = participants.iter().any(|p| Arc::ptr_eq(p, &current_participant));
         println!("Пользователь [{}] покинул комнату [{}]", user_id, room_id);
 
-        let leave_msg = serde_json::json!({
-            "type": "user_left",
-            "sender_id": user_id
-        }).to_string();
+        if is_same_socket {
+            participants.retain(|p| !Arc::ptr_eq(p, &current_participant));
 
-        for p in participants.iter() {
-            let _ = p.sender.send(leave_msg.clone());
+            let leave_msg = serde_json::json!({
+                "type": "user_left",
+                "sender_id": user_id
+            }).to_string();
+
+            for p in participants.iter() {
+                let _ = p.sender.send(leave_msg.clone());
+            }
+        } else {
+            println!("♻️ [Rust] Пропущен ложный уход для [{}], так как юзер уже переподключился", user_id);
         }
     }
 }
