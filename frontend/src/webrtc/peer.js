@@ -3,7 +3,7 @@ export function createPeer({ localStream, onTrack, onIceCandidate }) {
 		iceServers: [
 			{ urls: "stun:://google.com" },
 			{
-				urls: "turn:77.110.125.7:3478",
+				urls: "turn:77.110.125.7:3478:?transport=udp",
 				username: "coolserver",
 				credential: "niceserver"
 			}
