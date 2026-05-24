@@ -14,7 +14,6 @@ export function useWebRTC({ localStream, roomId, userId }) {
 		}
 
 		const pc = createPeer({
-			localStream,
 			onTrack: (stream) => {
 				setRemoteStreams(prev => {
 					if (prev.find(s => s.id === stream.id)) return prev;
@@ -35,6 +34,19 @@ export function useWebRTC({ localStream, roomId, userId }) {
 				}
 			}
 		});
+
+		if (localStream) {
+			localStream.getTracks().forEach(track => {
+				console.log("[Dynamic] Добавляем локальный трек в PC для:", targetId, track.kind);
+				pc.addTransceiver(track, {
+					direction: 'sendrecv',
+					streams: [localStream]
+				});
+			});
+		} else {
+			console.warn(`Внимание: созвон с ${targetId} начался до того, как включилась камера!`);
+			pc.addTransceiver('video', { direction: 'recvonly' });
+		}
 
 		peers.current.set(targetId, pc);
 		return pc;
