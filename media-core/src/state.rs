@@ -1,6 +1,6 @@
 use serde::Serialize;
 use std::{collections::HashMap, sync::Arc};
-use tokio::sync::{Mutex, broadcast};
+use tokio::sync::Mutex;
 use tokio::sync::mpsc::UnboundedSender;
 
 pub struct Participant {
@@ -18,3 +18,4 @@ pub struct ParticipantInfo {
     pub user_id: String,
     pub username: String,
 }
+

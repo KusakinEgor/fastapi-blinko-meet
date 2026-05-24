@@ -43,7 +43,6 @@ async fn handle_socket(
 ) {
     let (mut ws_sender, mut ws_receiver) = socket.split();
 
-    // вњ… РќРћР РњРђР›Р¬РќР«Р™ CHANNEL
     let (tx, mut rx) =
         tokio::sync::mpsc::unbounded_channel::<String>();
 
@@ -53,7 +52,6 @@ async fn handle_socket(
         sender: tx.clone(),
     });
 
-    // вњ… JOIN ROOM
     {
         let mut rooms = state.rooms.lock().await;
 
@@ -61,32 +59,17 @@ async fn handle_socket(
             .entry(room_id.clone())
             .or_insert_with(Vec::new);
 
-        // СѓРґР°Р»СЏРµРј СЃС‚Р°СЂРѕРµ РїРѕРґРєР»СЋС‡РµРЅРёРµ С‚РѕРіРѕ Р¶Рµ СЋР·РµСЂР°
         participants.retain(|p| p.user_id != user_id);
 
         participants.push(current_participant.clone());
 
         println!(
-            "вњ… [{}] joined room [{}]",
+            "✅ [{}] joined room [{}]",
             user_id,
             room_id
         );
-
-        // СѓРІРµРґРѕРјР»СЏРµРј РѕСЃС‚Р°Р»СЊРЅС‹С…
-        let join_msg = serde_json::json!({
-            "type": "user_joined",
-            "sender_id": user_id.clone()
-        })
-        .to_string();
-
-        for p in participants.iter() {
-            if p.user_id != user_id {
-                let _ = p.sender.send(join_msg.clone());
-            }
-        }
     }
 
-    // вњ… SEND TASK
     let mut send_task = tokio::spawn(async move {
         while let Some(msg) = rx.recv().await {
             if ws_sender
@@ -99,7 +82,6 @@ async fn handle_socket(
         }
     });
 
-    // вњ… RECEIVE TASK
     let state_clone = state.clone();
     let room_id_clone = room_id.clone();
     let user_id_clone = user_id.clone();
@@ -108,11 +90,13 @@ async fn handle_socket(
         while let Some(Ok(Message::Text(text))) =
             ws_receiver.next().await
         {
-            println!(
-                "рџ“Ё [{}] WS MESSAGE: {}",
-                user_id_clone,
-                text
-            );
+            if !text.contains("\"type\":\"ping\"") {
+                println!(
+                    "📩 [{}] WS MESSAGE: {}",
+                    user_id_clone,
+                    text
+                );
+            }
 
             let mut signal =
                 match serde_json::from_str::<SignalMessage>(
@@ -121,7 +105,7 @@ async fn handle_socket(
                     Ok(v) => v,
                     Err(err) => {
                         println!(
-                            "вќЊ parse error: {:?}",
+                            "❌ parse error: {:?}",
                             err
                         );
                         continue;
@@ -138,7 +122,6 @@ async fn handle_socket(
             if let Some(participants) =
                 rooms.get(&room_id_clone)
             {
-                // targeted message
                 if let Some(target_id) =
                     &signal.target_id
                 {
@@ -153,7 +136,6 @@ async fn handle_socket(
                             .send(encoded.clone());
                     }
                 }
-                // broadcast
                 else {
                     for p in participants.iter() {
                         if p.user_id != user_id_clone {
@@ -167,12 +149,11 @@ async fn handle_socket(
         }
 
         println!(
-            "вќЊ recv_task ended for [{}]",
+            "❌ recv_task ended for [{}]",
             user_id_clone
         );
     });
 
-    // вњ… WAIT
     tokio::select! {
         _ = &mut send_task => {
             recv_task.abort();
@@ -183,43 +164,42 @@ async fn handle_socket(
         }
     };
 
-    // вњ… DISCONNECT
     {
         let mut rooms = state.rooms.lock().await;
 
         if let Some(participants) =
             rooms.get_mut(&room_id)
         {
-            println!(
-                "вќЊ [{}] left room [{}]",
-                user_id,
-                room_id
-            );
+            let is_same_socket = participants.iter().any(|p| Arc::ptr_eq(p, &current_participant));
 
-            participants.retain(|p| {
-                !Arc::ptr_eq(
-                    p,
-                    &current_participant
-                )
-            });
-
-            let leave_msg = serde_json::json!({
-                "type": "user_left",
-                "sender_id": user_id.clone()
-            })
-            .to_string();
-
-            for p in participants.iter() {
-                let _ =
-                    p.sender.send(leave_msg.clone());
-            }
-
-            // cleanup empty room
-            if participants.is_empty() {
-                rooms.remove(&room_id);
+            if is_same_socket {
+                participants.retain(|p| {
+                    !Arc::ptr_eq(p, &current_participant)
+                });
 
                 println!(
-                    "рџ—‘ room [{}] deleted",
+                    "❌ [{}] left room [{}]",
+                    user_id,
+                    room_id
+                );
+
+                let leave_msg = serde_json::json!({
+                    "type": "user_left",
+                    "sender_id": user_id.clone()
+                })
+                .to_string();
+
+                for p in participants.iter() {
+                    let _ = p.sender.send(leave_msg.clone());
+                }
+            } else {
+                println!("♻️ [Rust] Пропущен ложный уход для [{}], так как юзер уже переподключился", user_id);
+            }
+
+            if participants.is_empty() {
+                rooms.remove(&room_id);
+                println!(
+                    "🗑️ room [{}] deleted",
                     room_id
                 );
             }
@@ -247,3 +227,4 @@ pub async fn get_participants(
 
     Json(users)
 }
+
