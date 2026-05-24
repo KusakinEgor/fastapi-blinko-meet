@@ -538,7 +538,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 										) : (
 											messages?.map((msg) => (
 												<div key={msg.id} className="self-end bg-[#262626] text-white p-3 rounded-2xl rounded-tr-none max-w-[80%] ml-auto shadow-sm">
-													<p className="text-sm leading-relaxed break-words">{parseMessage(msg.text || msg.content)}</p>
+													<p className="text-sm leading-relaxed break-words">{parseMessage(msg.text || msg.content || "")}</p>
 													<span className="block text-[10px] text-gray-500 text-right mt-1">
 														{msg.time}
 													</span>
