@@ -1,7 +1,7 @@
 export function createPeer({ localStream, onTrack, onIceCandidate }) {
 	const pc = new RTCPeerConnection({
 		iceServers: [
-			{ urls: "stun:://google.com" },
+			{ urls: "stun:stun.l.google.com:19302" },
 			{
 				urls: "turn:77.110.125.7:3478:?transport=udp",
 				username: "coolserver",
