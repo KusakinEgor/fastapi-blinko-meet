@@ -8,6 +8,13 @@ export const roomsApi = {
 		});
 	},
 
+	joinRoom: async (slug, password = "") => {
+		return await apiRequest(`/rooms/${slug}/join`, {
+			method: "POST",
+			body: JSON.stringify({ password }),
+		});
+	},
+
 	leaveRoom: async (slug) => {
 		return await apiRequest(`/rooms/${slug}/leave`, {
 			method: "POST"

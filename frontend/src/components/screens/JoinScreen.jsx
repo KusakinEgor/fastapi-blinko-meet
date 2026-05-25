@@ -3,6 +3,7 @@ import Sidebar from "../ui/SideBar";
 import SettingsModal from "../ui/SettingsModal";
 import { useNavigate, useParams } from "react-router-dom";
 import { useLang } from "../../hooks/useLang";
+import { roomsApi } from "../../api/rooms";
 
 export default function JoinScreen({ onBack, onJoin }) {
   const navigate = useNavigate();
@@ -49,7 +50,7 @@ export default function JoinScreen({ onBack, onJoin }) {
 	  }
   }, [stream]);
 
-  const handleJoinClick = () => {
+  const handleJoinClick = async () => {
 	  if (!stream) {
 		  alert("Пожалуйста, подождите, пока камера включится");
 		  return;
@@ -59,9 +60,17 @@ export default function JoinScreen({ onBack, onJoin }) {
 		  return;
 	  }
 
-	  onJoin({ name, meetingCode, meetingPassword, slug });
+	  try {
+		  const joinData = await roomsApi.joinRoom(slug, meetingPassword);
 
-	  navigate(`/meet-room/${slug}`);
+		  onJoin({ name, meetingCode, meetingPassword, slug });
+		  
+		  navigate(`/meet-room/${slug}`);
+	  } catch (error) {
+		  console.error("Ошибка входа в комнату:", error);
+		  alert(error.message || "Неверный пароль или комната не найдена");
+	  }
+
   };
 
   return (
