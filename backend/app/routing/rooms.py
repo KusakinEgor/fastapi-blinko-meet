@@ -1,6 +1,7 @@
 import uuid
 import secrets
 from datetime import datetime, timezone
+from passlib.context import CryptContext
 
 from sqlalchemy import select
 from app.database.db import get_db_session
@@ -12,6 +13,8 @@ from app.models.room import RoomCreate, RoomOut, RoomJoinResponse, RoomJoinReque
 from app.services.get_user import get_current_user
 
 router = APIRouter(prefix="/rooms", tags=["Rooms"])
+
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 @router.post(
         "/create",
@@ -27,12 +30,17 @@ async def create_room(
 ):
     random_slug = f"{secrets.token_hex(3)}-{secrets.token_hex(3)}"
 
+    hashed_password = None
+
+    if room_data.password:
+        hashed_password = pwd_context.hash(room_data.password)
+
     new_room = Rooms(
             owner_id=current_user.id,
             slug=random_slug,
             name=room_data.name,
             is_private=bool(room_data.password),
-            password=room_data.password,
+            password=hashed_password,
             is_active=True
     )
 
