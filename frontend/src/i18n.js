@@ -68,8 +68,8 @@ i18n
 			  camera_proh: "Camera prohibited",
 			  allow: "Allow",
 			  new_video: "New video meeting",
-			  your_name: "Your name",
-			  meeting_title: "Meeting title",
+			  your_name: "Meeting title",
+			  meeting_title: "Room password",
 			  create_and_join: "Create and Join"
 		  },
 		  join_preview: {
@@ -184,8 +184,8 @@ i18n
 			  camera_proh: "Камера заблокирована",
 			  allow: "Разрешить",
 			  new_video: "Новая видеовстреча",
-			  your_name: "Ваше имя",
-			  meeting_title: "Название встречи",
+			  your_name: "Название встречи",
+			  meeting_title: "Пароль видеовстречи",
 			  create_and_join: "Создать и войти"
 		  },
 		  join_preview: {
