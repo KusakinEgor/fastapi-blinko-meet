@@ -61,17 +61,19 @@ export default function JoinScreen({ onBack, onJoin }) {
 		  alert("Пожалуйста, подождите, пока камера включится");
 		  return;
 	  }
-	  if (!name.trim()){
-		  alert("Введите ваше имя");
+
+	  const targetSlug = meetingCode.trim();
+	  if (!targetSlug) {
+		  alert("Введите код вдиеовстречи");
 		  return;
 	  }
 
 	  try {
-		  const joinData = await roomsApi.joinRoom(slug, meetingPassword);
+		  const joinData = await roomsApi.joinRoom(targetSlug, meetingPassword);
 
-		  onJoin({ name, meetingCode, meetingPassword, slug });
+		  onJoin({ name, meetingCode, meetingPassword, targetSlug });
 		  
-		  navigate(`/meet-room/${slug}`);
+		  navigate(`/meet-room/${targetSlug}`);
 	  } catch (error) {
 		  console.error("Ошибка входа в комнату:", error);
 		  alert(error.message || "Неверный пароль или комната не найдена");
@@ -161,7 +163,7 @@ export default function JoinScreen({ onBack, onJoin }) {
 
             <div className="relative w-full">
               <input
-                type="text"
+                type="password"
                 id="meetingPassword"
                 value={meetingPassword}
                 onChange={(e) => setMeetingPassword(e.target.value)}
