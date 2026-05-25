@@ -92,7 +92,11 @@ async def join_room(
         raise HTTPException(status_code=404, detail="Room not found")
 
     if room.is_private:
-        if not data.password or data.password != room.password:
+        if not data.password:
+            raise HTTPException(status_code=403, detail="Wrong password")
+
+        is_password_correct = pwd_context.verify(data.password, room.password)
+        if not is_password_correct:
             raise HTTPException(status_code=403, detail="Wrong password")
 
     session_token = secrets.token_urlsafe(32)
