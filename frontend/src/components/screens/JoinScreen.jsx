@@ -7,7 +7,7 @@ import { roomsApi } from "../../api/rooms";
 
 export default function JoinScreen({ onBack, onJoin }) {
   const navigate = useNavigate();
-  const { slug } = useParams();
+  const { slug: urlSlug } = useParams();
   const localVideoRef = useRef(null);
   const [loaded, setLoaded] = useState(false);
   const [stream, setStream] = useState(null);
@@ -37,12 +37,18 @@ export default function JoinScreen({ onBack, onJoin }) {
 
   const [isRoomFound, setIsRoomFound] = useState(true);
   const [name, setName] = useState("");
-  const [meetingCode, setMeetingCode] = useState("");
+  const [meetingCode, setMeetingCode] = useState(urlSlug || "");
   const [meetingPassword, setMeetingPassword] = useState("");
   const [micMuted, setMicMuted] = useState(false);
   const [camMuted, setCamMuted] = useState(false);
   const [remoteStreams, setRemoteStreams] = useState([]); 
   const [userId] = useState(() => Math.random().toString(36).substring(7));
+
+  useEffect(() => {
+	  if (urlSlug) {
+		  setMeetingCode(urlSlug);
+	  }
+  }, [urlSlug])
 
   useEffect(() => {
 	  if (stream && localVideoRef.current) {
@@ -133,25 +139,6 @@ export default function JoinScreen({ onBack, onJoin }) {
 
           <div className="flex flex-col justify-center gap-4 flex-1 max-w-md w-full">
             <span className="font-bold text-[40px] leading-none">{t("join_preview.title")}</span>
-
-            <div className="relative w-full">
-              <input
-                type="text"
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="peer w-full h-16 px-4 pt-5 pb-2 rounded-xl bg-[#171717] text-white placeholder-transparent outline-none"
-                placeholder="Your name"
-              />
-              <label
-                htmlFor="name"
-                className="absolute left-4 top-2 text-[#999999] font-bold text-sm transition-all duration-200
-                peer-placeholder-shown:top-5 peer-placeholder-shown:text-base
-                peer-focus:top-2 peer-focus:text-sm"
-              >
-				{t("join_preview.name_placeholder")}
-              </label>
-            </div>
 
             <div className="relative w-full">
               <input
