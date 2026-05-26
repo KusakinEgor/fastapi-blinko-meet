@@ -14,8 +14,31 @@ export function createPeer({ localStream, onTrack, onIceCandidate }) {
 
 	if (localStream) {
 		localStream.getTracks().forEach(track => {
-			console.log("➕ Добавляем локальный трек в PC:", track.kind);
-			pc.addTrack(track, localStream);
+			console.log("Добавляем локальный трек в PC:", track.kind);
+			const sender = pc.addTrack(track, localStream);
+
+			if (track.kind === "video") {
+				setTimeout(async () => {
+					try {
+						const parameters = sender.getParameters();
+
+						if (!parameters.encodings || parameters.encodings.length === 0) {
+							parameters.encodings = [{}];
+						}
+
+						parameters.encodings[0].maxBitrate = 500 * 1024;
+						parameters.encodings[0].maxFramerate = 20;
+						parameters.encodings[0].scaleResolutionDownBy = 1.5;
+
+						parameters.degradationPreference = "maintain-framerate";
+
+						await sender.setParameters(parameters);
+						console.log("[Оптимизация WebRTC]: Параметры видео успешно применены для мобильной сети!");
+					} catch (err) {
+						console.error("Ошибка применения оптимизации WebRTC:", err);
+					}
+				}, 100);
+			}
 		});
 	}
 
