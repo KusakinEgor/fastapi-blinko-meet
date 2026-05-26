@@ -42,63 +42,56 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   const mediaSourceRef = useRef(null);
   const queueRef = useRef([]);
 
+  const micMutedRef = useRef(micMuted);
+  useEffect(() => {
+	  micMutedRef.current = micMuted;
+  }, [micMuted]);
+
   const playReceivedAudio = useCallback((data) => {
 	  if (!data || !(data instanceof ArrayBuffer) || !audioPlayer) return;
 	  audioPlayer.playChunk(data);
   }, [audioPlayer]);
 
   useEffect(() => {
+	  let audioContext;
+	  let processor;
+	  let source;
+	  let audioTrack;
+
+	  if (!localStream || localStream.getAudioTracks().length === 0) return;
+
 	  audioSocketRef.current = new AudioSocket(slug, (data) => {
 		  if (data && data.type === "transcript") {
 			  console.log("ПОЛУЧЕН ТЕКСТ ОТ СЕРВЕРА:", data.text);
 			  const text = data.text;
 			  const userName = data.userName || "Участник";
 			  transcriptRef.current += `${userName}: ${text}. `;
-			  console.log("Транскрипт от бэкенда:", text);
 		  } else if (data instanceof ArrayBuffer) {
-			  playReceivedAudio(data)
+			  playReceivedAudio(data);
 		  }
-	  });
-
-	  audioSocketRef.current.connect();
-
-	  return () => {
-		  if (audioSocketRef.current) audioSocketRef.current.close();
-	  };
-  }, [slug, playReceivedAudio]);
-
-  useEffect(() => {
-	  let audioContext;
-	  let processor;
-	  let source;
-	  let audioClone;
-
-	  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+	  })
 
 	  const startAudioCapture = async () => {
-		  if (isMobile) return;
-
-		  if (!localStream || micMuted || localStream.getAudioTracks().length === 0) return;
-		  if (audioSocketRef.current?.socket?.readyState !== WebSocket.OPEN) return;
-
 		  try {
-			  audioClone = localStream.getAudioTracks()[0].clone();
-			  const isolatedStream = new MediaStream([audioClone]);
+			  audioTrack = localStream.getAudioTracks()[0];
+			  const mediaStreamSource = new MediaStream([audioTrack]);
 
-			  audioContext = new (window.AudioContext || window.webkitAudioContext)({  sampleRate: 16000 });
+			  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+			  audioContext = new AudioContextClass({ sampleRate: 16000 });
 
 			  if (audioContext.state === "suspended") {
 				  await audioContext.resume();
 			  }
 
-			  source = audioContext.createMediaStreamSource(isolatedStream);
-			  processor = audioContext.createScriptProcessor(16384, 1, 1);
+			  source = audioContext.createMediaStreamSource(mediaStreamSource);
+
+			  processor = audioContext.createScriptProcessor(4096, 1, 1);
 
 			  source.connect(processor);
 			  processor.connect(audioContext.destination);
 
 			  processor.onaudioprocess = (e) => {
-				  if (micMuted) return;
+				  if (micMutedRef.current) return;
 
 				  if (audioSocketRef.current?.socket?.readyState === WebSocket.OPEN) {
 					  const inputData = e.inputBuffer.getChannelData(0);
@@ -112,24 +105,32 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 					  audioSocketRef.current.sendAudio(pcmData.buffer);
 				  }
 			  };
-			  console.log("Web Audio Capture (cloned) запущен");
+			  console.log("Vosk Mobile Capture успешно запущен");
 		  } catch (e) {
-			  console.error("Audio API error:", e);
+			  console.error("Ошибка запуска аудио на телефоне:", e);
 		  }
 	  };
 
-	  startAudioCapture();
+	  if (audioSocketRef.current.socket) {
+		  audioSocketRef.current.socket.onopen = () => {
+			  console.log("Сокет открыт, запускаем стриминг в Vosk");
+			  startAudioCapture();
+		  };
+	  }
+
+	  audioSocketRef.current.connect();
 
 	  return () => {
+		  console.log("Остановка стрима и очистка ресурсов");
+		  if (audioSocketRef.current) audioSocketRef.current.close();
 		  if (processor) {
 			  processor.disconnect();
 			  processor.onaudioprocess = null;
 		  }
 		  if (source) source.disconnect();
 		  if (audioContext) audioContext.close();
-		  if (audioClone) audioClone.stop();
 	  }
-  }, [localStream, micMuted]);
+  }, [localStream, micMuted, playReceivedAudio]);
 
   const recognitionStreamRef = useRef(null);
   
