@@ -56,7 +56,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  let audioContext;
 	  let processor;
 	  let source;
-	  let audioTrack;
+	  let localMicStream;
 
 	  console.log("Инициализация Vosk-эффекта...");
 
@@ -69,19 +69,22 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 		  } else if (data instanceof ArrayBuffer) {
 			  playReceivedAudio(data);
 		  }
-	  })
+	  });
+	  audioSocketRef.current.connect();
 
-	  const startAudioCapture = async () => {
-		  if (!localStream || !localStream.getAudioTracks || localStream.getAudioTracks().length === 0) {
-			  console.warn("Стрим пустой или треки микрофона еще не готовы.");
-			  return;
-		  }
-
+	  const startOwnAudioCapture = async () => {
 		  try {
-			  console.log("Запуск аудио-захвата для Vosk...");
+			  console.log("Запрашиваем доступ к микрофону...");
 
-			  audioTrack = localStream.getAudioTracks()[0];
-			  const mediaStreamSource = new MediaStream([audioTrack]);
+			  localMicStream = await navigator.mediaDevices.getUserMedia({
+				  audio: {
+					  sampleRate: 16000,
+					  echoCancellation: false,
+					  noiseSuppression: false
+				  }
+			  });
+
+			  console.log("Доступ к микрофону получен. Настройка Audio API...");
 
 			  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
 			  audioContext = new AudioContextClass({ sampleRate: 16000 });
@@ -90,7 +93,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 				  await audioContext.resume();
 			  }
 
-			  source = audioContext.createMediaStreamSource(mediaStreamSource);
+			  source = audioContext.createMediaStreamSource(localMicStream);
 
 			  processor = audioContext.createScriptProcessor(4096, 1, 1);
 
@@ -100,7 +103,8 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 			  processor.onaudioprocess = (e) => {
 				  if (micMutedRef.current) return;
 
-				  if (audioSocketRef.current?.socket?.readyState === WebSocket.OPEN) {
+				  const socket = audioSocketRef.current?.socket;
+				  if (socket && socket.readyState === WebSocket.OPEN) {
 					  const inputData = e.inputBuffer.getChannelData(0);
 					  const pcmData = new Int16Array(inputData.length);
 
@@ -112,13 +116,14 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 					  audioSocketRef.current.sendAudio(pcmData.buffer);
 				  }
 			  };
-			  console.log("Vosk Mobile Capture успешно запущен");
+
+			  console.log("Стриминг звука в Vosk успешно запущен!");
 		  } catch (e) {
-			  console.error("Ошибка запуска аудио на телефоне:", e);
+			  console.error("❌ Не удалось получить доступ к микрофону или запустить Audio API:", e);
 		  }
 	  };
 
-	  startAudioCapture();
+	  startOwnAudioCapture();
 
 	  return () => {
 		  console.log("Остановка стрима и очистка ресурсов");
@@ -129,6 +134,10 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 		  }
 		  if (source) source.disconnect();
 		  if (audioContext) audioContext.close();
+
+		  if (localMicStream) {
+			  localMicStream.getTracks().forEach(track => track.stop());
+		  }
 	  }
   }, [localStream, micMuted, playReceivedAudio]);
 
