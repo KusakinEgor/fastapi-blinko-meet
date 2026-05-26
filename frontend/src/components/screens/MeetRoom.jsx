@@ -58,7 +58,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  let source;
 	  let audioTrack;
 
-	  if (!localStream || localStream.getAudioTracks().length === 0) return;
+	  console.log("Инициализация Vosk-эффекта...");
 
 	  audioSocketRef.current = new AudioSocket(slug, (data) => {
 		  if (data && data.type === "transcript") {
@@ -72,7 +72,14 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  })
 
 	  const startAudioCapture = async () => {
+		  if (!localStream || !localStream.getAudioTracks || localStream.getAudioTracks().length === 0) {
+			  console.warn("Стрим пустой или треки микрофона еще не готовы.");
+			  return;
+		  }
+
 		  try {
+			  console.log("Запуск аудио-захвата для Vosk...");
+
 			  audioTrack = localStream.getAudioTracks()[0];
 			  const mediaStreamSource = new MediaStream([audioTrack]);
 
@@ -111,14 +118,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 		  }
 	  };
 
-	  if (audioSocketRef.current.socket) {
-		  audioSocketRef.current.socket.onopen = () => {
-			  console.log("Сокет открыт, запускаем стриминг в Vosk");
-			  startAudioCapture();
-		  };
-	  }
-
-	  audioSocketRef.current.connect();
+	  startAudioCapture();
 
 	  return () => {
 		  console.log("Остановка стрима и очистка ресурсов");
