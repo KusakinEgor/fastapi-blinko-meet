@@ -6,7 +6,7 @@ import { useScreenRecorder } from "../../hooks/useScreenRecorder.js";
 import { useParams } from "react-router-dom";
 import { useWebRTC } from "../../webrtc/useWebRTC";
 import { parseMessage } from "../../lib/chat/parseMessage.jsx";
-import { sendMessage } from "../../api/chat.js";
+import { fetchMessageHistory, sendMessage } from "../../api/chat.js";
 import { useParticipants } from "../../hooks/useParticipants.js";
 import { AudioSocket } from "../../api/audioSocket.js";
 import { AudioPlayer } from "../../utils/AudioPlayer.js";
@@ -354,6 +354,28 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 		  }
 	  }
   };
+
+  useEffect(() => {
+	  const loadHistory = async () => {
+		  try {
+			  const data = await fetchMessageHistory();
+
+			  const formattedMessages = data.map((msg) => ({
+				  id: msg.id,
+				  text: msg.content,
+				  time: msg.created_at
+						? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+						: ""
+			  }));
+
+			  setMessages(formattedMessages);
+		  } catch (err) {
+			  console.error("Ошибка при загрузке истории:", err.message);
+		  }
+	  };
+
+	  loadHistory();
+  }, []);
 
   const setupMedia = useCallback(async () => {
 	  try {
