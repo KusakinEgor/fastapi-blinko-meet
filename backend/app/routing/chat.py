@@ -1,5 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from typing import List
+
 from app.core.security import decrypt_message, encrypt_message
 from app.database.db import get_db_session
 from app.models.chat import MessageCreate, MessageResponse
@@ -32,7 +35,8 @@ async def send_message(
 
     new_message = Message(
             content=encrypted_content,
-            user_id=current_user.id
+            user_id=current_user.id,
+            room_id=data.room_id
     )
 
     db.add(new_message)
@@ -40,6 +44,30 @@ async def send_message(
     await db.refresh(new_message)
 
     new_message.content = decrypt_message(new_message.content)
-
     return new_message
 
+@router.get(
+        "/room/{slug}/history",
+        response_model=List[MessageResponse],
+        summary="Get active users' messages in a room",
+)
+async def get_messages_history(
+        slug: str,
+        db: AsyncSession = Depends(get_db_session),
+        current_user: User = Depends(get_current_user)
+):
+    query = (
+            select(Message)
+            .where(Message.room_id == slug)
+            .order_by(Message.created_at.asc())
+    )
+    result = await db.execute(query)
+    messages = result.scalars().all()
+
+    for msg in messages:
+        try:
+            msg.content = decrypt_message(msg.content)
+        except Exception:
+            msg.content = "[Ошибка расшифровки]"
+
+    return messages
