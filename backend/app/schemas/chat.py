@@ -8,5 +8,6 @@ class Message(TimestampMixin, Base):
 
     content: Mapped[str] = mapped_column(Text, nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    room_id: Mapped[str | None] = mapped_column(String, nullable=True)
 
     user: Mapped["User"] = relationship("User", back_populates="messages")
