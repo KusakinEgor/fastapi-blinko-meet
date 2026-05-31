@@ -1,6 +1,6 @@
 const API_URL = import.meta.env.VITE_API_URL;
 
-export const sendMessage = async (content) => {
+export const sendMessage = async (content, roomId) => {
 	const token = localStorage.getItem("access_token");
 
 	const response = await fetch(`${API_URL}/messages/send`, {
@@ -9,7 +9,7 @@ export const sendMessage = async (content) => {
 			"Content-Type": "application/json",
 			"Authorization": `Bearer ${token}`
 		},
-		body: JSON.stringify({ content }),
+		body: JSON.stringify({ content, room_id: roomId}),
 	});
 
 	if (!response.ok) {
@@ -20,10 +20,10 @@ export const sendMessage = async (content) => {
 	return await response.json();
 };
 
-export const fetchMessageHistory = async () => {
+export const fetchMessageHistory = async (roomId) => {
 	const token = localStorage.getItem("access_token");
 
-	const response = await fetch(`${API_URL}/messages/history`, {
+	const response = await fetch(`${API_URL}/messages/room/${roomId}/history`, {
 		method: "GET",
 		headers: {
 			"Authorization": `Bearer ${token}`
