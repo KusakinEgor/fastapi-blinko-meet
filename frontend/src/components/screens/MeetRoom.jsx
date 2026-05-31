@@ -319,7 +319,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  if (!text) return;
 
 	  try {
-		  const savedMessage = await sendMessage(text);
+		  const savedMessage = await sendMessage(text, slug);
 
 		  setMessages((prev) => [
 			  ...prev,
@@ -358,7 +358,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
   useEffect(() => {
 	  const loadHistory = async () => {
 		  try {
-			  const data = await fetchMessageHistory();
+			  const data = await fetchMessageHistory(slug);
 
 			  const formattedMessages = data.map((msg) => ({
 				  id: msg.id,
