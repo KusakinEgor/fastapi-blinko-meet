@@ -76,8 +76,21 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 		  try {
 			  console.log("Запрашиваем доступ к микрофону...");
 
+			  const devices = await navigator.mediaDevices.enumerateDevices();
+			  const audioDevices = devices.filter(device => device.kind === 'audioinput');
+
+			  if (audioDevices.length === 0) {
+				  throw new Error("В системе вообще не найдено микрофонов (даже в камере)!");
+			  }
+
+			  const chosenMicId = audioDevices[0].deviceId;
+			  console.log(`Найден микрофон: ${audioDevices[0].label || 'Устройство по умолчанию'}`);
+
+			  console.log("Запрашиваем доступ к выбранному микрофону...");
+
 			  localMicStream = await navigator.mediaDevices.getUserMedia({
 				  audio: {
+					  deviceId: chosenMicId ? { exact: chosenMicId } : undefined,
 					  sampleRate: 16000,
 					  echoCancellation: false,
 					  noiseSuppression: false
@@ -524,7 +537,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 				{activeTab && (
 					<div className="bg-[#171717] w-full h-full min-h-0 rounded-xl flex flex-col overflow-hidden p-4">
 						<div className="flex w-full justify-between flex-none">
-							<span className="font-bold text-[25px] p-2">
+							<span className="font-bold text-[18px] sm:text-[22px] lg:text-[18px] xl:text-[22px] 2xl:text-[25px] p-2 block whitespace-nowrap">
 								{count} {count === 1 ? "participant" : t("meeting_room.participants_list_title")}
 							</span>
 							<div className="flex gap-1 p-2">
@@ -614,7 +627,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 										<path fill-rule="evenodd" clip-rule="evenodd" d="M16.2504 7.49999C16.2504 9.84719 14.3476 11.75 12.0004 11.75C9.65318 11.75 7.75039 9.84719 7.75039 7.49999C7.75039 5.15278 9.65318 3.25 12.0004 3.25C14.3476 3.25 16.2504 5.15278 16.2504 7.49999ZM11.8696 20.75C11.3165 19.7939 11 18.6839 11 17.5C11 16.1039 11.4401 14.8107 12.1892 13.7514C12.1265 13.7505 12.0638 13.75 12.001 13.75C9.10759 13.75 6.4203 14.7482 4.19361 16.4568C3.73539 16.8084 3.48305 17.3648 3.50089 17.9421C3.52124 18.6009 3.58196 19.0294 3.76311 19.385C4.00279 19.8554 4.38524 20.2378 4.85565 20.4775C5.39043 20.75 6.09049 20.75 7.49063 20.75H11.8696Z" fill="currentColor"></path>
 										<path fill-rule="evenodd" clip-rule="evenodd" d="M17.5 23C20.5376 23 23 20.5376 23 17.5C23 14.4624 20.5376 12 17.5 12C14.4624 12 12 14.4624 12 17.5C12 20.5376 14.4624 23 17.5 23ZM18 14.5C18 14.2239 17.7761 14 17.5 14C17.2239 14 17 14.2239 17 14.5V17H14.5C14.2239 17 14 17.2239 14 17.5C14 17.7761 14.2239 18 14.5 18H17V20.5C17 20.7761 17.2239 21 17.5 21C17.7761 21 18 20.7761 18 20.5V18H20.5C20.7761 18 21 17.7761 21 17.5C21 17.2239 20.7761 17 20.5 17H18V14.5Z" fill="currentColor"></path>
 									</svg>
-									<span className="font-bold">{t("meeting_room.invite_btn")}</span>
+									<span className="font-bold text-sm sm:text-base lg:text-sm xl:text-base whitespace-nowrap">{t("meeting_room.invite_btn")}</span>
 								</div>
 							</button>
 						)}
