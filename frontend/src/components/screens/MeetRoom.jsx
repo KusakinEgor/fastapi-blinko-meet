@@ -602,11 +602,14 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 														4: "kola",
 														5: "admin1",
 													};
-													const senderName = userNames[msg.user_id] || `Пользователь #${msg.user_id}`;
-													
+
+													const realUserId = msg.user_id || msg.sender_id || msg.userId || msg.sender;
+													const isMyMessage = realUserId === 1 || msg.sender === "Вы";
+													const senderName = userNames[realUserId] || `Пользователь #${realUserId || 'неизвестен'}`;
+
 													return (
 														<div key={msg.id} className="self-end bg-[#262626] text-white p-3 rounded-2xl rounded-tr-none max-w-[80%] ml-auto shadow-sm">
-															<span className="block text-[11px] font-medium text-amber-400 mb-1 select-none">{senderName}</span>
+															<span className="block text-[11px] font-medium text-amber-400 mb-1 select-none">{isMyMessage ? "Вы" : senderName}</span>
 															<p className="text-sm leading-relaxed break-words">{parseMessage(msg.text || msg.content || msg.messages || "")}</p>
 															<span className="block text-[10px] text-gray-500 text-right mt-1">
 																{msg.time}
