@@ -24,24 +24,24 @@ export default function LandingScreen({onJoin, onCreate, onLogin}) {
   useEffect(() => setLoaded(true), []);
 
   return (
-    <div className="min-h-screen bg-black text-white flex relative overflow-hidden">
+    <div className="min-h-screen bg-black text-white flex flex-col md:flex-row relative overflow-x-hidden">
 
       <div
-        className={`sm:w-24 bg-[#080808] backdrop-blur-xl flex flex-col justify-between items-center p-4 transition-all duration-1000
+        className={`w-full md:w-24 h-auto md:h-screen bg-[#080808] backdrop-blur-xl flex flex-row md:flex-col justify-between items-center p-4 transition-all duration-1000 shrink-0 border-b md:border-b-0 md:border-r border-white/5
         ${loaded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-6"}`}
       >
-        <div className="flex flex-col gap-6 mt-4">
+        <div className="flex flex-row md:flex-col gap-4 md:gap-6">
 
           <Button
             variant="secondary"
-            className="flex flex-col items-center py-2 px-3 hover:bg-white/10 rounded-lg transition-all duration-200"
+            className="flex flex-col items-center py-2 px-3 hover:bg-white/10 rounded-lg transition-all duration-200 md:text-sm"
             onClick={() => setShowLoginPanel(!showLoginPanel)}
           >
             <svg
               width="24"
               viewBox="0 0 24 24"
               fill="none"
-              className="text-xl mb-1"
+              className="text-xl mb-1 md:text-xl"
             >
               <path
                 fillRule="evenodd"
@@ -56,7 +56,7 @@ export default function LandingScreen({onJoin, onCreate, onLogin}) {
           <Button
             variant="secondary"
             onClick={onCreate}
-            className="flex flex-col items-center py-2 px-3 hover:bg-white/10 rounded-lg transition-all duration-200"
+            className="flex flex-col items-center py-2 px-3 hover:bg-white/10 rounded-lg transition-all duration-200 md:text-sm"
           >
             <svg
               width="24"
@@ -64,7 +64,7 @@ export default function LandingScreen({onJoin, onCreate, onLogin}) {
               viewBox="0 0 24 24"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
-              className="text-xl mb-1"
+              className="text-xl md:text-xl mb-1"
             >
               <path
                 d="M4.09999 18H13.55C14.7097 18 15.6499 17.1046 15.6499 16V8C15.6499 6.89543 14.7097 6 13.55 6H4.09999C2.9402 6 2 6.89543 2 8V16C2 17.1046 2.9402 18 4.09999 18Z"
@@ -98,7 +98,7 @@ export default function LandingScreen({onJoin, onCreate, onLogin}) {
 
       </div>
 
-      <div className="grid grid-cols-2 gap-10 p-10 w-full h-screen justify-center items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 p-4 sm:p-6 lg:p-10 w-full min-h-screen lg:h-screen justify-center items-center">
             <div className="grid grid-cols-2 gap-4">
                 <div className="flex justify-end">
                     <DivButton
@@ -108,7 +108,7 @@ export default function LandingScreen({onJoin, onCreate, onLogin}) {
                         <svg width="120" height="97" viewBox="0 0 120 97" fill="none">
                             <path fill-rule="evenodd" clip-rule="evenodd" d="M78.2756 46.5515L99.457 68.9399C99.6955 69.192 99.9044 69.2771 100.08 69.312C100.289 69.3537 100.554 69.3392 100.825 69.2355C101.097 69.1317 101.285 68.9731 101.391 68.8298C101.476 68.7164 101.561 68.5496 101.564 68.2341L102 27.4133C102.003 27.1125 101.926 26.9453 101.845 26.828C101.746 26.6831 101.569 26.5233 101.313 26.412C101.058 26.3009 100.801 26.2726 100.59 26.3026C100.41 26.3283 100.197 26.4027 99.9499 26.63L95.8896 22.2125C100.519 17.9572 108.066 21.2383 108 27.4774L107.564 68.2981C107.495 74.704 99.5311 77.7487 95.0985 73.0634L80.178 57.2927V70.7125C80.178 75.9384 75.88 80.1748 70.578 80.1748H21.6C16.2981 80.1748 12 75.9384 12 70.7125V25.6371C12 20.4112 16.2981 16.1748 21.6 16.1748H70.578C75.88 16.1748 80.178 20.4112 80.178 25.6371V36.6535L95.8896 22.2125L99.9499 26.63L78.2756 46.5515ZM74.1781 25.6371C74.1781 23.8064 72.6483 22.1748 70.578 22.1748H21.6C19.5298 22.1748 18 23.8064 18 25.6371V70.7125C18 72.5432 19.5298 74.1748 21.6 74.1748H70.578C72.6483 74.1748 74.1781 72.5432 74.1781 70.7125V25.6371Z" fill="white" fill-opacity="0.96"></path>
                         </svg>
-                        <span className="text-white mt-2 text-[56px] leading-[58px] font-bold">{t("home.create_meeting")}</span>
+                        <span className="text-white font-bold text-[36px] leading-[40px] lg:text-[32px] lg:leading-[36px] xl:text-[44px] xl:leading-[48px] 2xl:text-[56px] 2xl:leading-[58px] block mt-auto">{t("home.create_meeting")}</span>
                         <div className="absolute inset-0 bg-white/1 backdrop-blur-sm opacity-0 hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
                     </DivButton>
                 </div>
@@ -121,9 +121,9 @@ export default function LandingScreen({onJoin, onCreate, onLogin}) {
                         </svg>
 
                         <div className="mt-auto">
-                            <span className="text-white font-bold mt-2 text-[32px] leading-[36px]">{t("home.schedule_title")}</span>
+                            <span className="text-white font-bold text-[26px] leading-[30px] lg:text-[20px] lg:leading-[24px] xl:text-[24px] xl:leading-[28px] 2xl:text-[32px] 2xl:leading-[36px]">{t("home.schedule_title")}</span>
                             <br></br>
-                            <span className="text-[#999999] font-semibold mt-1 text-[18px]">{t("home.schedule_desc")}</span>    
+                            <span className="text-[#999999] font-semibold text-[15px] lg:text-[12px] xl:text-[14px] 2xl:text-[18px]">{t("home.schedule_desc")}</span>    
                         </div>
 
                         <div className="absolute inset-0 bg-white/1 backdrop-blur-sm opacity-0 hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
@@ -138,7 +138,7 @@ export default function LandingScreen({onJoin, onCreate, onLogin}) {
                         </svg>
 
                         <div className="mt-auto">
-                            <span className="text-white font-bold mt-2 text-[32px] leading-[36px]">{t("home.join_meeting")}</span>
+                            <span className="text-white font-bold text-[26px] leading-[30px] lg:text-[20px] lg:leading-[24px] xl:text-[24px] xl:leading-[28px] 2xl:text-[32px] 2xl:leading-[36px]">{t("home.join_meeting")}</span>
                         </div>
 
                         <div className="absolute inset-0 bg-white/1 backdrop-blur-sm opacity-0 hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
@@ -146,19 +146,19 @@ export default function LandingScreen({onJoin, onCreate, onLogin}) {
                 </div>
             </div>
             
-            <div className="flex flex-col justify-center items-start gap-4">
-                <div>
+            <div className="flex flex-col justify-center items-start gap-4 items-center lg:items-start w-full mt-4 lg:mt-0">
+                <div className="hidden lg:block">
                     <span className="text-white font-semibold text-[70px]">{t("home.login_title")}</span>
-                    <span className="text-[#999999] font-semibold text-[70px] leading-[70px]"><Trans i18nKey="home.login_description">to manage your<br/>meetings and see it's<br/>history</Trans></span>
+                    <span className="text-[#999999] font-semibold text-[32px] leading-[38px] sm:text-[40px] sm:leading-[46px] lg:text-[42px] lg:leading-[48px] xl:text-[50px] xl:leading-[56px] block max-w-4xl"><Trans i18nKey="home.login_description">to manage your<br/>meetings and see it's<br/>history</Trans></span>
                 </div>
                 <DivButton
                     onClick={onLogin}
-                    className="bg-[#fff] py-2 px-4 rounded-xl mt-10 w-[220px] h-[48px] flex justify-center items-center"
+                    className="bg-[#fff] py-2 px-4 rounded-xl mt-0 lg:mt-10 max-w-[320px] h-[48px] flex justify-center items-center lg:mx-0 mx-auto"
                 >
                     <span className="text-black font-semibold">{t("home.sign_in_btn")}</span>
                 </DivButton> 
-                <div>
-                    <img src={MyIcon} alt="icon"></img>
+                <div className="hidden lg:block">
+                    <img src={MyIcon} alt="icon" className="w-auto h-auto max-h-[300px] xl:max-h-[220px] 2xl:max-h-[350px] object-contain transition-all"></img>
                 </div>
             </div>
       </div>
