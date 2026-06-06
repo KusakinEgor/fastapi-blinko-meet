@@ -52,6 +52,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 	  audioPlayer.playChunk(data);
   }, [audioPlayer]);
 
+
   useEffect(() => {
 	  let audioContext;
 	  let processor;
@@ -595,14 +596,24 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 										{(!messages || messages.length === 0) ? (
 											<div className="text-gray-500 text-sm italic">{t("meeting_room.no_messages")}</div>
 										) : (
-											messages?.map((msg) => (
-												<div key={msg.id} className="self-end bg-[#262626] text-white p-3 rounded-2xl rounded-tr-none max-w-[80%] ml-auto shadow-sm">
-													<p className="text-sm leading-relaxed break-words">{parseMessage(msg.text || msg.content || msg.messages || "")}</p>
-													<span className="block text-[10px] text-gray-500 text-right mt-1">
-														{msg.time}
-													</span>
-												</div>
-											))
+											messages?.map((msg) => {
+													const userNames = {
+														2: "Вы",
+														89: "kola",
+														5: "admin1",
+													};
+													const senderName = userNames[msg.user_id] || `Пользователь #${msg.user_id}`;
+													
+													return (
+														<div key={msg.id} className="self-end bg-[#262626] text-white p-3 rounded-2xl rounded-tr-none max-w-[80%] ml-auto shadow-sm">
+															<span className="block text-[11px] font-medium text-amber-400 mb-1 select-none">{senderName}</span>
+															<p className="text-sm leading-relaxed break-words">{parseMessage(msg.text || msg.content || msg.messages || "")}</p>
+															<span className="block text-[10px] text-gray-500 text-right mt-1">
+																{msg.time}
+															</span>
+														</div>
+													)
+											})
 										)}
 									</div>
 									
