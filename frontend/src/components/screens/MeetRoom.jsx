@@ -599,7 +599,7 @@ export default function MeetRoom({ name, meetingTitle, onBack }) {
 											messages?.map((msg) => {
 													const userNames = {
 														2: "Вы",
-														89: "kola",
+														4: "kola",
 														5: "admin1",
 													};
 													const senderName = userNames[msg.user_id] || `Пользователь #${msg.user_id}`;
